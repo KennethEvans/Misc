@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+	package="net.kenevans.android.misc" android:versionCode="1" android:versionName="1.0.0"
+		android:installLocation="auto" >
+		
+	<uses-sdk android:minSdkVersion="8" />
+	<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+	<uses-permission android:name="android.permission.WRITE_SMS" />
+	<uses-permission android:name="android.permission.READ_SMS" />
+    <uses-permission android:name="android.permission.RECEIVE_SMS" />
+    <!--  Google Maps API -->
+    <uses-permission android:name="android.permission.INTERNET" />
+	<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+	
+	<application android:icon="@drawable/bluemouse"
+		android:label="@string/app_name">
+        <uses-library android:name="com.google.android.maps" />
+		<activity android:name=".MiscActivity" android:label="@string/app_name">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+			</intent-filter>
+		</activity>
+		<activity android:name=".NetworkActivity" android:label="@string/network_title">
+		</activity>
+		<activity android:name=".CurrentTimeActivity" android:label="@string/current_time_title">
+		</activity>
+		<activity android:name=".SMSActivity" android:label="@string/sms_title">
+		</activity>
+		<activity android:name=".DisplayMessageActivity" android:label="@string/displaymessage_title">
+		</activity>
+		<activity android:name=".MessageListenerActivity" android:label="@string/messagelistener_title">
+		</activity>
+		<activity android:name=".MapLocationActivity" android:label="@string/map_location_title">
+		</activity>
+		<!--
+        <receiver android:name=".SMSMessageReceiver"> 
+            <intent-filter> 
+                <action android:name="android.provider.Telephony.SMS_RECEIVED" /> 
+            </intent-filter> 
+        </receiver>
+        -->
+	</application>
+</manifest>

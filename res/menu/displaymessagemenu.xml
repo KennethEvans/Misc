@@ -1,0 +1,7 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/prev" android:title="@string/prev_item" />
+    <item android:id="@+id/next" android:title="@string/next_item" />
+    <item android:id="@+id/delete" android:title="@string/delete_item" />
+    <item android:id="@+id/fixtime" android:title="@string/fixtime_item" />
+    <item android:id="@+id/dryrun" android:title="@string/dryrun_item" />
+</menu>

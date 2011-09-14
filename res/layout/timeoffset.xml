@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+    
+    #<!--
+    Consider this for the TextView and EditText  
+    android:textAppearance="?android:attr/textAppearanceMedium"
+    -->
+
+    <TextView 
+        android:id="@+id/hourText"
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        android:layout_marginLeft="10dip"
+        android:layout_marginRight="10dip"
+        android:gravity="left"
+        android:text="Hours"
+    />
+    <EditText
+        android:id="@+id/hourEditText"
+        android:inputType="numberSigned"
+        android:layout_height="wrap_content"
+        android:layout_width="fill_parent"
+        android:layout_marginLeft="10dip"
+        android:layout_marginRight="10dip"
+        android:scrollHorizontally="true"
+        android:autoText="false"
+        android:capitalize="none"
+        android:gravity="fill_horizontal"
+    />
+    <TextView
+        android:id="@+id/minutesText"
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        android:layout_marginLeft="10dip"
+        android:layout_marginRight="10dip"
+        android:gravity="left"
+        android:text="Minutes"
+    />
+    <EditText
+        android:id="@+id/minuteEditText"
+        android:inputType="numberSigned"
+        android:layout_height="wrap_content"
+        android:layout_width="fill_parent"
+        android:layout_marginLeft="10dip"
+        android:layout_marginRight="10dip"
+        android:scrollHorizontally="true"
+        android:autoText="false"
+        android:capitalize="none"
+        android:gravity="fill_horizontal"
+    />
+	<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+		android:orientation="horizontal"
+		android:gravity="center_horizontal"
+		android:layout_margin="10dip"
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content">
+		
+		<Button android:id="@+id/ok_button"
+			android:text="@string/ok_label" 
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content">
+		</Button>
+		<Button android:id="@+id/cancel_button"
+			android:text="@string/cancel_label" 
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content">
+		</Button>
+	</LinearLayout>
+        
+</LinearLayout>

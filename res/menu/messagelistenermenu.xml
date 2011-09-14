@@ -1,0 +1,4 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/clear" android:title="@string/clear_item" />
+    <item android:id="@+id/copy" android:title="@string/copy_item" />
+</menu>
