@@ -45,7 +45,7 @@ public class DisplayMessageActivity extends Activity {
 	/** Set this to not make any changes to the database. */
 	private boolean dryRun = true;
 	/** The current default value for the user's offset. */
-	private static int lastOffset;
+	private static int lastTimeOffset;
 	private TextView mTitleTextView;
 	private TextView mSubtitleTextView;
 	private TextView mBodyTextView;
@@ -61,11 +61,11 @@ public class DisplayMessageActivity extends Activity {
 		Date now = new Date();
 		Calendar calendar = Calendar.getInstance();
 		calendar.setTime(now);
-		lastOffset = calendar.getTimeZone().getOffset(now.getTime());
+		lastTimeOffset = calendar.getTimeZone().getOffset(now.getTime());
 
 		// Get the saved state for lastOffset, otherwise resets to the above.
 		SharedPreferences prefs = getPreferences(MODE_PRIVATE);
-		lastOffset = prefs.getInt("offset", lastOffset);
+		lastTimeOffset = prefs.getInt("timeOffset", lastTimeOffset);
 
 		mTitleTextView = (TextView) findViewById(R.id.titleview);
 		mSubtitleTextView = (TextView) findViewById(R.id.subtitleview);
@@ -117,7 +117,7 @@ public class DisplayMessageActivity extends Activity {
 		super.onPause();
 		// Retain the offset so the user can use it again
 		SharedPreferences.Editor editor = getPreferences(MODE_PRIVATE).edit();
-		editor.putInt("offset", lastOffset);
+		editor.putInt("timeOffset", lastTimeOffset);
 		editor.putBoolean("dryrun", dryRun);
 		editor.commit();
 	}
@@ -127,7 +127,7 @@ public class DisplayMessageActivity extends Activity {
 		// Restore the offset so the user can use it again
 		super.onResume();
 		SharedPreferences prefs = getPreferences(MODE_PRIVATE);
-		lastOffset = prefs.getInt("offset", lastOffset);
+		lastTimeOffset = prefs.getInt("timeOffset", lastTimeOffset);
 		dryRun = prefs.getBoolean("dryrun", dryRun);
 	}
 
@@ -156,7 +156,7 @@ public class DisplayMessageActivity extends Activity {
 
 			// Make a TimeOffsetDialog to get the users value
 			final TimeOffsetDialog dialog = new TimeOffsetDialog(this,
-					lastOffset);
+					lastTimeOffset);
 			// The title needs to be this long to keep the width reasonable
 			// Wasn't able to fix this with resources
 			dialog.setTitle(R.string.timeoffset_dialog_title);
@@ -171,7 +171,7 @@ public class DisplayMessageActivity extends Activity {
 									"Got invalid value for the time offset");
 						} else {
 							// Save this value as the default
-							lastOffset = offset;
+							lastTimeOffset = offset;
 							long newDate = curDate + offset;
 							if (dryRun) {
 								Toast.makeText(
@@ -209,7 +209,7 @@ public class DisplayMessageActivity extends Activity {
 						// This allows the user to define a new default offset
 						Integer offset = dialog.getTimeOffset();
 						if (offset != null) {
-							lastOffset = offset;
+							lastTimeOffset = offset;
 						}
 					}
 				}
