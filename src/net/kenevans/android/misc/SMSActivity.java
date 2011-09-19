@@ -68,9 +68,6 @@ public class SMSActivity extends ListActivity implements IConstants {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		// Set the current position to 0
-		// currentPosition = 0;
-
 		// Call refresh to set the contents
 		refresh();
 	}
@@ -158,13 +155,6 @@ public class SMSActivity extends ListActivity implements IConstants {
 				Log.d(TAG, "onActivityResult: position=" + currentPosition
 						+ " id=" + id);
 				startActivityForResult(i, ACTIVITY_DISPLAY_MESSAGE);
-
-				// Retain the offset. Doesn't seem to get done if we don't do
-				// this.
-				SharedPreferences.Editor editor = getPreferences(MODE_PRIVATE)
-						.edit();
-				editor.putInt("currentPosition", currentPosition);
-				editor.commit();
 			} catch (Exception ex) {
 				Utils.excMsg(this, "Error displaying new message", ex);
 			}
@@ -173,19 +163,16 @@ public class SMSActivity extends ListActivity implements IConstants {
 
 	@Override
 	protected void onPause() {
+		Log.d(TAG, this.getClass().getSimpleName()
+				+ ": onPause: currentPosition=" + currentPosition);
 		super.onPause();
-		// Retain the offset so the user can use it again
-		SharedPreferences.Editor editor = getPreferences(MODE_PRIVATE).edit();
-		editor.putInt("currentPosition", currentPosition);
-		editor.commit();
 	}
 
 	@Override
 	protected void onResume() {
-		// Restore the offset so the user can use it again
+		Log.d(TAG, this.getClass().getSimpleName()
+				+ ": onResume(1): currentPosition=" + currentPosition);
 		super.onResume();
-		SharedPreferences prefs = getPreferences(MODE_PRIVATE);
-		currentPosition = prefs.getInt("currentPosition", currentPosition);
 	}
 
 	/**
