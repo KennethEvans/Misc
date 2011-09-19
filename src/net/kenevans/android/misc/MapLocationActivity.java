@@ -33,6 +33,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.WindowManager;
 import android.widget.Toast;
 
 import com.google.android.maps.GeoPoint;
@@ -76,6 +77,9 @@ public class MapLocationActivity extends MapActivity implements IConstants {
 
 		MapView mapView = (MapView) findViewById(R.id.mapview);
 		mapView.setBuiltInZoomControls(true);
+		
+		// Keep it visible
+		getWindow().addFlags( WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
 		// Find the tower values
 		int[] vals = getTowerValues();
