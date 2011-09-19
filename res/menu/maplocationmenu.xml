@@ -1,4 +1,4 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:id="@+id/refresh" android:title="@string/refresh_item" />
-    <item android:id="@+id/copy" android:title="@string/copy_item" />
+    <item android:id="@+id/details" android:title="@string/details_item" />
 </menu>

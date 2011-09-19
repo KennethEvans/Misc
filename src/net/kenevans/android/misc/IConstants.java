@@ -35,7 +35,7 @@ public interface IConstants {
 	/** The URI for messages. Has all messages. */
 	public static final Uri SMS_URI = Uri.parse("content://sms");
 	/** SMS database column for the id. Identifies the row. */
-	public static final String ROW_ID = "_id";
+	public static final String COL_ID = "_id";
 	/** SMS database column for the address. */
 	public static final String COL_ADDRESS = "address";
 	/** SMS database column for the date. */

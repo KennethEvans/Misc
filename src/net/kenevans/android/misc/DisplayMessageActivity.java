@@ -72,10 +72,10 @@ public class DisplayMessageActivity extends Activity {
 		mBodyTextView = (TextView) findViewById(R.id.bodyview);
 
 		mRowId = (savedInstanceState == null) ? null
-				: (Long) savedInstanceState.getSerializable(SMSActivity.ROW_ID);
+				: (Long) savedInstanceState.getSerializable(SMSActivity.COL_ID);
 		if (mRowId == null) {
 			Bundle extras = getIntent().getExtras();
-			mRowId = extras != null ? extras.getLong(SMSActivity.ROW_ID) : null;
+			mRowId = extras != null ? extras.getLong(SMSActivity.COL_ID) : null;
 		}
 
 		// Call refresh to set the contents
@@ -139,7 +139,7 @@ public class DisplayMessageActivity extends Activity {
 		try {
 			String[] columns = { SMSActivity.COL_DATE };
 			// Only get the row with mRowId
-			String selection = SMSActivity.ROW_ID + "=" + mRowId.longValue();
+			String selection = SMSActivity.COL_ID + "=" + mRowId.longValue();
 			Cursor cursor = getContentResolver().query(SMSActivity.SMS_URI,
 					columns, selection, null, null);
 
@@ -260,10 +260,10 @@ public class DisplayMessageActivity extends Activity {
 	 */
 	private void refresh() {
 		try {
-			String[] columns = { SMSActivity.ROW_ID, SMSActivity.COL_ADDRESS,
+			String[] columns = { SMSActivity.COL_ID, SMSActivity.COL_ADDRESS,
 					SMSActivity.COL_DATE, SMSActivity.COL_BODY };
 			// Only get the row with mRowId
-			String selection = SMSActivity.ROW_ID + "=" + mRowId.longValue();
+			String selection = SMSActivity.COL_ID + "=" + mRowId.longValue();
 
 			// // DEBUG Get all the column names
 			// Cursor cursor1 = getContentResolver().query(SMSActivity.SMS_URI,
@@ -273,12 +273,12 @@ public class DisplayMessageActivity extends Activity {
 			// for(String name : names) {
 			// info += name + "\n";
 			// }
-			// Log.i(Utils.getTAG(), "SMS Column Names\n" + info);
+			// Log.d(Utils.getTAG(), "SMS Column Names\n" + info);
 			// cursor1.close();
 
 			Cursor cursor = getContentResolver().query(SMSActivity.SMS_URI,
 					columns, selection, null, null);
-			int indexId = cursor.getColumnIndex(SMSActivity.ROW_ID);
+			int indexId = cursor.getColumnIndex(SMSActivity.COL_ID);
 			int indexDate = cursor.getColumnIndex(SMSActivity.COL_DATE);
 			int indexAddress = cursor.getColumnIndex(SMSActivity.COL_ADDRESS);
 			int indexBody = cursor.getColumnIndex(SMSActivity.COL_BODY);

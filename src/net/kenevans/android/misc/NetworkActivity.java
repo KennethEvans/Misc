@@ -25,7 +25,6 @@ import java.util.Date;
 
 import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.telephony.CellLocation;
@@ -76,17 +75,14 @@ public class NetworkActivity extends Activity implements IConstants {
 		case R.id.copy:
 			copyToClipboard();
 			return true;
-		case R.id.map:
-			showMap();
-			return true;
 		}
 		return false;
 	}
 
 	@Override
 	protected void onPause() {
-		Log.i(TAG, "onPause: mLatitude=" + mLatitude + " mLongitude="
-				+ mLongitude);
+		Log.d(TAG, this.getClass().getSimpleName() + ": onPause: mLatitude="
+				+ mLatitude + " mLongitude=" + mLongitude);
 		super.onPause();
 		// Retain the state
 		SharedPreferences.Editor editor = getPreferences(MODE_PRIVATE).edit();
@@ -106,8 +102,8 @@ public class NetworkActivity extends Activity implements IConstants {
 		mLongitude = prefs.getInt("longitude", mLongitude);
 		mNid = prefs.getInt("nid", mNid);
 		mSid = prefs.getInt("sid", mSid);
-		Log.i(TAG, "onResume: mLatitude=" + mLatitude + " mLongitude="
-				+ mLongitude);
+		Log.d(TAG, this.getClass().getSimpleName() + ": onResume: mLatitude="
+				+ mLatitude + " mLongitude=" + mLongitude);
 	}
 
 	/**
@@ -171,7 +167,7 @@ public class NetworkActivity extends Activity implements IConstants {
 				info += "Base Station Lon: " + loc + " [" + locToDeg(loc)
 						+ " deg]\n";
 				mLongitude = locToGoogle(loc);
-				Log.i(TAG, "getNetworkInfo: mLatitude=" + mLatitude
+				Log.d(TAG, "getNetworkInfo: mLatitude=" + mLatitude
 						+ " mLongitude=" + mLongitude);
 				// Retain the state as these values
 				SharedPreferences.Editor editor = getPreferences(MODE_PRIVATE)
@@ -202,29 +198,30 @@ public class NetworkActivity extends Activity implements IConstants {
 		return info;
 	}
 
-	private void showMap() {
-		if (mLongitude == Integer.MAX_VALUE || mLongitude == Integer.MAX_VALUE) {
-			Utils.errMsg(this,
-					"Current latitude and longitude values are invalid");
-			return;
-		}
-		try {
-			Log.i(TAG, "showMap: mLatitude=" + mLatitude + " mLongitude="
-					+ mLongitude);
-			// Start the MapLocationActivity
-			Intent intent = new Intent();
-			intent.setClass(this, MapLocationActivity.class);
-			intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
-					| Intent.FLAG_ACTIVITY_SINGLE_TOP);
-			intent.putExtra(LATITUDE, mLatitude);
-			intent.putExtra(LONGITUDE, mLongitude);
-			intent.putExtra(SID, mSid);
-			intent.putExtra(NID, mNid);
-			startActivity(intent);
-		} catch (Exception ex) {
-			Utils.excMsg(this, "Error showing map", ex);
-		}
-	}
+	// private void showMap() {
+	// if (mLongitude == Integer.MAX_VALUE || mLongitude == Integer.MAX_VALUE) {
+	// Utils.errMsg(this,
+	// "Current latitude and longitude values are invalid");
+	// return;
+	// }
+	// try {
+	// Log.d(TAG, this.getClass().getSimpleName()
+	// + ": showMap: mLatitude=" + mLatitude + " mLongitude="
+	// + mLongitude);
+	// // Start the MapLocationActivity
+	// Intent intent = new Intent();
+	// intent.setClass(this, MapLocationActivity.class);
+	// intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
+	// | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+	// intent.putExtra(LATITUDE, mLatitude);
+	// intent.putExtra(LONGITUDE, mLongitude);
+	// intent.putExtra(SID, mSid);
+	// intent.putExtra(NID, mNid);
+	// startActivity(intent);
+	// } catch (Exception ex) {
+	// Utils.excMsg(this, "Error showing map", ex);
+	// }
+	// }
 
 	/**
 	 * Input value is in units of .25 sec from -1296000 to 1296000 corresponding
@@ -236,7 +233,7 @@ public class NetworkActivity extends Activity implements IConstants {
 	 * @return Value in degrees to six places or "Invalid" if lat is
 	 *         Integer.MAX_VALUE.
 	 */
-	private String locToDeg(int loc) {
+	public static String locToDeg(int loc) {
 		if (loc == Integer.MAX_VALUE) {
 			return "Invalid";
 		}
@@ -254,7 +251,7 @@ public class NetworkActivity extends Activity implements IConstants {
 	 * @return Value suitable for GoogleMaps, which is 1.e6 times the value in
 	 *         deg.
 	 */
-	private int locToGoogle(int loc) {
+	public static int locToGoogle(int loc) {
 		if (loc == Integer.MAX_VALUE) {
 			return loc;
 		}

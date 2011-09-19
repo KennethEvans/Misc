@@ -29,6 +29,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.os.Bundle;
 import android.telephony.SmsMessage;
 import android.text.ClipboardManager;
@@ -66,7 +67,7 @@ public class MessageListenerActivity extends Activity implements IConstants {
 				Date now = new Date();
 
 				// DEBUG
-				Log.i(TAG, "BroadcastReceiver.onReceive: mContents.length()="
+				Log.d(TAG, "BroadcastReceiver.onReceive: mContents.length()="
 						+ ((mContents == null) ? "null" : mContents.length()));
 				Bundle extras = intent.getExtras();
 				if (extras == null) {
@@ -82,6 +83,12 @@ public class MessageListenerActivity extends Activity implements IConstants {
 					info += "From: "
 							+ SMSActivity.formatAddress(message
 									.getOriginatingAddress()) + "\n";
+					info += "From (Display): "
+							+ SMSActivity.formatAddress(message
+									.getDisplayOriginatingAddress()) + "\n";
+					if (message.isEmail()) {
+						info += "Is Email: " + message.isEmail() + "\n";
+					}
 					info += "Time received: "
 							+ SMSActivity.formatDate(now.getTime()) + "\n";
 					info += "Timestamp: "
@@ -89,22 +96,24 @@ public class MessageListenerActivity extends Activity implements IConstants {
 									.getTimestampMillis()) + "\n";
 					info += "TimestampMillis: " + message.getTimestampMillis()
 							+ "\n";
+					info += "IndexOnIcc: " + message.getIndexOnIcc() + "\n";
 
 					// DEBUG
-					Log.i(TAG,
+					Log.d(TAG,
 							"BroadcastReceiver.onReceive: date="
 									+ SMSActivity.formatDate(message
 											.getTimestampMillis()));
+					Log.d(TAG, getDatabaseMessages(2));
 
 					info += "ServiceCenterAddress: "
 							+ message.getServiceCenterAddress() + "\n";
+
 					// info += "Body:\n" + message.getMessageBody() + "\n";
-					info += "Display Body:\n" + message.getDisplayMessageBody()
-							+ "\n";
+					info += "Body (Display):\n"
+							+ message.getDisplayMessageBody() + "\n";
 					mContents += info;
 
-					// Save the state now in case we are paused when the event
-					// comes in
+					// Save the state now
 					SharedPreferences.Editor editor = getPreferences(
 							MODE_PRIVATE).edit();
 					editor.putString("contents", mContents);
@@ -143,7 +152,7 @@ public class MessageListenerActivity extends Activity implements IConstants {
 	protected void onPause() {
 		super.onPause();
 		// DEBUG
-		Log.i(TAG, this.getClass().getSimpleName()
+		Log.d(TAG, this.getClass().getSimpleName()
 				+ ".onPause: mContents.length()="
 				+ ((mContents == null) ? "null" : mContents.length()));
 		super.onPause();
@@ -162,7 +171,7 @@ public class MessageListenerActivity extends Activity implements IConstants {
 		resetDisplay();
 
 		// DEBUG
-		Log.i(TAG, this.getClass().getSimpleName()
+		Log.d(TAG, this.getClass().getSimpleName()
 				+ ".onResume: mContents.length()="
 				+ ((mContents == null) ? "null" : mContents.length()));
 	}
@@ -172,16 +181,50 @@ public class MessageListenerActivity extends Activity implements IConstants {
 		// Unregister the receiver (Not sure if this is necessary)
 		try {
 			if (mReceiver != null) {
-				Log.i(TAG, this.getClass().getSimpleName() + ": "
+				Log.d(TAG, this.getClass().getSimpleName() + ": "
 						+ "unregisterReceiver");
 				unregisterReceiver(mReceiver);
 				mReceiver = null;
 			}
 		} catch (Exception ex) {
-			Log.i(TAG, this.getClass().getSimpleName() + ": "
+			Log.d(TAG, this.getClass().getSimpleName() + ": "
 					+ " Problem with unregisterReceiver\n" + ex.getMessage());
 		}
 		super.onDestroy();
+	}
+
+	private String getDatabaseMessages(int nItems) {
+		String info = "";
+		Cursor cursor = null;
+		try {
+			String[] columns = { COL_ID, COL_ADDRESS, COL_DATE, COL_BODY };
+			// Get all rows
+			cursor = getContentResolver().query(SMS_URI, columns, null, null,
+					COL_ID + " DESC");
+			int indexId = cursor.getColumnIndex(SMSActivity.COL_ID);
+			int indexDate = cursor.getColumnIndex(SMSActivity.COL_DATE);
+			int indexAddress = cursor.getColumnIndex(SMSActivity.COL_ADDRESS);
+			String id;
+			String address;
+			Long dateNum;
+			for (int i = 0; i < nItems; i++) {
+				if (!cursor.moveToNext()) {
+					break;
+				}
+				id = cursor.getString(indexId);
+				address = cursor.getString(indexAddress);
+				dateNum = cursor.getLong(indexDate);
+				info += "  " + id + " " + SMSActivity.formatAddress(address)
+						+ " " + SMSActivity.formatDate(dateNum) + "\n";
+			}
+		} catch (Exception ex) {
+			Utils.excMsg(this, "Error finding messages", ex);
+		} finally {
+			if (cursor != null) {
+				cursor.close();
+			}
+		}
+		return info;
 	}
 
 	/**

@@ -19,4 +19,5 @@
 	<string name="dryrun_item">Toggle Dry Run</string>
 	<string name="clear_item">Clear</string>
 	<string name="map_item">Map</string>
+	<string name="details_item">Details</string>
 </resources>

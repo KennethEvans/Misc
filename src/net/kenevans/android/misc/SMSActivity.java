@@ -99,9 +99,9 @@ public class SMSActivity extends ListActivity implements IConstants {
 		// Save the position when starting the activity
 		currentPosition = position;
 		Intent i = new Intent(this, DisplayMessageActivity.class);
-		i.putExtra(SMSActivity.ROW_ID, id);
+		i.putExtra(SMSActivity.COL_ID, id);
 		// DEBUG
-		Log.i(TAG, "onListItemClick: position=" + position + " id=" + id);
+		Log.d(TAG, "onListItemClick: position=" + position + " id=" + id);
 		startActivityForResult(i, ACTIVITY_DISPLAY_MESSAGE);
 	}
 
@@ -110,7 +110,7 @@ public class SMSActivity extends ListActivity implements IConstants {
 			Intent intent) {
 		super.onActivityResult(requestCode, resultCode, intent);
 		// DEBUG
-		Log.i(TAG, "onActivityResult: requestCode=" + requestCode
+		Log.d(TAG, "onActivityResult: requestCode=" + requestCode
 				+ " resultCode=" + resultCode + " currentPosition="
 				+ currentPosition);
 		if (requestCode == ACTIVITY_DISPLAY_MESSAGE) {
@@ -122,7 +122,7 @@ public class SMSActivity extends ListActivity implements IConstants {
 			}
 			try {
 				int count = adapter.getCount();
-				Log.i(TAG, "onActivityResult: count=" + count);
+				Log.d(TAG, "onActivityResult: count=" + count);
 				if (count == 0) {
 					Utils.infoMsg(this, "There are no items in the list");
 					return;
@@ -154,8 +154,8 @@ public class SMSActivity extends ListActivity implements IConstants {
 				// Request the new message
 				long id = adapter.getItemId(currentPosition);
 				Intent i = new Intent(this, DisplayMessageActivity.class);
-				i.putExtra(SMSActivity.ROW_ID, id);
-				Log.i(TAG, "onActivityResult: position=" + currentPosition
+				i.putExtra(SMSActivity.COL_ID, id);
+				Log.d(TAG, "onActivityResult: position=" + currentPosition
 						+ " id=" + id);
 				startActivityForResult(i, ACTIVITY_DISPLAY_MESSAGE);
 
@@ -257,7 +257,7 @@ public class SMSActivity extends ListActivity implements IConstants {
 		// work?
 		// TODO Probably causes extra work but does insure a refresh.
 		try {
-			String[] columns = { ROW_ID, COL_ADDRESS, COL_DATE, COL_BODY };
+			String[] columns = { COL_ID, COL_ADDRESS, COL_DATE, COL_BODY };
 			// Get all rows
 			cursor = getContentResolver().query(SMS_URI, columns, null, null,
 					COL_DATE + " DESC");
@@ -277,7 +277,7 @@ public class SMSActivity extends ListActivity implements IConstants {
 				adapter.changeCursor(cursor);
 			}
 		} catch (Exception ex) {
-			Utils.excMsg(this, "Error finding message", ex);
+			Utils.excMsg(this, "Error finding messages", ex);
 		}
 	}
 
@@ -290,7 +290,7 @@ public class SMSActivity extends ListActivity implements IConstants {
 		public CustomCursorAdapter(Context context, Cursor cursor) {
 			super(context, cursor);
 			inflater = LayoutInflater.from(context);
-			indexId = cursor.getColumnIndex(ROW_ID);
+			indexId = cursor.getColumnIndex(COL_ID);
 			indexDate = cursor.getColumnIndex(COL_DATE);
 			indexAddress = cursor.getColumnIndex(COL_ADDRESS);
 		}
