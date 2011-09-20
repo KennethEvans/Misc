@@ -39,7 +39,7 @@ public class Utils implements IConstants {
 			AlertDialog alertDialog = new AlertDialog.Builder(context)
 					.setTitle(title)
 					.setMessage(msg)
-					.setPositiveButton("OK",
+					.setPositiveButton(context.getText(R.string.ok),
 							new DialogInterface.OnClickListener() {
 								public void onClick(DialogInterface dialog,
 										int which) {
@@ -61,7 +61,7 @@ public class Utils implements IConstants {
 	 */
 	public static void errMsg(Context context, String msg) {
 		Log.e(TAG, getContextTag(context) + msg);
-		alert(context, "Error", msg);
+		alert(context, context.getText(R.string.error).toString(), msg);
 	}
 
 	/**
@@ -72,7 +72,7 @@ public class Utils implements IConstants {
 	 */
 	public static void warnMsg(Context context, String msg) {
 		Log.w(TAG, getContextTag(context) + msg);
-		alert(context, "Warning", msg);
+		alert(context, context.getText(R.string.warning).toString(), msg);
 	}
 
 	/**
@@ -83,7 +83,7 @@ public class Utils implements IConstants {
 	 */
 	public static void infoMsg(Context context, String msg) {
 		Log.i(TAG, getContextTag(context) + msg);
-		alert(context, "Information", msg);
+		alert(context, context.getText(R.string.info).toString(), msg);
 	}
 
 	/**
@@ -95,10 +95,11 @@ public class Utils implements IConstants {
 	 * @param t
 	 */
 	public static void excMsg(Context context, String msg, Throwable t) {
-		String fullMsg = msg += "\n" + "Exception: " + t + "\n"
-				+ t.getMessage();
+		String fullMsg = msg += "\n"
+				+ context.getText(R.string.exception).toString() + ": " + t
+				+ "\n" + t.getMessage();
 		Log.e(TAG, getContextTag(context) + msg);
-		alert(context, "Exception", fullMsg);
+		alert(context, context.getText(R.string.exception).toString(), fullMsg);
 	}
 
 	/**
@@ -110,7 +111,7 @@ public class Utils implements IConstants {
 	 */
 	public static String getContextTag(Context context) {
 		if (context == null) {
-			return "<Unknown>: ";
+			return "<???>: ";
 		}
 		return "Utils: " + context.getClass().getSimpleName() + ": ";
 	}
