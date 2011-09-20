@@ -34,7 +34,7 @@ public class IntervalTimer {
 	/** The handler that handles the Runnables */
 	private Handler handler;
 	/** A runnable that runs the given runnable and then starts the timer again. */
-	private Runnable delegate;
+	private Runnable wrapper;
 	/** Whether the timer is started or not. */
 	private boolean started = false;
 
@@ -43,15 +43,6 @@ public class IntervalTimer {
 	 * about resetting the timer to run again.
 	 */
 	private Runnable userRunnable;
-
-	/**
-	 * Returns if the timer is started or not.
-	 * 
-	 * @return
-	 */
-	public boolean getIsStarted() {
-		return started;
-	}
 
 	/**
 	 * Constructor that sets the interval.
@@ -94,7 +85,7 @@ public class IntervalTimer {
 		}
 		this.interval = interval;
 		setUserRunnable(runnable);
-		handler.postDelayed(delegate, this.interval);
+		handler.postDelayed(wrapper, this.interval);
 		started = true;
 	}
 
@@ -102,10 +93,10 @@ public class IntervalTimer {
 	 * Start the timer if not already started.
 	 */
 	public void start() {
-		if (started || delegate == null) {
+		if (started || wrapper == null) {
 			return;
 		}
-		handler.postDelayed(delegate, interval);
+		handler.postDelayed(wrapper, interval);
 		started = true;
 	}
 
@@ -113,10 +104,10 @@ public class IntervalTimer {
 	 * Stop the timer if not already stopped.
 	 */
 	public void stop() {
-		if (!started || delegate == null) {
+		if (!started || wrapper == null) {
 			return;
 		}
-		handler.removeCallbacks(delegate);
+		handler.removeCallbacks(wrapper);
 		started = false;
 	}
 
@@ -131,18 +122,27 @@ public class IntervalTimer {
 		if (runnable == null) {
 			// Reset the delegate so we don't run something that was supposed to
 			// have been changed
-			delegate = null;
+			wrapper = null;
 			return;
 		}
 		userRunnable = runnable;
 		// Use the delegate to run the given Runnable and then do
 		// handler.postDelayed().
-		delegate = new Runnable() {
+		wrapper = new Runnable() {
 			public void run() {
 				userRunnable.run();
-				handler.postDelayed(delegate, interval);
+				handler.postDelayed(wrapper, interval);
 			}
 		};
+	}
+
+	/**
+	 * Returns if the timer is started or not.
+	 * 
+	 * @return
+	 */
+	public boolean isStarted() {
+		return started;
 	}
 
 	/**
