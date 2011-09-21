@@ -24,6 +24,9 @@ package net.kenevans.android.misc;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.util.Log;
 
 public class Utils implements IConstants {
@@ -114,6 +117,28 @@ public class Utils implements IConstants {
 			return "<???>: ";
 		}
 		return "Utils: " + context.getClass().getSimpleName() + ": ";
+	}
+
+	/**
+	 * Determines whether this is a debug build or not. Can be used to decide
+	 * which Maps API key to use. Relies on android:debuggable being set
+	 * automatically by the build. If set manually (not necessary with current
+	 * tools), needs to be removed for release builds for this to work.
+	 * 
+	 * @param context
+	 * @return
+	 */
+	public static boolean isDebugBuild(Context context) {
+		boolean retVal = false;
+		try {
+			PackageManager pm = context.getPackageManager();
+			PackageInfo pi = pm.getPackageInfo(context.getPackageName(), 0);
+
+			retVal = ((pi.applicationInfo.flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0);
+		} catch (Exception ex) {
+			retVal = false;
+		}
+		return retVal;
 	}
 
 }

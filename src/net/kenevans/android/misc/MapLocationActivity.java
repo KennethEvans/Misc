@@ -73,7 +73,13 @@ public class MapLocationActivity extends MapActivity implements IConstants {
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.maplocation);
+
+		// Determine the layout with the correct Maps API key
+		if (Utils.isDebugBuild(this)) {
+			setContentView(R.layout.maplocation_debug);
+		} else {
+			setContentView(R.layout.maplocation);
+		}
 
 		MapView mapView = (MapView) findViewById(R.id.mapview);
 		mapView.setBuiltInZoomControls(true);
