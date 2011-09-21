@@ -51,7 +51,7 @@ import android.widget.Toast;
  * @author evans
  * 
  */
-public class SMSActivity extends ListActivity implements IConstants {
+public class SMSTestActivity extends ListActivity implements IConstants {
 	/**
 	 * The current position when ACTIVITY_DISPLAY_MESSAGE is requested. Used
 	 * with the resultCodes RESULT_PREV and RESULT_NEXT when they are returned.
@@ -59,7 +59,10 @@ public class SMSActivity extends ListActivity implements IConstants {
 	private int currentPosition;
 
 	/** The Uri to use. */
-	public static final Uri URI = SMS_URI;
+	public static final Uri URI = SMS_SENT_URI;
+//	public static final Uri URI = SMS_INBOX_URI;
+//	public static final Uri URI = SMS_OUTBOX_URI;
+//	public static final Uri URI = SMS_CONVERSATIONS_URI;
 
 	/** Enum to specify the sort order. */
 	enum Order {
@@ -117,7 +120,7 @@ public class SMSActivity extends ListActivity implements IConstants {
 		// Save the position when starting the activity
 		currentPosition = position;
 		Intent i = new Intent(this, DisplayMessageActivity.class);
-		i.putExtra(SMSActivity.COL_ID, id);
+		i.putExtra(SMSTestActivity.COL_ID, id);
 		// DEBUG
 		Log.d(TAG, "onListItemClick: position=" + position + " id=" + id);
 		startActivityForResult(i, ACTIVITY_DISPLAY_MESSAGE);
@@ -172,7 +175,7 @@ public class SMSActivity extends ListActivity implements IConstants {
 				// Request the new message
 				long id = adapter.getItemId(currentPosition);
 				Intent i = new Intent(this, DisplayMessageActivity.class);
-				i.putExtra(SMSActivity.COL_ID, id);
+				i.putExtra(SMSTestActivity.COL_ID, id);
 				Log.d(TAG, "onActivityResult: position=" + currentPosition
 						+ " id=" + id);
 				startActivityForResult(i, ACTIVITY_DISPLAY_MESSAGE);

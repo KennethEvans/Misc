@@ -77,9 +77,9 @@ public class MapLocationActivity extends MapActivity implements IConstants {
 
 		MapView mapView = (MapView) findViewById(R.id.mapview);
 		mapView.setBuiltInZoomControls(true);
-		
+
 		// Keep it visible
-		getWindow().addFlags( WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+		getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
 		// Find the tower values
 		int[] vals = getTowerValues();
@@ -99,17 +99,17 @@ public class MapLocationActivity extends MapActivity implements IConstants {
 		// Initialize the map with the current values.
 		initializeMap();
 
-		if (!autoUpdate) {
-			// Animate to the current point
-			mapView.getController().animateTo(
-					new GeoPoint(mLatitude, mLongitude));
-		} else {
+		// Force update. update will be called again in onResume but with false.
+		updateMap(true);
+
+		// Create but son't start the timer if we are auto-updating
+		if (autoUpdate) {
 			// Create the timer but don't start it. It will be started in
 			// onResume.
 			mTimer = new IntervalTimer(mInterval, new Runnable() {
 				@Override
 				public void run() {
-					updateMap();
+					updateMap(false);
 				}
 			});
 		}
@@ -126,8 +126,9 @@ public class MapLocationActivity extends MapActivity implements IConstants {
 	public boolean onOptionsItemSelected(MenuItem item) {
 		int id = item.getItemId();
 		switch (id) {
-		case R.id.refresh:
-			updateMap();
+		case R.id.reset:
+			// Force update
+			updateMap(true);
 			return true;
 		case R.id.details:
 			showDetails();
@@ -159,7 +160,7 @@ public class MapLocationActivity extends MapActivity implements IConstants {
 			mMyLocation.enableMyLocation();
 		}
 		if (autoUpdate) {
-			updateMap();
+			updateMap(false);
 			if (mTimer != null) {
 				mTimer.start();
 			}
@@ -242,8 +243,11 @@ public class MapLocationActivity extends MapActivity implements IConstants {
 	/**
 	 * Updates the map with the new tower location if the location has changed.
 	 * This method may be called often with a short interval between calls.
+	 * 
+	 * @param force
+	 *            Update whether the location has changed or not.
 	 */
-	private void updateMap() {
+	private void updateMap(boolean force) {
 		Log.d(TAG, "updateMap: " + " mLatitude=" + mLatitude + " mLongitude="
 				+ mLongitude + " mNid=" + mNid + " mSid=" + mSid);
 
@@ -271,7 +275,7 @@ public class MapLocationActivity extends MapActivity implements IConstants {
 
 		// Check if the values have changed
 		try {
-			if (lat == mLatitude && lon == mLongitude) {
+			if (!force && lat == mLatitude && lon == mLongitude) {
 				// No change
 				Log.d(TAG, "  No change");
 				return;

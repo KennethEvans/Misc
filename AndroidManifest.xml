@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-	package="net.kenevans.android.misc" android:versionCode="1" android:versionName="1.0.0"
-		android:installLocation="auto" >
+	package="net.kenevans.android.misc" android:installLocation="auto" android:versionName="1.0.0.Beta1" android:versionCode="0">
 		
 	<uses-sdk android:minSdkVersion="8" />
 	<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
@@ -26,6 +25,8 @@
 		<activity android:name=".CurrentTimeActivity" android:label="@string/current_time_title">
 		</activity>
 		<activity android:name=".SMSActivity" android:label="@string/sms_title">
+		</activity>
+		<activity android:name=".SMSTestActivity" android:label="@string/sms_title">
 		</activity>
 		<activity android:name=".DisplayMessageActivity" android:label="@string/displaymessage_title">
 		</activity>

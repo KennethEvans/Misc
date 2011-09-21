@@ -25,7 +25,6 @@ import java.util.Date;
 
 import android.app.Activity;
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.telephony.CellLocation;
 import android.telephony.TelephonyManager;
@@ -84,24 +83,24 @@ public class NetworkActivity extends Activity implements IConstants {
 		Log.d(TAG, this.getClass().getSimpleName() + ": onPause: mLatitude="
 				+ mLatitude + " mLongitude=" + mLongitude);
 		super.onPause();
-		// Retain the state
-		SharedPreferences.Editor editor = getPreferences(MODE_PRIVATE).edit();
-		editor.putInt("latitude", mLatitude);
-		editor.putInt("longitude", mLongitude);
-		editor.putInt("nid", mNid);
-		editor.putInt("sid", mSid);
-		editor.commit();
+//		// Retain the state
+//		SharedPreferences.Editor editor = getPreferences(MODE_PRIVATE).edit();
+//		editor.putInt("latitude", mLatitude);
+//		editor.putInt("longitude", mLongitude);
+//		editor.putInt("nid", mNid);
+//		editor.putInt("sid", mSid);
+//		editor.commit();
 	}
 
 	@Override
 	protected void onResume() {
 		super.onResume();
-		// Restore the state
-		SharedPreferences prefs = getPreferences(MODE_PRIVATE);
-		mLatitude = prefs.getInt("latitude", mLatitude);
-		mLongitude = prefs.getInt("longitude", mLongitude);
-		mNid = prefs.getInt("nid", mNid);
-		mSid = prefs.getInt("sid", mSid);
+//		// Restore the state
+//		SharedPreferences prefs = getPreferences(MODE_PRIVATE);
+//		mLatitude = prefs.getInt("latitude", mLatitude);
+//		mLongitude = prefs.getInt("longitude", mLongitude);
+//		mNid = prefs.getInt("nid", mNid);
+//		mSid = prefs.getInt("sid", mSid);
 		Log.d(TAG, this.getClass().getSimpleName() + ": onResume: mLatitude="
 				+ mLatitude + " mLongitude=" + mLongitude);
 	}
@@ -169,14 +168,14 @@ public class NetworkActivity extends Activity implements IConstants {
 				mLongitude = locToGoogle(loc);
 				Log.d(TAG, "getNetworkInfo: mLatitude=" + mLatitude
 						+ " mLongitude=" + mLongitude);
-				// Retain the state as these values
-				SharedPreferences.Editor editor = getPreferences(MODE_PRIVATE)
-						.edit();
-				editor.putInt("latitude", mLatitude);
-				editor.putInt("longitude", mLongitude);
-				editor.putInt("nid", mNid);
-				editor.putInt("sid", mSid);
-				editor.commit();
+//				// Retain the state as these values
+//				SharedPreferences.Editor editor = getPreferences(MODE_PRIVATE)
+//						.edit();
+//				editor.putInt("latitude", mLatitude);
+//				editor.putInt("longitude", mLongitude);
+//				editor.putInt("nid", mNid);
+//				editor.putInt("sid", mSid);
+//				editor.commit();
 			} else if (cl instanceof GsmCellLocation) {
 				GsmCellLocation gsmcl = (GsmCellLocation) cl;
 				info += "GSM Cell Location:\n";

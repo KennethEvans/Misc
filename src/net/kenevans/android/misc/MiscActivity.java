@@ -41,8 +41,7 @@ import android.widget.Toast;
 public class MiscActivity extends ListActivity {
 	/** Array of items used to populate the ListView */
 	private static final Data[] DATA = {
-			new Data("Track Towers",
-					"Show the current tower location",
+			new Data("Track Towers", "Show the current tower location",
 					MapLocationActivity.class),
 			new Data("Network Information",
 					"Get information about the carrier", NetworkActivity.class),
@@ -51,6 +50,8 @@ public class MiscActivity extends ListActivity {
 			// CurrentTimeActivity.class),
 			new Data("Message Listener", "Listen to received messages",
 					MessageListenerActivity.class),
+			new Data("Messages Test", "Display all messages in "
+					+ SMSTestActivity.URI, SMSTestActivity.class),
 			new Data("Messages", "Display all messages in the SMS database",
 					SMSActivity.class),
 	// new Data("Test", "Not implemented", null),

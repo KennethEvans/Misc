@@ -1,3 +1,4 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:id="@+id/refresh" android:title="@string/refresh_item" />
+    <item android:id="@+id/order" android:title="@string/order_item" />
 </menu>

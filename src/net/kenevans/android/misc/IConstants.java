@@ -34,6 +34,12 @@ public interface IConstants {
 	// SMS database
 	/** The URI for messages. Has all messages. */
 	public static final Uri SMS_URI = Uri.parse("content://sms");
+	/** The URI for the inbox. */
+	public static final Uri SMS_INBOX_URI = Uri.parse("content://sms/inbox");
+	/** The URI for the outbox. */
+	public static final Uri SMS_OUTBOX_URI = Uri.parse("content://sms/outbox");
+	/** The URI for the sent messages. */
+	public static final Uri SMS_SENT_URI = Uri.parse("content://sms/sent");
 	/** SMS database column for the id. Identifies the row. */
 	public static final String COL_ID = "_id";
 	/** SMS database column for the address. */
@@ -50,12 +56,8 @@ public interface IConstants {
 	// This provider, however, does not play nice when looking for and editing
 	// the existing messages. So, we use the original content://sms URI for our
 	// editing
-	// /**
-	// * The URI for message conversations. The id is the id of the last item in
-	// * the conversation.
-	// */
-	// private static final Uri observingURI = Uri
-	// .parse("content://mms-sms/conversations");
+	/** The URI for conversations. */
+	public static final Uri SMS_CONVERSATIONS_URI = Uri.parse("content://mms-sms/conversations");
 
 	// Messages
 	/** Request code for displaying a message. */

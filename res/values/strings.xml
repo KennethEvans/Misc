@@ -1,23 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 	<string name="app_name">Misc</string>
-	<string name="network_title">Network Information</string>
+	<string name="cancel_label">Cancel</string>
+	<string name="clear_item">Clear</string>
+	<string name="copy_item">Copy</string>
 	<string name="current_time_title">Current Time</string>
-	<string name="sms_title">Messages</string>
+	<string name="delete_item">Delete</string>
+	<string name="details_item">Details</string>
+	<string name="displaymessage_title">Message</string>
+	<string name="dryRunTitle">Set Dry Run</string>
+	<string name="dryrun_item">Set Dry Run</string>
+	<string name="fixtime_item">Fix Time</string>
+	<string name="map_item">Map</string>
 	<string name="map_location_title">Location</string>
 	<string name="messagelistener_title">Message Listener</string>
-	<string name="displaymessage_title">Message</string>
-	<string name="timeoffset_dialog_title">Set the Desired Time Change</string>
-	<string name="ok_label">OK</string>
-	<string name="cancel_label">Cancel</string>
-	<string name="refresh_item">Refresh</string>
-	<string name="copy_item">Copy</string>
-	<string name="delete_item">Delete</string>
+	<string name="network_title">Network Information</string>
 	<string name="next_item">Next</string>
+	<string name="off">OFF</string>
+	<string name="ok_label">OK</string>
+	<string name="on">ON</string>
+	<string name="orderById">By ID</string>
+	<string name="orderByTime">By Time</string>
+	<string name="orderTitle">Select Sort Order</string>
+	<string name="order_item">Sort Order</string>
 	<string name="prev_item">Previous</string>
-	<string name="fixtime_item">Fix Time</string>
-	<string name="dryrun_item">Toggle Dry Run</string>
-	<string name="clear_item">Clear</string>
-	<string name="map_item">Map</string>
-	<string name="details_item">Details</string>
+	<string name="refresh_item">Refresh</string>
+	<string name="reset_item">Reset</string>
+	<string name="sms_title">Messages</string>
+	<string name="timeoffset_dialog_title">Set the Desired Time Change</string>
+	
+	<!-- Utils -->
+	<string name="error">Error</string>
+	<string name="exception">Exception</string>
+	<string name="info">Info</string>
+	<string name="ok">OK</string>
+	<string name="warning">Warning</string>
 </resources>

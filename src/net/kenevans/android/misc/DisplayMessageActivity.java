@@ -25,7 +25,9 @@ import java.util.Calendar;
 import java.util.Date;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.ContentValues;
+import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.os.Bundle;
@@ -320,14 +322,26 @@ public class DisplayMessageActivity extends Activity {
 	 * Toggles whether database changes are real or simulated.
 	 */
 	private void toggleDryRun() {
-		dryRun = !dryRun;
-		String msg;
-		if (dryRun) {
-			msg = "Time changes are simulated.\nDatabase will not be changed.";
-		} else {
-			msg = "Time changes are real.\nDatabase will be changed.";
-		}
-		Utils.infoMsg(this, msg);
+		final CharSequence[] items = { getText(R.string.on),
+				getText(R.string.off) };
+		AlertDialog.Builder builder = new AlertDialog.Builder(this);
+		builder.setTitle(getText(R.string.dryRunTitle));
+		builder.setSingleChoiceItems(items, dryRun ? 0 : 1,
+				new DialogInterface.OnClickListener() {
+					public void onClick(DialogInterface dialog, int item) {
+						dialog.dismiss();
+						dryRun = item == 0 ? true : false;
+						String msg;
+						if (dryRun) {
+							msg = "Time changes are simulated.\nDatabase will not be changed.";
+						} else {
+							msg = "Time changes are real.\nDatabase will be changed.";
+						}
+						Utils.infoMsg(DisplayMessageActivity.this, msg);
+					}
+				});
+		AlertDialog alert = builder.create();
+		alert.show();
 	}
 
 }
