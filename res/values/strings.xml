@@ -11,6 +11,8 @@
 	<string name="dryRunTitle">Set Dry Run</string>
 	<string name="dryrun_item">Set Dry Run</string>
 	<string name="fixtime_item">Fix Time</string>
+	<string name="help_item">Help</string>
+	<string name="info_title">Help</string>
 	<string name="map_item">Map</string>
 	<string name="map_location_title">Location</string>
 	<string name="messagelistener_title">Message Listener</string>

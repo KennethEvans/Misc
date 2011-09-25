@@ -39,8 +39,8 @@ import android.widget.Toast;
  * Class that has a ListView of Activities to be launched.
  */
 public class MiscActivity extends ListActivity {
-	/** Array of items used to populate the ListView */
-	private static final Data[] DATA = {
+	/** Array of items used to populate the ListView when debugging. */
+	private static final Data[] DEBUG_DATA = {
 			new Data("Track Towers", "Show the current tower location",
 					MapLocationActivity.class),
 			new Data("Network Information",
@@ -48,6 +48,7 @@ public class MiscActivity extends ListActivity {
 			// new Data("Current Time",
 			// "Get the current time in several formats",
 			// CurrentTimeActivity.class),
+			new Data("WebView", "Test WebView", InfoActivity.class),
 			new Data("Message Listener", "Listen to received messages",
 					MessageListenerActivity.class),
 			new Data("Messages Test", "Display all messages in "
@@ -57,26 +58,45 @@ public class MiscActivity extends ListActivity {
 	// new Data("Test", "Not implemented", null),
 	};
 
+	/** Array of items used to populate the ListView for release. */
+	private static final Data[] RELEASE_DATA = {
+			new Data("Track Towers", "Show the current tower location",
+					MapLocationActivity.class),
+			new Data("Network Information",
+					"Get information about the carrier", NetworkActivity.class),
+			new Data("Messages", "Display all messages in the SMS database",
+					SMSActivity.class), };
+
+	/** The Array of items actually used to populate the ListView. */
+	private Data[] data = RELEASE_DATA;
+
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setListAdapter(new MiscAdapter(this));
+
+		// Use different items when debugging
+		if (Utils.isDebugBuild(this)) {
+			data = DEBUG_DATA;
+		}
+
+		// set the ListAdapter
+		setListAdapter(new MiscAdapter(this, data));
 
 		ListView lv = getListView();
 		lv.setOnItemClickListener(new OnItemClickListener() {
 			@Override
 			public void onItemClick(AdapterView<?> parent, View view, int pos,
 					long id) {
-				if (pos < 0 || pos >= DATA.length) {
+				if (pos < 0 || pos >= data.length) {
 					return;
 				}
-				if (DATA[pos].activityClass == null) {
+				if (data[pos].activityClass == null) {
 					Toast.makeText(getApplicationContext(),
-							DATA[pos].title + " Selected", Toast.LENGTH_SHORT)
+							data[pos].title + " Selected", Toast.LENGTH_SHORT)
 							.show();
 				} else {
 					Intent i = new Intent(MiscActivity.this,
-							DATA[pos].activityClass);
+							data[pos].activityClass);
 					try {
 						startActivity(i);
 					} catch (Exception ex) {
@@ -111,25 +131,26 @@ public class MiscActivity extends ListActivity {
 	 */
 	private static class MiscAdapter extends BaseAdapter {
 		private LayoutInflater mInflater;
+		private Data[] data;
 
-		public MiscAdapter(Context context) {
+		public MiscAdapter(Context context, Data[] data) {
+			this.data = data;
 			// Cache the LayoutInflate to avoid asking for a new one each time.
 			mInflater = LayoutInflater.from(context);
 		}
 
 		/**
-		 * The number of items in the list is determined by the number of
-		 * speeches in our array.
+		 * The number of items in the list.
 		 * 
 		 * @see android.widget.ListAdapter#getCount()
 		 */
 		public int getCount() {
-			return DATA.length;
+			return data.length;
 		}
 
 		/**
 		 * Since the data comes from an array, just returning the index is
-		 * sufficent to get at the data. If we were using a more complex data
+		 * sufficient to get at the data. If we were using a more complex data
 		 * structure, we would return whatever object represents one row in the
 		 * list.
 		 * 
@@ -156,7 +177,7 @@ public class MiscActivity extends ListActivity {
 		 */
 		public View getView(int pos, View convertView, ViewGroup parent) {
 			// A ViewHolder keeps references to children views to avoid
-			// unneccessary calls
+			// unnecessary calls
 			// to findViewById() on each row.
 			ViewHolder holder;
 
@@ -184,8 +205,8 @@ public class MiscActivity extends ListActivity {
 			}
 
 			// Bind the data efficiently with the holder.
-			holder.title.setText(DATA[pos].title);
-			holder.subtitle.setText(DATA[pos].subtitle);
+			holder.title.setText(data[pos].title);
+			holder.subtitle.setText(data[pos].subtitle);
 
 			return convertView;
 		}

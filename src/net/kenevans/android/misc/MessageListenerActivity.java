@@ -201,9 +201,9 @@ public class MessageListenerActivity extends Activity implements IConstants {
 			// Get all rows
 			cursor = getContentResolver().query(SMS_URI, columns, null, null,
 					COL_ID + " DESC");
-			int indexId = cursor.getColumnIndex(SMSActivity.COL_ID);
-			int indexDate = cursor.getColumnIndex(SMSActivity.COL_DATE);
-			int indexAddress = cursor.getColumnIndex(SMSActivity.COL_ADDRESS);
+			int indexId = cursor.getColumnIndex(COL_ID);
+			int indexDate = cursor.getColumnIndex(COL_DATE);
+			int indexAddress = cursor.getColumnIndex(COL_ADDRESS);
 			String id;
 			String address;
 			Long dateNum;

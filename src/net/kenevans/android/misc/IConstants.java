@@ -31,6 +31,10 @@ public interface IConstants {
 	/** Tag to associate with log messages. */
 	public static final String TAG = "Misc";
 
+	// Information
+	/** Key for information URL sent to InfoActivity. */
+	public static final String INFO_URL = "InformationURL";
+
 	// SMS database
 	/** The URI for messages. Has all messages. */
 	public static final Uri SMS_URI = Uri.parse("content://sms");
@@ -57,7 +61,8 @@ public interface IConstants {
 	// the existing messages. So, we use the original content://sms URI for our
 	// editing
 	/** The URI for conversations. */
-	public static final Uri SMS_CONVERSATIONS_URI = Uri.parse("content://mms-sms/conversations");
+	public static final Uri SMS_CONVERSATIONS_URI = Uri
+			.parse("content://mms-sms/conversations");
 
 	// Messages
 	/** Request code for displaying a message. */

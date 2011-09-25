@@ -139,6 +139,9 @@ public class MapLocationActivity extends MapActivity implements IConstants {
 		case R.id.details:
 			showDetails();
 			return true;
+		case R.id.help:
+			showHelp();
+			return true;
 		}
 		return false;
 	}
@@ -332,6 +335,24 @@ public class MapLocationActivity extends MapActivity implements IConstants {
 			intent.setClass(this, NetworkActivity.class);
 			intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
 					| Intent.FLAG_ACTIVITY_SINGLE_TOP);
+			startActivity(intent);
+		} catch (Exception ex) {
+			Utils.excMsg(this, "Error showing details", ex);
+		}
+	}
+
+	/**
+	 * Show the help.
+	 */
+	private void showHelp() {
+		try {
+			// Start theInfoActivity
+			Intent intent = new Intent();
+			intent.setClass(this, InfoActivity.class);
+			intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
+					| Intent.FLAG_ACTIVITY_SINGLE_TOP);
+			intent.putExtra(INFO_URL,
+					"file:///android_asset/towerlocations.html");
 			startActivity(intent);
 		} catch (Exception ex) {
 			Utils.excMsg(this, "Error showing details", ex);

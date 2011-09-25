@@ -28,6 +28,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ContentValues;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.os.Bundle;
@@ -43,7 +44,7 @@ import android.widget.Toast;
 /**
  * Class to display a single message.
  */
-public class DisplayMessageActivity extends Activity {
+public class DisplayMessageActivity extends Activity implements IConstants {
 	/** Set this to not make any changes to the database. */
 	private boolean dryRun = true;
 	/** The current default value for the user's offset. */
@@ -74,10 +75,10 @@ public class DisplayMessageActivity extends Activity {
 		mBodyTextView = (TextView) findViewById(R.id.bodyview);
 
 		mRowId = (savedInstanceState == null) ? null
-				: (Long) savedInstanceState.getSerializable(SMSActivity.COL_ID);
+				: (Long) savedInstanceState.getSerializable(COL_ID);
 		if (mRowId == null) {
 			Bundle extras = getIntent().getExtras();
-			mRowId = extras != null ? extras.getLong(SMSActivity.COL_ID) : null;
+			mRowId = extras != null ? extras.getLong(COL_ID) : null;
 		}
 
 		// Call refresh to set the contents
@@ -96,10 +97,10 @@ public class DisplayMessageActivity extends Activity {
 		int id = item.getItemId();
 		switch (id) {
 		case R.id.prev:
-			navigate(SMSActivity.RESULT_PREV);
+			navigate(RESULT_PREV);
 			return true;
 		case R.id.next:
-			navigate(SMSActivity.RESULT_NEXT);
+			navigate(RESULT_NEXT);
 			return true;
 		case R.id.fixtime:
 			fixTime();
@@ -109,6 +110,9 @@ public class DisplayMessageActivity extends Activity {
 			return true;
 		case R.id.delete:
 			deleteMessage();
+			return true;
+		case R.id.help:
+			showHelp();
 			return true;
 		}
 		return false;
@@ -139,13 +143,13 @@ public class DisplayMessageActivity extends Activity {
 	 */
 	private void fixTime() {
 		try {
-			String[] columns = { SMSActivity.COL_DATE };
+			String[] columns = { COL_DATE };
 			// Only get the row with mRowId
-			String selection = SMSActivity.COL_ID + "=" + mRowId.longValue();
-			Cursor cursor = getContentResolver().query(SMSActivity.SMS_URI,
-					columns, selection, null, null);
+			String selection = COL_ID + "=" + mRowId.longValue();
+			Cursor cursor = getContentResolver().query(SMS_URI, columns,
+					selection, null, null);
 
-			int indexDate = cursor.getColumnIndex(SMSActivity.COL_DATE);
+			int indexDate = cursor.getColumnIndex(COL_DATE);
 			// There should only be one row returned
 			boolean found = cursor.moveToFirst();
 			if (!found) {
@@ -189,9 +193,8 @@ public class DisplayMessageActivity extends Activity {
 							} else {
 								// The following change the database
 								ContentValues values = new ContentValues();
-								values.put(SMSActivity.COL_DATE, newDate);
-								getContentResolver().update(
-										SMSActivity.SMS_URI, values,
+								values.put(COL_DATE, newDate);
+								getContentResolver().update(SMS_URI, values,
 										"_id = " + mRowId, null);
 							}
 
@@ -247,12 +250,29 @@ public class DisplayMessageActivity extends Activity {
 		} else {
 			try {
 				// The following change the database
-				getContentResolver().delete(SMSActivity.SMS_URI,
-						"_id = " + mRowId, null);
-				navigate(SMSActivity.RESULT_NEXT);
+				getContentResolver().delete(SMS_URI, "_id = " + mRowId, null);
+				navigate(RESULT_NEXT);
 			} catch (Exception ex) {
 				Utils.excMsg(this, "Problem deleting message", ex);
 			}
+		}
+	}
+
+	/**
+	 * Show the help.
+	 */
+	private void showHelp() {
+		try {
+			// Start theInfoActivity
+			Intent intent = new Intent();
+			intent.setClass(this, InfoActivity.class);
+			intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
+					| Intent.FLAG_ACTIVITY_SINGLE_TOP);
+			intent.putExtra(INFO_URL,
+					"file:///android_asset/displaymessage.html");
+			startActivity(intent);
+		} catch (Exception ex) {
+			Utils.excMsg(this, "Error showing details", ex);
 		}
 	}
 
@@ -262,13 +282,12 @@ public class DisplayMessageActivity extends Activity {
 	 */
 	private void refresh() {
 		try {
-			String[] columns = { SMSActivity.COL_ID, SMSActivity.COL_ADDRESS,
-					SMSActivity.COL_DATE, SMSActivity.COL_BODY };
+			String[] columns = { COL_ID, COL_ADDRESS, COL_DATE, COL_BODY };
 			// Only get the row with mRowId
-			String selection = SMSActivity.COL_ID + "=" + mRowId.longValue();
+			String selection = COL_ID + "=" + mRowId.longValue();
 
 			// // DEBUG Get all the column names
-			// Cursor cursor1 = getContentResolver().query(SMSActivity.SMS_URI,
+			// Cursor cursor1 = getContentResolver().query(SMS_URI,
 			// null, selection, null, null);
 			// String[] names = cursor1.getColumnNames();
 			// String info = "";
@@ -278,12 +297,12 @@ public class DisplayMessageActivity extends Activity {
 			// Log.d(Utils.getTAG(), "SMS Column Names\n" + info);
 			// cursor1.close();
 
-			Cursor cursor = getContentResolver().query(SMSActivity.SMS_URI,
-					columns, selection, null, null);
-			int indexId = cursor.getColumnIndex(SMSActivity.COL_ID);
-			int indexDate = cursor.getColumnIndex(SMSActivity.COL_DATE);
-			int indexAddress = cursor.getColumnIndex(SMSActivity.COL_ADDRESS);
-			int indexBody = cursor.getColumnIndex(SMSActivity.COL_BODY);
+			Cursor cursor = getContentResolver().query(SMS_URI, columns,
+					selection, null, null);
+			int indexId = cursor.getColumnIndex(COL_ID);
+			int indexDate = cursor.getColumnIndex(COL_DATE);
+			int indexAddress = cursor.getColumnIndex(COL_ADDRESS);
+			int indexBody = cursor.getColumnIndex(COL_BODY);
 			// There should only be one row returned
 			boolean found = cursor.moveToFirst();
 			if (!found) {
