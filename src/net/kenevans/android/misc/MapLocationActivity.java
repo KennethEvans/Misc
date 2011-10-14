@@ -21,6 +21,7 @@
 
 package net.kenevans.android.misc;
 
+import java.util.Date;
 import java.util.List;
 
 import android.content.Context;
@@ -66,6 +67,8 @@ public class MapLocationActivity extends MapActivity implements IConstants {
 	private int mNid;
 	/** The last known value for the SID. */
 	private int mSid;
+	/** The last known value for the BID. */
+	private int mBid;
 
 	/** The last error message or null if none. */
 	String lastError;
@@ -100,6 +103,7 @@ public class MapLocationActivity extends MapActivity implements IConstants {
 			mLongitude = vals[1];
 			mNid = vals[2];
 			mSid = vals[3];
+			mBid = vals[4];
 		}
 
 		// Initialize the map with the current values.
@@ -138,6 +142,9 @@ public class MapLocationActivity extends MapActivity implements IConstants {
 			return true;
 		case R.id.details:
 			showDetails();
+			return true;
+		case R.id.send:
+			sendSMS();
 			return true;
 		case R.id.help:
 			showHelp();
@@ -206,7 +213,7 @@ public class MapLocationActivity extends MapActivity implements IConstants {
 
 		// Create the MarkerItemizedOverlay
 		MarkerItemizedOverlay newMarkerOverlay = createMarkerOverlay(mLatitude,
-				mLongitude, mNid, mSid);
+				mLongitude, mNid, mSid, mBid);
 		if (newMarkerOverlay != null) {
 			mapOverlays.add(newMarkerOverlay);
 		}
@@ -244,9 +251,10 @@ public class MapLocationActivity extends MapActivity implements IConstants {
 		int lon = NetworkActivity.locToGoogle(cdmacl.getBaseStationLongitude());
 		int nid = cdmacl.getNetworkId();
 		int sid = cdmacl.getSystemId();
+		int bid = cdmacl.getBaseStationId();
 		Log.d(TAG, "  New values: " + " lat=" + lat + " lon=" + lon + " nid="
-				+ nid + " sid=" + sid);
-		return new int[] { lat, lon, nid, sid };
+				+ nid + " sid=" + sid + " bid=" + bid);
+		return new int[] { lat, lon, nid, sid, bid };
 	}
 
 	/**
@@ -258,7 +266,8 @@ public class MapLocationActivity extends MapActivity implements IConstants {
 	 */
 	private void updateMap(boolean force) {
 		Log.d(TAG, "updateMap: " + " mLatitude=" + mLatitude + " mLongitude="
-				+ mLongitude + " mNid=" + mNid + " mSid=" + mSid);
+				+ mLongitude + " mNid=" + mNid + " mSid=" + mSid + " mBid="
+				+ mBid);
 
 		// Find new tower values
 		int[] vals = getTowerValues();
@@ -269,6 +278,7 @@ public class MapLocationActivity extends MapActivity implements IConstants {
 		int lon = vals[1];
 		int nid = vals[2];
 		int sid = vals[3];
+		int bid = vals[4];
 
 		// Get the existing overlays if any
 		MapView mapView = null;
@@ -284,7 +294,8 @@ public class MapLocationActivity extends MapActivity implements IConstants {
 
 		// Check if the values have changed
 		try {
-			if (!force && lat == mLatitude && lon == mLongitude) {
+			// Note: Have found different BID for same lat and lon
+			if (!force && lat == mLatitude && lon == mLongitude && bid == mBid) {
 				// No change
 				Log.d(TAG, "  No change");
 				return;
@@ -296,8 +307,9 @@ public class MapLocationActivity extends MapActivity implements IConstants {
 			mLongitude = lon;
 			mNid = nid;
 			mSid = sid;
+			mBid = bid;
 			MarkerItemizedOverlay newMarkerOverlay = createMarkerOverlay(lat,
-					lon, nid, sid);
+					lon, nid, sid, bid);
 			if (newMarkerOverlay != null) {
 				mapOverlays.set(0, newMarkerOverlay);
 			}
@@ -342,6 +354,36 @@ public class MapLocationActivity extends MapActivity implements IConstants {
 	}
 
 	/**
+	 * Send an SMS message using the default application.
+	 */
+	private void sendSMS() {
+		try {
+			Log.d(TAG, this.getClass().getSimpleName()
+					+ ": sendSMS: mLatitude=" + mLatitude + " mLongitude="
+					+ mLongitude);
+			// Create the message
+			int[] vals = getTowerValues();
+			Date now = new Date();
+			String msg = now + "\n";
+			msg += "NID=" + mNid + " SID=" + mSid + " BID=" + mBid + "\n"
+					+ String.format("%.6f", mLatitude * 1.e-6) + ","
+					+ String.format("%.6f", mLongitude * 1.e-6);
+			if (vals == null) {
+				Utils.errMsg(this, "Cannot get tower values");
+				return;
+			}
+
+			// Start the default SMS activity
+			Intent intent = new Intent(Intent.ACTION_VIEW);
+			intent.putExtra("sms_body", msg);
+			intent.setType("vnd.android-dir/mms-sms");
+			startActivity(intent);
+		} catch (Exception ex) {
+			Utils.excMsg(this, "Error sending SMS", ex);
+		}
+	}
+
+	/**
 	 * Show the help.
 	 */
 	private void showHelp() {
@@ -373,14 +415,14 @@ public class MapLocationActivity extends MapActivity implements IConstants {
 	 * @return The new MarkerItemizedOverlay or null on failure.
 	 */
 	private MarkerItemizedOverlay createMarkerOverlay(int lat, int lon,
-			int nid, int sid) {
+			int nid, int sid, int bid) {
 		MarkerItemizedOverlay markerOverlay = null;
 		try {
 			markerOverlay = new MarkerItemizedOverlay(this, this.getResources()
 					.getDrawable(R.drawable.tower));
 			GeoPoint point = new GeoPoint(lat, lon);
 			OverlayItem overlayItem = new OverlayItem(point, "Cell Tower",
-					"NID=" + nid + " SID=" + sid + "\nLat="
+					"NID=" + nid + " SID=" + sid + " BID=" + bid + "\nLat="
 							+ String.format("%.6f", lat * 1.e-6) + " Lon="
 							+ String.format("%.6f", lon * 1.e-6));
 			markerOverlay.addOverlay(overlayItem);

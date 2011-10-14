@@ -152,8 +152,8 @@ public class MessageListenerActivity extends Activity implements IConstants {
 	protected void onPause() {
 		super.onPause();
 		// DEBUG
-		Log.d(TAG, this.getClass().getSimpleName()
-				+ ".onPause: mContents.length()="
+		Log.d(TAG, this.getClass().getSimpleName() + ".onPause: mReceiver="
+				+ mReceiver + "\nmContents.length()="
 				+ ((mContents == null) ? "null" : mContents.length()));
 		super.onPause();
 		// Retain the contents
@@ -171,13 +171,16 @@ public class MessageListenerActivity extends Activity implements IConstants {
 		resetDisplay();
 
 		// DEBUG
-		Log.d(TAG, this.getClass().getSimpleName()
-				+ ".onResume: mContents.length()="
+		Log.d(TAG, this.getClass().getSimpleName() + ".onResume: mReceiver="
+				+ mReceiver + "\nmContents.length()="
 				+ ((mContents == null) ? "null" : mContents.length()));
 	}
 
 	@Override
 	protected void onDestroy() {
+		// DEBUG
+		Log.d(TAG, this.getClass().getSimpleName() + ".onDestroy: mReceiver="
+				+ mReceiver);
 		// Unregister the receiver (Not sure if this is necessary)
 		try {
 			if (mReceiver != null) {

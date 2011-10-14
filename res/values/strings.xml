@@ -28,6 +28,7 @@
 	<string name="prev_item">Previous</string>
 	<string name="refresh_item">Refresh</string>
 	<string name="reset_item">Reset</string>
+	<string name="send_item">Send SMS</string>
 	<string name="sms_title">Messages</string>
 	<string name="timeoffset_dialog_title">Set the Desired Time Change</string>
 	
