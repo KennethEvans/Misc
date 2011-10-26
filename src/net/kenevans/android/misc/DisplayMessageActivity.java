@@ -32,6 +32,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.os.Bundle;
+import android.text.method.ScrollingMovementMethod;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -72,7 +73,9 @@ public class DisplayMessageActivity extends Activity implements IConstants {
 
 		mTitleTextView = (TextView) findViewById(R.id.titleview);
 		mSubtitleTextView = (TextView) findViewById(R.id.subtitleview);
+		mSubtitleTextView.setMovementMethod(new ScrollingMovementMethod());
 		mBodyTextView = (TextView) findViewById(R.id.bodyview);
+		mBodyTextView.setMovementMethod(new ScrollingMovementMethod());
 
 		mRowId = (savedInstanceState == null) ? null
 				: (Long) savedInstanceState.getSerializable(COL_ID);
@@ -282,27 +285,22 @@ public class DisplayMessageActivity extends Activity implements IConstants {
 	 */
 	private void refresh() {
 		try {
-			String[] columns = { COL_ID, COL_ADDRESS, COL_DATE, COL_BODY };
 			// Only get the row with mRowId
 			String selection = COL_ID + "=" + mRowId.longValue();
 
-			// // DEBUG Get all the column names
-			// Cursor cursor1 = getContentResolver().query(SMS_URI,
-			// null, selection, null, null);
-			// String[] names = cursor1.getColumnNames();
-			// String info = "";
-			// for(String name : names) {
-			// info += name + "\n";
-			// }
-			// Log.d(Utils.getTAG(), "SMS Column Names\n" + info);
-			// cursor1.close();
-
-			Cursor cursor = getContentResolver().query(SMS_URI, columns,
+			// First get the names of all the columns in the database
+			Cursor cursor = getContentResolver().query(SMS_URI, null,
 					selection, null, null);
+			String[] columns = cursor.getColumnNames();
+			cursor.close();
+			// Then get the columns for this row
+			cursor = getContentResolver().query(SMS_URI, columns, selection,
+					null, null);
 			int indexId = cursor.getColumnIndex(COL_ID);
 			int indexDate = cursor.getColumnIndex(COL_DATE);
 			int indexAddress = cursor.getColumnIndex(COL_ADDRESS);
 			int indexBody = cursor.getColumnIndex(COL_BODY);
+
 			// There should only be one row returned
 			boolean found = cursor.moveToFirst();
 			if (!found) {
@@ -314,9 +312,32 @@ public class DisplayMessageActivity extends Activity implements IConstants {
 				String address = cursor.getString(indexAddress);
 				Long dateNum = cursor.getLong(indexDate);
 				String body = cursor.getString(indexBody);
-				mTitleTextView.setText(id + ": "
-						+ SMSActivity.formatAddress(address));
-				mSubtitleTextView.setText(SMSActivity.formatDate(dateNum));
+				String title = id + ": " + SMSActivity.formatAddress(address)
+						+ "\n" + SMSActivity.formatDate(dateNum);
+				String subTitle = "";
+
+				// Add all the fields in the database
+				for (String name : columns) {
+					// Skip the body
+					if (name.equals("body")) {
+						continue;
+					}
+					try {
+						int index = cursor.getColumnIndex(name);
+						// Don't do a LF the first time
+						if (subTitle.length() != 0) {
+							subTitle += "\n";
+						}
+						subTitle += name + ": " + cursor.getString(index);
+					} catch (Exception ex) {
+						// Shouldn't happen
+						subTitle += name + ": Not found";
+					}
+				}
+
+				// Set the TextViews
+				mTitleTextView.setText(title);
+				mSubtitleTextView.setText(subTitle);
 				mBodyTextView.setText(body);
 			}
 			// We are through with the cursor
