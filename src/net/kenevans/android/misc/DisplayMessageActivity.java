@@ -1,4 +1,3 @@
-//Copyright (c) 2011 Kenneth Evans
 //
 //Permission is hereby granted, free of charge, to any person obtaining
 //a copy of this software and associated documentation files (the
@@ -31,6 +30,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
 import android.text.method.ScrollingMovementMethod;
 import android.view.Menu;
@@ -50,6 +50,14 @@ public class DisplayMessageActivity extends Activity implements IConstants {
 	private boolean dryRun = true;
 	/** The current default value for the user's offset. */
 	private static int lastTimeOffset;
+	/** The Uri to use. */
+	public Uri uri;
+	/**
+	 * The date multiplier to use to get ms. MMS message timestamps are in sec
+	 * not ms.
+	 */
+	public Long dateMultiplier = 1L;
+
 	private TextView mTitleTextView;
 	private TextView mSubtitleTextView;
 	private TextView mBodyTextView;
@@ -79,10 +87,22 @@ public class DisplayMessageActivity extends Activity implements IConstants {
 
 		mRowId = (savedInstanceState == null) ? null
 				: (Long) savedInstanceState.getSerializable(COL_ID);
-		if (mRowId == null) {
-			Bundle extras = getIntent().getExtras();
-			mRowId = extras != null ? extras.getLong(COL_ID) : null;
+		Bundle extras = getIntent().getExtras();
+		if (mRowId == null && extras != null) {
+			mRowId = extras.getLong(COL_ID);
 		}
+		if (extras != null) {
+			String uriPath = extras.getString(URI_KEY);
+			if (uriPath != null) {
+				uri = Uri.parse(uriPath);
+			}
+			dateMultiplier = extras.getLong(DATE_MULTIPLIER_KEY);
+		}
+		if (uri == null) {
+			Utils.errMsg(this, "Null content provider database Uri");
+			return;
+		}
+		mRowId = extras != null ? extras.getLong(COL_ID) : null;
 
 		// Call refresh to set the contents
 		refresh();
@@ -149,8 +169,8 @@ public class DisplayMessageActivity extends Activity implements IConstants {
 			String[] columns = { COL_DATE };
 			// Only get the row with mRowId
 			String selection = COL_ID + "=" + mRowId.longValue();
-			Cursor cursor = getContentResolver().query(SMS_URI, columns,
-					selection, null, null);
+			Cursor cursor = getContentResolver().query(uri, columns, selection,
+					null, null);
 
 			int indexDate = cursor.getColumnIndex(COL_DATE);
 			// There should only be one row returned
@@ -159,7 +179,7 @@ public class DisplayMessageActivity extends Activity implements IConstants {
 				Utils.errMsg(this, "Did not find message");
 				return;
 			}
-			final Long curDate = cursor.getLong(indexDate);
+			final Long curDate = cursor.getLong(indexDate) * dateMultiplier;
 			// We are through with the cursor
 			cursor.close();
 
@@ -197,7 +217,7 @@ public class DisplayMessageActivity extends Activity implements IConstants {
 								// The following change the database
 								ContentValues values = new ContentValues();
 								values.put(COL_DATE, newDate);
-								getContentResolver().update(SMS_URI, values,
+								getContentResolver().update(uri, values,
 										"_id = " + mRowId, null);
 							}
 
@@ -253,7 +273,7 @@ public class DisplayMessageActivity extends Activity implements IConstants {
 		} else {
 			try {
 				// The following change the database
-				getContentResolver().delete(SMS_URI, "_id = " + mRowId, null);
+				getContentResolver().delete(uri, "_id = " + mRowId, null);
 				navigate(RESULT_NEXT);
 			} catch (Exception ex) {
 				Utils.excMsg(this, "Problem deleting message", ex);
@@ -289,13 +309,13 @@ public class DisplayMessageActivity extends Activity implements IConstants {
 			String selection = COL_ID + "=" + mRowId.longValue();
 
 			// First get the names of all the columns in the database
-			Cursor cursor = getContentResolver().query(SMS_URI, null,
-					selection, null, null);
+			Cursor cursor = getContentResolver().query(uri, null, selection,
+					null, null);
 			String[] columns = cursor.getColumnNames();
 			cursor.close();
 			// Then get the columns for this row
-			cursor = getContentResolver().query(SMS_URI, columns, selection,
-					null, null);
+			cursor = getContentResolver().query(uri, columns, selection, null,
+					null);
 			int indexId = cursor.getColumnIndex(COL_ID);
 			int indexDate = cursor.getColumnIndex(COL_DATE);
 			int indexAddress = cursor.getColumnIndex(COL_ADDRESS);
@@ -309,9 +329,18 @@ public class DisplayMessageActivity extends Activity implements IConstants {
 				mBodyTextView.setText("Failed to find message " + mRowId);
 			} else {
 				String id = cursor.getString(indexId);
-				String address = cursor.getString(indexAddress);
-				Long dateNum = cursor.getLong(indexDate);
-				String body = cursor.getString(indexBody);
+				String address = "<Address NA>";
+				if (indexAddress > -1) {
+					address = cursor.getString(indexAddress);
+				}
+				Long dateNum = -1L;
+				if (indexDate > -1) {
+					dateNum = cursor.getLong(indexDate) * dateMultiplier;
+				}
+				String body = "<Body NA>";
+				if (indexBody > -1) {
+					body = cursor.getString(indexBody);
+				}
 				String title = id + ": " + SMSActivity.formatAddress(address)
 						+ "\n" + SMSActivity.formatDate(dateNum);
 				String subTitle = "";

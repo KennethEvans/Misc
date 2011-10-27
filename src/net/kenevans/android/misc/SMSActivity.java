@@ -22,6 +22,7 @@
 package net.kenevans.android.misc;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 
 import android.app.AlertDialog;
 import android.app.ListActivity;
@@ -59,7 +60,13 @@ public class SMSActivity extends ListActivity implements IConstants {
 	private int currentPosition;
 
 	/** The Uri to use. */
-	public static final Uri URI = SMS_URI;
+	public static final Uri uri = SMS_URI;
+
+	/**
+	 * The date multiplier to use to get ms. MMS message timestamps are in sec
+	 * not ms.
+	 */
+	public static final Long dateMultiplier = 1L;
 
 	/** Enum to specify the sort order. */
 	enum Order {
@@ -79,7 +86,6 @@ public class SMSActivity extends ListActivity implements IConstants {
 	public static final SimpleDateFormat formatter = new SimpleDateFormat(
 			format);
 
-	private Cursor cursor;
 	private CustomCursorAdapter adapter;
 
 	@Override
@@ -118,8 +124,12 @@ public class SMSActivity extends ListActivity implements IConstants {
 		currentPosition = position;
 		Intent i = new Intent(this, DisplayMessageActivity.class);
 		i.putExtra(COL_ID, id);
+		i.putExtra(URI_KEY, getUri().toString());
+		i.putExtra(DATE_MULTIPLIER_KEY, getDateMultiplier());
 		// DEBUG
-		Log.d(TAG, "onListItemClick: position=" + position + " id=" + id);
+		Log.d(TAG, "onListItemClick: class=" + this.getClass().getSimpleName()
+				+ " position=" + position + " id=" + id + " uri="
+				+ getUri().toString() + " dateMultiplier=" + dateMultiplier);
 		startActivityForResult(i, ACTIVITY_DISPLAY_MESSAGE);
 	}
 
@@ -173,6 +183,8 @@ public class SMSActivity extends ListActivity implements IConstants {
 				long id = adapter.getItemId(currentPosition);
 				Intent i = new Intent(this, DisplayMessageActivity.class);
 				i.putExtra(COL_ID, id);
+				i.putExtra(URI_KEY, getUri().toString());
+				i.putExtra(DATE_MULTIPLIER_KEY, getDateMultiplier());
 				Log.d(TAG, "onActivityResult: position=" + currentPosition
 						+ " id=" + id);
 				startActivityForResult(i, ACTIVITY_DISPLAY_MESSAGE);
@@ -228,6 +240,10 @@ public class SMSActivity extends ListActivity implements IConstants {
 		// independent.
 		if (dateNum == null) {
 			return "<Unknown>";
+		}
+		if (dateNum == -1) {
+			// Means the column was not found in the database
+			return "<Date NA>";
 		}
 		// Consider using Date.toString()
 		// It might be more locale independent.
@@ -285,9 +301,28 @@ public class SMSActivity extends ListActivity implements IConstants {
 		// work?
 		// TODO Probably causes extra work but does insure a refresh.
 		try {
-			String[] columns = { COL_ID, COL_ADDRESS, COL_DATE, COL_BODY };
-			// Get all rows
-			cursor = getContentResolver().query(URI, columns, null, null,
+			// First get the names of all the columns in the database
+			Cursor cursor = getContentResolver().query(getUri(), null, null,
+					null, null);
+			String[] avaliableColumns = cursor.getColumnNames();
+			cursor.close();
+
+			// Make an array of the desired ones that are available
+			String[] desiredColumns = { COL_ID, COL_ADDRESS, COL_DATE, COL_BODY };
+			ArrayList<String> list = new ArrayList<String>();
+			for (String col : desiredColumns) {
+				for (String col1 : avaliableColumns) {
+					if (col.equals(col1)) {
+						list.add(col);
+						break;
+					}
+				}
+			}
+			String[] columns = new String[list.size()];
+			list.toArray(columns);
+
+			// Get the available columns from all rows
+			cursor = getContentResolver().query(getUri(), columns, null, null,
 					sortOrder.sqlCommand);
 			// editingCursor = getContentResolver().query(editingURI, columns,
 			// "type=?", new String[] { "1" }, "_id DESC");
@@ -307,6 +342,21 @@ public class SMSActivity extends ListActivity implements IConstants {
 		} catch (Exception ex) {
 			Utils.excMsg(this, "Error finding messages", ex);
 		}
+
+	}
+
+	/**
+	 * @return The content provider URI used.
+	 */
+	public Uri getUri() {
+		return uri;
+	}
+
+	/**
+	 * @return The date multiplier to use.
+	 */
+	public Long getDateMultiplier() {
+		return dateMultiplier;
 	}
 
 	private class CustomCursorAdapter extends CursorAdapter {
@@ -328,8 +378,14 @@ public class SMSActivity extends ListActivity implements IConstants {
 			TextView title = (TextView) view.findViewById(R.id.title);
 			TextView subtitle = (TextView) view.findViewById(R.id.subtitle);
 			String id = cursor.getString(indexId);
-			String address = cursor.getString(indexAddress);
-			Long dateNum = cursor.getLong(indexDate);
+			String address = "<Address NA>";
+			if (indexAddress > -1) {
+				address = cursor.getString(indexAddress);
+			}
+			Long dateNum = -1L;
+			if (indexDate > -1) {
+				dateNum = cursor.getLong(indexDate) * getDateMultiplier();
+			}
 			title.setText(id + ": " + formatAddress(address));
 			subtitle.setText(formatDate(dateNum));
 		}

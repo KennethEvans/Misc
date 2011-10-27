@@ -52,7 +52,7 @@ public class MiscActivity extends ListActivity {
 			new Data("Message Listener", "Listen to received messages",
 					MessageListenerActivity.class),
 			new Data("Messages Test", "Display all messages in "
-					+ SMSTestActivity.URI, SMSTestActivity.class),
+					+ SMSTestActivity.uri, SMSTestActivity.class),
 			new Data("Messages", "Display all messages in the SMS database",
 					SMSActivity.class),
 	// new Data("Test", "Not implemented", null),

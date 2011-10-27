@@ -36,6 +36,10 @@ public interface IConstants {
 	public static final String INFO_URL = "InformationURL";
 
 	// SMS database
+	/** The key for the URI used. */
+	public static final String URI_KEY = "URI";
+	/** The key for the date multiplier used. */
+	public static final String DATE_MULTIPLIER_KEY = "DateMultiplier";
 	/** The URI for messages. Has all messages. */
 	public static final Uri SMS_URI = Uri.parse("content://sms");
 	/** The URI for the inbox. */
@@ -52,6 +56,12 @@ public interface IConstants {
 	public static final String COL_DATE = "date";
 	/** SMS database column for the body. */
 	public static final String COL_BODY = "body";
+
+	/** The URI for MMS messages. Has all messages. */
+	public static final Uri MMS_URI = Uri.parse("content://mms");
+	/** The URI for MMS and SMS messages. Has all messages. */
+	public static final Uri MMS_SMS_CONVERSATIONS_URI = Uri
+			.parse("content://mms-sms/conversations");
 
 	// Conversations database
 	// From SMS Fix Time:
