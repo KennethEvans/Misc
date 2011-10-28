@@ -127,9 +127,10 @@ public class SMSActivity extends ListActivity implements IConstants {
 		i.putExtra(URI_KEY, getUri().toString());
 		i.putExtra(DATE_MULTIPLIER_KEY, getDateMultiplier());
 		// DEBUG
-		Log.d(TAG, "onListItemClick: class=" + this.getClass().getSimpleName()
+		Log.d(TAG, this.getClass().getSimpleName() + ".onListItemClick: "
 				+ " position=" + position + " id=" + id + " uri="
-				+ getUri().toString() + " dateMultiplier=" + dateMultiplier);
+				+ getUri().toString() + " dateMultiplier="
+				+ getDateMultiplier());
 		startActivityForResult(i, ACTIVITY_DISPLAY_MESSAGE);
 	}
 
@@ -197,14 +198,14 @@ public class SMSActivity extends ListActivity implements IConstants {
 	@Override
 	protected void onPause() {
 		Log.d(TAG, this.getClass().getSimpleName()
-				+ ": onPause: currentPosition=" + currentPosition);
+				+ ".onPause: currentPosition=" + currentPosition);
 		super.onPause();
 	}
 
 	@Override
 	protected void onResume() {
 		Log.d(TAG, this.getClass().getSimpleName()
-				+ ": onResume(1): currentPosition=" + currentPosition);
+				+ ".onResume(1): currentPosition=" + currentPosition);
 		super.onResume();
 	}
 
@@ -297,7 +298,7 @@ public class SMSActivity extends ListActivity implements IConstants {
 	 */
 	private void refresh() {
 		// TODO is refresh necessary? See the Notepad example where it is used.
-		// TODO does calling this more than one cause memory leaks or extra
+		// TODO does calling this more than onece cause memory leaks or extra
 		// work?
 		// TODO Probably causes extra work but does insure a refresh.
 		try {
@@ -322,8 +323,10 @@ public class SMSActivity extends ListActivity implements IConstants {
 			list.toArray(columns);
 
 			// Get the available columns from all rows
-			cursor = getContentResolver().query(getUri(), columns, null, null,
-					sortOrder.sqlCommand);
+			// String selection = COL_ID + "<=76" + " OR " + COL_ID + "=13";
+			String selection = null;
+			cursor = getContentResolver().query(getUri(), columns, selection,
+					null, sortOrder.sqlCommand);
 			// editingCursor = getContentResolver().query(editingURI, columns,
 			// "type=?", new String[] { "1" }, "_id DESC");
 			startManagingCursor(cursor);
@@ -342,7 +345,72 @@ public class SMSActivity extends ListActivity implements IConstants {
 		} catch (Exception ex) {
 			Utils.excMsg(this, "Error finding messages", ex);
 		}
+	}
 
+	/**
+	 * Method used to test what is happening with a database.
+	 * 
+	 * @param testNum
+	 *            Prefix to log message.
+	 * @param cls
+	 *            The calling class (will be part of the log message).
+	 * @param context
+	 *            The calling context. Used to get the content resolver if the
+	 *            input cursor is null.
+	 * @param cursor
+	 *            The calling cursor or null to use a cursor with all columns.
+	 * @param id
+	 *            The _id.
+	 * @param uri
+	 *            The URI of the content database (will be part of the log
+	 *            message).
+	 */
+	public static void test(int testNum, Class<?> cls, Context context,
+			Cursor cursor, String id, Uri uri) {
+		Cursor cursor1;
+		if (cursor == null) {
+			String selection = COL_ID + "=" + id;
+			// String[] projection = { "*" };
+			String[] projection = null;
+			cursor1 = context.getContentResolver().query(uri, projection,
+					selection, null, null);
+			cursor1.moveToFirst();
+		} else {
+			cursor1 = cursor;
+		}
+
+		int indexId = cursor1.getColumnIndex(COL_ID);
+		int indexDate = cursor1.getColumnIndex(COL_DATE);
+		int indexAddress = cursor1.getColumnIndex(COL_ADDRESS);
+		int indexThreadId = cursor1.getColumnIndex(COL_THREAD_ID);
+
+		do {
+			String id1 = cursor1.getString(indexId);
+			String address = "<Address NA>";
+			if (indexAddress > -1) {
+				address = cursor1.getString(indexAddress);
+			}
+			Long dateNum = -1L;
+			if (indexDate > -1) {
+				dateNum = cursor1.getLong(indexDate);
+			}
+			String threadId = "<ThreadID NA>";
+			if (indexThreadId > -1) {
+				threadId = cursor1.getString(indexThreadId);
+			}
+			Log.d(TAG,
+					testNum + " " + cls.getSimpleName() + ".test" + "id=(" + id
+							+ "," + id1 + ") address=" + address + " dateNum="
+							+ dateNum + " threadId=" + threadId + " uri=" + uri
+							+ " cursor=(" + cursor1.getColumnCount() + ","
+							+ cursor1.getCount() + "," + cursor1.getPosition()
+							+ ")");
+		} while (cursor == null && cursor1.moveToNext());
+
+		if (cursor == null) {
+			// Close the cursor if we created it here
+			cursor1.close();
+		}
 	}
 
 	/**
@@ -388,6 +456,14 @@ public class SMSActivity extends ListActivity implements IConstants {
 			}
 			title.setText(id + ": " + formatAddress(address));
 			subtitle.setText(formatDate(dateNum));
+			Log.d(TAG, getClass().getSimpleName() + ".bindView" + " id=" + id
+					+ " address=" + address + " dateNum=" + dateNum
+					+ " dateMultiplier=" + getDateMultiplier());
+			// DEBUG
+			if (id.equals(new Integer(76).toString())) {
+				test(1, this.getClass(), SMSActivity.this, cursor, id, getUri());
+				test(2, this.getClass(), SMSActivity.this, null, id, getUri());
+			}
 		}
 
 		@Override

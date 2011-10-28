@@ -29,6 +29,8 @@
 		</activity>
 		<activity android:name=".SMSTestActivity" android:label="@string/sms_title">
 		</activity>
+		<activity android:name=".SMSTest2Activity" android:label="@string/sms_title">
+		</activity>
 		<activity android:name=".DisplayMessageActivity" android:label="@string/displaymessage_title">
 		</activity>
 		<activity android:name=".MessageListenerActivity" android:label="@string/messagelistener_title">

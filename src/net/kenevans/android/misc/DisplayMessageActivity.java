@@ -33,6 +33,7 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.method.ScrollingMovementMethod;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -169,11 +170,13 @@ public class DisplayMessageActivity extends Activity implements IConstants {
 			String[] columns = { COL_DATE };
 			// Only get the row with mRowId
 			String selection = COL_ID + "=" + mRowId.longValue();
+			String sort = COL_DATE + " DESC";
 			Cursor cursor = getContentResolver().query(uri, columns, selection,
-					null, null);
+					null, sort);
 
 			int indexDate = cursor.getColumnIndex(COL_DATE);
-			// There should only be one row returned
+			// There should only be one row returned, the last will be the most
+			// recent if more are returned owing to the sort above
 			boolean found = cursor.moveToFirst();
 			if (!found) {
 				Utils.errMsg(this, "Did not find message");
@@ -313,15 +316,21 @@ public class DisplayMessageActivity extends Activity implements IConstants {
 					null, null);
 			String[] columns = cursor.getColumnNames();
 			cursor.close();
+
 			// Then get the columns for this row
+			String sort = COL_DATE + " DESC";
 			cursor = getContentResolver().query(uri, columns, selection, null,
-					null);
+					sort);
 			int indexId = cursor.getColumnIndex(COL_ID);
 			int indexDate = cursor.getColumnIndex(COL_DATE);
 			int indexAddress = cursor.getColumnIndex(COL_ADDRESS);
 			int indexBody = cursor.getColumnIndex(COL_BODY);
+			Log.d(TAG, this.getClass().getSimpleName() + ".refresh: "
+					+ " mRowId=" + mRowId + " uri=" + uri.toString()
+					+ " dateMultiplier=" + dateMultiplier);
 
-			// There should only be one row returned
+			// There should only be one row returned, the last will be the most
+			// recent if more are returned owing to the sort above
 			boolean found = cursor.moveToFirst();
 			if (!found) {
 				mTitleTextView.setText("<Error>");
@@ -341,23 +350,34 @@ public class DisplayMessageActivity extends Activity implements IConstants {
 				if (indexBody > -1) {
 					body = cursor.getString(indexBody);
 				}
-				String title = id + ": " + SMSActivity.formatAddress(address)
-						+ "\n" + SMSActivity.formatDate(dateNum);
+				String title = id;
+				// Indicate if more than one found
+				if (cursor.getCount() > 1) {
+					title += " [1/" + cursor.getCount() + "]";
+				}
+				title += ": " + SMSActivity.formatAddress(address) + "\n"
+						+ SMSActivity.formatDate(dateNum);
 				String subTitle = "";
+				Log.d(TAG, getClass().getSimpleName() + ".refresh" + " id="
+						+ id + " address=" + address + " dateNum=" + dateNum
+						+ " dateMultiplier=" + dateMultiplier);
 
 				// Add all the fields in the database
 				for (String name : columns) {
-					// Skip the body
-					if (name.equals("body")) {
-						continue;
-					}
 					try {
 						int index = cursor.getColumnIndex(name);
 						// Don't do a LF the first time
 						if (subTitle.length() != 0) {
 							subTitle += "\n";
 						}
-						subTitle += name + ": " + cursor.getString(index);
+						// Don't print the body
+						if (name.equals("body")) {
+							subTitle += name + ": <"
+									+ cursor.getString(index).length()
+									+ " chars>";
+						} else {
+							subTitle += name + ": " + cursor.getString(index);
+						}
 					} catch (Exception ex) {
 						// Shouldn't happen
 						subTitle += name + ": Not found";
@@ -368,6 +388,12 @@ public class DisplayMessageActivity extends Activity implements IConstants {
 				mTitleTextView.setText(title);
 				mSubtitleTextView.setText(subTitle);
 				mBodyTextView.setText(body);
+
+				// Debug
+				if (id.equals(new Integer(76).toString())) {
+					SMSActivity.test(3, this.getClass(), this, cursor, id, uri);
+					SMSActivity.test(4, this.getClass(), this, null, id, uri);
+				}
 			}
 			// We are through with the cursor
 			cursor.close();

@@ -56,12 +56,19 @@ public interface IConstants {
 	public static final String COL_DATE = "date";
 	/** SMS database column for the body. */
 	public static final String COL_BODY = "body";
+	/** SMS database column for the thread ID. */
+	public static final String COL_THREAD_ID = "thread_id";
 
 	/** The URI for MMS messages. Has all messages. */
 	public static final Uri MMS_URI = Uri.parse("content://mms");
-	/** The URI for MMS and SMS messages. Has all messages. */
+	/** The URI for SMS and MMS messages. Wasn't successful. */
+	public static final Uri MMS__SMS_URI = Uri.parse("content://mms-sms");
+	/** The URI for MMS and SMS conversations. */
 	public static final Uri MMS_SMS_CONVERSATIONS_URI = Uri
 			.parse("content://mms-sms/conversations");
+	/** The URI for MMS and SMS complete conversations. Wasn't successful. */
+	public static final Uri MMS_SMS_COMPLETE_CONVERSATIONS_URI = Uri
+			.parse("content://mms-sms/complete-conversations");
 
 	// Conversations database
 	// From SMS Fix Time:
