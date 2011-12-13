@@ -49,6 +49,8 @@ public class MiscActivity extends ListActivity {
 			// "Get the current time in several formats",
 			// CurrentTimeActivity.class),
 			new Data("WebView", "Test WebView", InfoActivity.class),
+			new Data("Application Info", "Display Application Information",
+					AppsActivity.class),
 			new Data("Message Listener", "Listen to received messages",
 					MessageListenerActivity.class),
 			new Data("Messages Test1", "Display all messages in "

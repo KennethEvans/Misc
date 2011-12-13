@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 	<string name="app_name">Misc</string>
+	<string name="apps_title">Applications Information</string>
 	<string name="cancel_label">Cancel</string>
 	<string name="clear_item">Clear</string>
 	<string name="copy_item">Copy</string>
@@ -28,6 +29,7 @@
 	<string name="prev_item">Previous</string>
 	<string name="refresh_item">Refresh</string>
 	<string name="reset_item">Reset</string>
+	<string name="save_app_info_item">Save to SD Card</string>
 	<string name="send_item">Send SMS</string>
 	<string name="sms_title">Messages</string>
 	<string name="timeoffset_dialog_title">Set the Desired Time Change</string>
