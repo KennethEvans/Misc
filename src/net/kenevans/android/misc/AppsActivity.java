@@ -52,7 +52,12 @@ import android.widget.Toast;
  * 
  */
 public class AppsActivity extends Activity implements IConstants {
+	/** Name of the file written to the root of the SD card */
+	private static final String sdCardFileName = "ApplicationInfo.txt";
+
 	private TextView mTextView;
+	// These were done while experimenting. The ones that are false could be
+	// removed for efficiency.
 	public boolean doBuildInfo = false;
 	public boolean doComponentList = false;
 	public boolean doNonSystemApps = true;
@@ -174,11 +179,10 @@ public class AppsActivity extends Activity implements IConstants {
 	 */
 	private void save() {
 		BufferedWriter out = null;
-		String fileName = "ApplicationInfo.txt";
 		try {
 			File sdCardRoot = Environment.getExternalStorageDirectory();
 			if (sdCardRoot.canWrite()) {
-				File file = new File(sdCardRoot, fileName);
+				File file = new File(sdCardRoot, sdCardFileName);
 				FileWriter writer = new FileWriter(file);
 				out = new BufferedWriter(writer);
 				CharSequence charSeq = mTextView.getText();
@@ -196,7 +200,7 @@ public class AppsActivity extends Activity implements IConstants {
 				// Do nothing
 			}
 		}
-		Toast.makeText(getApplicationContext(), "Wrote " + fileName,
+		Toast.makeText(getApplicationContext(), "Wrote " + sdCardFileName,
 				Toast.LENGTH_LONG).show();
 	}
 
