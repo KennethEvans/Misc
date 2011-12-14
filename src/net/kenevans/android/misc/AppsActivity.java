@@ -29,10 +29,12 @@ import java.util.Date;
 import java.util.List;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -41,6 +43,7 @@ import android.os.Environment;
 import android.text.ClipboardManager;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
+import android.util.SparseBooleanArray;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -56,10 +59,8 @@ public class AppsActivity extends Activity implements IConstants {
 	private static final String sdCardFileName = "ApplicationInfo.txt";
 
 	private TextView mTextView;
-	// These were done while experimenting. The ones that are false could be
-	// removed for efficiency.
 	public boolean doBuildInfo = false;
-	public boolean doComponentList = false;
+	//	public boolean doComponentList = false;
 	public boolean doNonSystemApps = true;
 	public boolean doSystemApps = false;
 
@@ -75,9 +76,8 @@ public class AppsActivity extends Activity implements IConstants {
 		mTextView = (TextView) findViewById(R.id.textview);
 		// Make it scroll
 		mTextView.setMovementMethod(new ScrollingMovementMethod());
-
-		// Call refresh to set the contents
-		refresh();
+		
+		// refresh will be called in onResume
 	}
 
 	@Override
@@ -100,6 +100,12 @@ public class AppsActivity extends Activity implements IConstants {
 		case R.id.save:
 			save();
 			return true;
+		case R.id.settings:
+			setOptions();
+			return true;
+		case R.id.help:
+			showHelp();
+			return true;
 		}
 		return false;
 	}
@@ -107,11 +113,21 @@ public class AppsActivity extends Activity implements IConstants {
 	@Override
 	protected void onPause() {
 		super.onPause();
+		SharedPreferences.Editor editor = getPreferences(MODE_PRIVATE).edit();
+		editor.putBoolean("doBuildInfo", doBuildInfo);
+		editor.putBoolean("doNonSystemApps", doNonSystemApps);
+		editor.putBoolean("doSystemApps", doSystemApps);
+		editor.commit();
 	}
 
 	@Override
 	protected void onResume() {
 		super.onResume();
+		SharedPreferences prefs = getPreferences(MODE_PRIVATE);
+		doBuildInfo = prefs.getBoolean("doBuildInfo", doBuildInfo);
+		doNonSystemApps = prefs.getBoolean("doNonSystemApps", doNonSystemApps);
+		doSystemApps = prefs.getBoolean("doSystemApps", doSystemApps);
+
 		refresh();
 	}
 
@@ -205,6 +221,59 @@ public class AppsActivity extends Activity implements IConstants {
 	}
 
 	/**
+	 * Bring up a dialog to change the options.
+	 */
+	private void setOptions() {
+		final CharSequence[] items = { "Build Information",
+				"Downloaded Applications", "System Applications" };
+		boolean[] states = { doBuildInfo, doNonSystemApps, doSystemApps };
+		AlertDialog.Builder builder = new AlertDialog.Builder(this);
+		builder.setTitle("Settings");
+		builder.setMultiChoiceItems(items, states,
+				new DialogInterface.OnMultiChoiceClickListener() {
+					public void onClick(DialogInterface dialogInterface,
+							int item, boolean state) {
+					}
+				});
+		builder.setPositiveButton("Okay",
+				new DialogInterface.OnClickListener() {
+					public void onClick(DialogInterface dialog, int id) {
+						SparseBooleanArray checked = ((AlertDialog) dialog)
+								.getListView().getCheckedItemPositions();
+						doBuildInfo = checked.get(0);
+						doNonSystemApps = checked.get(1);
+						doSystemApps = checked.get(2);
+						refresh();
+					}
+				});
+		builder.setNegativeButton("Cancel",
+				new DialogInterface.OnClickListener() {
+					public void onClick(DialogInterface dialog, int id) {
+						dialog.cancel();
+					}
+				});
+		builder.create().show();
+	}
+
+	/**
+	 * Show the help.
+	 */
+	private void showHelp() {
+		try {
+			// Start theInfoActivity
+			Intent intent = new Intent();
+			intent.setClass(this, InfoActivity.class);
+			intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
+					| Intent.FLAG_ACTIVITY_SINGLE_TOP);
+			intent.putExtra(INFO_URL,
+					"file:///android_asset/appinfo.html");
+			startActivity(intent);
+		} catch (Exception ex) {
+			Utils.excMsg(this, "Error showing Help", ex);
+		}
+	}
+
+	/**
 	 * Gets the Build information.
 	 * 
 	 * @return
@@ -223,16 +292,16 @@ public class AppsActivity extends Activity implements IConstants {
 		return buf.toString();
 	}
 
-	/**
-	 * Return whether the given ResolveInfo represents a system package or not.
-	 * 
-	 * @param ri
-	 * @return
-	 */
-	private boolean isSystemPackage(ResolveInfo ri) {
-		return ((ri.activityInfo.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0) ? true
-				: false;
-	}
+//	/**
+//	 * Return whether the given ResolveInfo represents a system package or not.
+//	 * 
+//	 * @param ri
+//	 * @return
+//	 */
+//	private boolean isSystemPackage(ResolveInfo ri) {
+//		return ((ri.activityInfo.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0) ? true
+//				: false;
+//	}
 
 	/**
 	 * Return whether the given PackgeInfo represents a system package or not.
@@ -268,26 +337,26 @@ public class AppsActivity extends Activity implements IConstants {
 		return res;
 	}
 
-	private List<String> getComponentList(String action, String category) {
-		Intent intent = new Intent(action);
-		intent.addCategory(category);
-
-		List<ResolveInfo> ril = getPackageManager().queryIntentActivities(
-				intent, PackageManager.MATCH_DEFAULT_ONLY);
-		List<String> componentList = new ArrayList<String>();
-		String componentString;
-		for (ResolveInfo ri : ril) {
-			if (ri.activityInfo != null) {
-				componentString =
-				// ri.activityInfo.packageName
-				// +
-				(isSystemPackage(ri) ? "S " : "") + ri.activityInfo.name;
-				componentList.add(componentString);
-
-			}
-		}
-		return componentList;
-	}
+//	private List<String> getComponentList(String action, String category) {
+//		Intent intent = new Intent(action);
+//		intent.addCategory(category);
+//
+//		List<ResolveInfo> ril = getPackageManager().queryIntentActivities(
+//				intent, PackageManager.MATCH_DEFAULT_ONLY);
+//		List<String> componentList = new ArrayList<String>();
+//		String componentString;
+//		for (ResolveInfo ri : ril) {
+//			if (ri.activityInfo != null) {
+//				componentString =
+//				// ri.activityInfo.packageName
+//				// +
+//				(isSystemPackage(ri) ? "S " : "") + ri.activityInfo.name;
+//				componentList.add(componentString);
+//
+//			}
+//		}
+//		return componentList;
+//	}
 
 	/**
 	 * Gets information about the applications.
@@ -309,26 +378,26 @@ public class AppsActivity extends Activity implements IConstants {
 
 		// Build information
 		if (doBuildInfo) {
-			info += "SDK Information\n\n";
+			info += "Build Information\n\n";
 			info += getBuildInfo() + "\n";
 		}
 
-		// Installed component list
-		if (doComponentList) {
-			info += "Launcher Components\n\n";
-			List<String> components = getComponentList(Intent.ACTION_MAIN,
-					Intent.CATEGORY_LAUNCHER);
-			if (components == null) {
-				info += "<null>\n";
-			} else if (components.isEmpty()) {
-				info += "<none>\n";
-			} else {
-				for (String component : components) {
-					info += component + "\n";
-				}
-				info += "\n";
-			}
-		}
+//		// Installed component list
+//		if (doComponentList) {
+//			info += "Launcher Components\n\n";
+//			List<String> components = getComponentList(Intent.ACTION_MAIN,
+//					Intent.CATEGORY_LAUNCHER);
+//			if (components == null) {
+//				info += "<null>\n";
+//			} else if (components.isEmpty()) {
+//				info += "<none>\n";
+//			} else {
+//				for (String component : components) {
+//					info += component + "\n";
+//				}
+//				info += "\n";
+//			}
+//		}
 
 		// Non-system applications information
 		if (doNonSystemApps) {

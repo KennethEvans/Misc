@@ -298,7 +298,7 @@ public class DisplayMessageActivity extends Activity implements IConstants {
 					"file:///android_asset/displaymessage.html");
 			startActivity(intent);
 		} catch (Exception ex) {
-			Utils.excMsg(this, "Error showing details", ex);
+			Utils.excMsg(this, "Error showing Help", ex);
 		}
 	}
 

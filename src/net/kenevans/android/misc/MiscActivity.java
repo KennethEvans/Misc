@@ -68,6 +68,8 @@ public class MiscActivity extends ListActivity {
 					MapLocationActivity.class),
 			new Data("Network Information",
 					"Get information about the carrier", NetworkActivity.class),
+			new Data("Application Info", "Display Application Information",
+					AppsActivity.class),
 			new Data("Messages", "Display all messages in the SMS database",
 					SMSActivity.class), };
 

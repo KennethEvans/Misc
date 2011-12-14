@@ -397,7 +397,7 @@ public class MapLocationActivity extends MapActivity implements IConstants {
 					"file:///android_asset/towerlocations.html");
 			startActivity(intent);
 		} catch (Exception ex) {
-			Utils.excMsg(this, "Error showing details", ex);
+			Utils.excMsg(this, "Error showing Help", ex);
 		}
 	}
 
