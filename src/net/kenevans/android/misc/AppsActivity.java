@@ -60,7 +60,7 @@ public class AppsActivity extends Activity implements IConstants {
 
 	private TextView mTextView;
 	public boolean doBuildInfo = false;
-	//	public boolean doComponentList = false;
+	// public boolean doComponentList = false;
 	public boolean doNonSystemApps = true;
 	public boolean doSystemApps = false;
 
@@ -76,7 +76,7 @@ public class AppsActivity extends Activity implements IConstants {
 		mTextView = (TextView) findViewById(R.id.textview);
 		// Make it scroll
 		mTextView.setMovementMethod(new ScrollingMovementMethod());
-		
+
 		// refresh will be called in onResume
 	}
 
@@ -206,6 +206,10 @@ public class AppsActivity extends Activity implements IConstants {
 				if (charSeq.length() == 0) {
 					Utils.warnMsg(this, "The file written is empty");
 				}
+				Utils.infoMsg(this, "Wrote " + sdCardFileName);
+			} else {
+				Utils.errMsg(this, "Cannot write to SD card");
+				return;
 			}
 		} catch (Exception ex) {
 			Utils.excMsg(this, "Error saving to SD card", ex);
@@ -216,8 +220,6 @@ public class AppsActivity extends Activity implements IConstants {
 				// Do nothing
 			}
 		}
-		Toast.makeText(getApplicationContext(), "Wrote " + sdCardFileName,
-				Toast.LENGTH_LONG).show();
 	}
 
 	/**
@@ -265,8 +267,7 @@ public class AppsActivity extends Activity implements IConstants {
 			intent.setClass(this, InfoActivity.class);
 			intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
 					| Intent.FLAG_ACTIVITY_SINGLE_TOP);
-			intent.putExtra(INFO_URL,
-					"file:///android_asset/appinfo.html");
+			intent.putExtra(INFO_URL, "file:///android_asset/appinfo.html");
 			startActivity(intent);
 		} catch (Exception ex) {
 			Utils.excMsg(this, "Error showing Help", ex);
@@ -292,16 +293,18 @@ public class AppsActivity extends Activity implements IConstants {
 		return buf.toString();
 	}
 
-//	/**
-//	 * Return whether the given ResolveInfo represents a system package or not.
-//	 * 
-//	 * @param ri
-//	 * @return
-//	 */
-//	private boolean isSystemPackage(ResolveInfo ri) {
-//		return ((ri.activityInfo.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0) ? true
-//				: false;
-//	}
+	// /**
+	// * Return whether the given ResolveInfo represents a system package or
+	// not.
+	// *
+	// * @param ri
+	// * @return
+	// */
+	// private boolean isSystemPackage(ResolveInfo ri) {
+	// return ((ri.activityInfo.applicationInfo.flags &
+	// ApplicationInfo.FLAG_SYSTEM) != 0) ? true
+	// : false;
+	// }
 
 	/**
 	 * Return whether the given PackgeInfo represents a system package or not.
@@ -337,26 +340,26 @@ public class AppsActivity extends Activity implements IConstants {
 		return res;
 	}
 
-//	private List<String> getComponentList(String action, String category) {
-//		Intent intent = new Intent(action);
-//		intent.addCategory(category);
-//
-//		List<ResolveInfo> ril = getPackageManager().queryIntentActivities(
-//				intent, PackageManager.MATCH_DEFAULT_ONLY);
-//		List<String> componentList = new ArrayList<String>();
-//		String componentString;
-//		for (ResolveInfo ri : ril) {
-//			if (ri.activityInfo != null) {
-//				componentString =
-//				// ri.activityInfo.packageName
-//				// +
-//				(isSystemPackage(ri) ? "S " : "") + ri.activityInfo.name;
-//				componentList.add(componentString);
-//
-//			}
-//		}
-//		return componentList;
-//	}
+	// private List<String> getComponentList(String action, String category) {
+	// Intent intent = new Intent(action);
+	// intent.addCategory(category);
+	//
+	// List<ResolveInfo> ril = getPackageManager().queryIntentActivities(
+	// intent, PackageManager.MATCH_DEFAULT_ONLY);
+	// List<String> componentList = new ArrayList<String>();
+	// String componentString;
+	// for (ResolveInfo ri : ril) {
+	// if (ri.activityInfo != null) {
+	// componentString =
+	// // ri.activityInfo.packageName
+	// // +
+	// (isSystemPackage(ri) ? "S " : "") + ri.activityInfo.name;
+	// componentList.add(componentString);
+	//
+	// }
+	// }
+	// return componentList;
+	// }
 
 	/**
 	 * Gets information about the applications.
@@ -382,22 +385,22 @@ public class AppsActivity extends Activity implements IConstants {
 			info += getBuildInfo() + "\n";
 		}
 
-//		// Installed component list
-//		if (doComponentList) {
-//			info += "Launcher Components\n\n";
-//			List<String> components = getComponentList(Intent.ACTION_MAIN,
-//					Intent.CATEGORY_LAUNCHER);
-//			if (components == null) {
-//				info += "<null>\n";
-//			} else if (components.isEmpty()) {
-//				info += "<none>\n";
-//			} else {
-//				for (String component : components) {
-//					info += component + "\n";
-//				}
-//				info += "\n";
-//			}
-//		}
+		// // Installed component list
+		// if (doComponentList) {
+		// info += "Launcher Components\n\n";
+		// List<String> components = getComponentList(Intent.ACTION_MAIN,
+		// Intent.CATEGORY_LAUNCHER);
+		// if (components == null) {
+		// info += "<null>\n";
+		// } else if (components.isEmpty()) {
+		// info += "<none>\n";
+		// } else {
+		// for (String component : components) {
+		// info += component + "\n";
+		// }
+		// info += "\n";
+		// }
+		// }
 
 		// Non-system applications information
 		if (doNonSystemApps) {
