@@ -205,8 +205,7 @@ public class MiscActivity extends ListActivity {
 
 				convertView.setTag(holder);
 			} else {
-				// Get the ViewHolder back to get fast access to the TextView
-				// and the ImageView.
+				// Get the ViewHolder back
 				holder = (ViewHolder) convertView.getTag();
 			}
 
