@@ -1,13 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
 	package="net.kenevans.android.misc" android:installLocation="preferExternal"
-	android:versionName="1.0.0.Beta2" android:versionCode="1">
+	android:versionName="1.0.0.Beta3" android:versionCode="3">
 
 	<uses-sdk android:minSdkVersion="8" />
 	<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 	<uses-permission android:name="android.permission.WRITE_SMS" />
 	<uses-permission android:name="android.permission.READ_SMS" />
 	<uses-permission android:name="android.permission.RECEIVE_SMS" />
+	<!-- Call Logs -->
+	<uses-permission android:name="android.permission.READ_CONTACTS" />
 	<!-- Google Maps API -->
 	<uses-permission android:name="android.permission.INTERNET" />
 	<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
@@ -38,6 +40,11 @@
 		</activity>
 		<activity android:name=".MessageListenerActivity"
 			android:label="@string/messagelistener_title">
+		</activity>
+		<activity android:name=".CallHistoryActivity" android:label="@string/phonehistory_title">
+		</activity>
+		<activity android:name=".DisplayCallActivity"
+			android:label="@string/displayphonehistory_title">
 		</activity>
 		<activity android:name=".MapLocationActivity" android:label="@string/map_location_title">
 		</activity>

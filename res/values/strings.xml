@@ -9,6 +9,7 @@
 	<string name="delete_item">Delete</string>
 	<string name="details_item">Details</string>
 	<string name="displaymessage_title">Message</string>
+	<string name="displayphonehistory_title">Call</string>
 	<string name="dryRunTitle">Set Dry Run</string>
 	<string name="dryrun_item">Set Dry Run</string>
 	<string name="fixtime_item">Fix Time</string>
@@ -26,6 +27,7 @@
 	<string name="orderByTime">By Time</string>
 	<string name="orderTitle">Select Sort Order</string>
 	<string name="order_item">Sort Order</string>
+	<string name="phonehistory_title">Calls</string>
 	<string name="prev_item">Previous</string>
 	<string name="refresh_item">Refresh</string>
 	<string name="reset_item">Reset</string>

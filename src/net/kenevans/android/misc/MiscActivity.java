@@ -59,6 +59,8 @@ public class MiscActivity extends ListActivity {
 					+ SMSTest2Activity.uri, SMSTest2Activity.class),
 			new Data("Messages", "Display all messages in the SMS database",
 					SMSActivity.class),
+			new Data("Call History", "Display call history",
+					CallHistoryActivity.class),
 	// new Data("Test", "Not implemented", null),
 	};
 

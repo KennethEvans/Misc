@@ -252,7 +252,7 @@ public class DisplayMessageActivity extends Activity implements IConstants {
 	}
 
 	/**
-	 * Sets the result code to send back to the SMSACtivity. One of:
+	 * Sets the result code to send back to the calling Activity. One of:
 	 * <ul>
 	 * <li>RESULT_PREV
 	 * <li>RESULT_NEXT

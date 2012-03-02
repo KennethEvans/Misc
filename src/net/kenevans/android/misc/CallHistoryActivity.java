@@ -24,19 +24,15 @@ package net.kenevans.android.misc;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 
-import android.app.AlertDialog;
 import android.app.ListActivity;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.CallLog;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CursorAdapter;
@@ -52,7 +48,7 @@ import android.widget.Toast;
  * @author evans
  * 
  */
-public class SMSActivity extends ListActivity implements IConstants {
+public class CallHistoryActivity extends ListActivity implements IConstants {
 	/**
 	 * The current position when ACTIVITY_DISPLAY_MESSAGE is requested. Used
 	 * with the resultCodes RESULT_PREV and RESULT_NEXT when they are returned.
@@ -60,13 +56,7 @@ public class SMSActivity extends ListActivity implements IConstants {
 	private int currentPosition;
 
 	/** The Uri to use. */
-	public static final Uri uri = SMS_URI;
-
-	/**
-	 * The date multiplier to use to get ms. MMS message timestamps are in sec
-	 * not ms.
-	 */
-	public static final Long dateMultiplier = 1L;
+	public static final Uri uri = CALLLOG_CALLS_URI;
 
 	/** Enum to specify the sort order. */
 	enum Order {
@@ -96,41 +86,39 @@ public class SMSActivity extends ListActivity implements IConstants {
 		refresh();
 	}
 
-	@Override
-	public boolean onCreateOptionsMenu(Menu menu) {
-		MenuInflater inflater = getMenuInflater();
-		inflater.inflate(R.menu.smsmenu, menu);
-		return true;
-	}
-
-	@Override
-	public boolean onOptionsItemSelected(MenuItem item) {
-		int id = item.getItemId();
-		switch (id) {
-		case R.id.refresh:
-			refresh();
-			return true;
-		case R.id.order:
-			setOrder();
-			return true;
-		}
-		return false;
-	}
+	// @Override
+	// public boolean onCreateOptionsMenu(Menu menu) {
+	// MenuInflater inflater = getMenuInflater();
+	// inflater.inflate(R.menu.smsmenu, menu);
+	// return true;
+	// }
+	//
+	// @Override
+	// public boolean onOptionsItemSelected(MenuItem item) {
+	// int id = item.getItemId();
+	// switch (id) {
+	// case R.id.refresh:
+	// refresh();
+	// return true;
+	// case R.id.order:
+	// setOrder();
+	// return true;
+	// }
+	// return false;
+	// }
 
 	@Override
 	protected void onListItemClick(ListView lv, View view, int position, long id) {
 		super.onListItemClick(lv, view, position, id);
 		// Save the position when starting the activity
 		currentPosition = position;
-		Intent i = new Intent(this, DisplayMessageActivity.class);
+		Intent i = new Intent(this, DisplayCallActivity.class);
 		i.putExtra(COL_ID, id);
 		i.putExtra(URI_KEY, getUri().toString());
-		i.putExtra(DATE_MULTIPLIER_KEY, getDateMultiplier());
 		// DEBUG
 		Log.d(TAG, this.getClass().getSimpleName() + ".onListItemClick: "
 				+ " position=" + position + " id=" + id + " uri="
-				+ getUri().toString() + " dateMultiplier="
-				+ getDateMultiplier());
+				+ getUri().toString());
 		startActivityForResult(i, DISPLAY_MESSAGE);
 	}
 
@@ -182,10 +170,9 @@ public class SMSActivity extends ListActivity implements IConstants {
 				}
 				// Request the new message
 				long id = adapter.getItemId(currentPosition);
-				Intent i = new Intent(this, DisplayMessageActivity.class);
+				Intent i = new Intent(this, DisplayCallActivity.class);
 				i.putExtra(COL_ID, id);
 				i.putExtra(URI_KEY, getUri().toString());
-				i.putExtra(DATE_MULTIPLIER_KEY, getDateMultiplier());
 				Log.d(TAG, "onActivityResult: position=" + currentPosition
 						+ " id=" + id);
 				startActivityForResult(i, DISPLAY_MESSAGE);
@@ -209,88 +196,68 @@ public class SMSActivity extends ListActivity implements IConstants {
 		super.onResume();
 	}
 
+	// /**
+	// * Bring up a dialog to change the sort order.
+	// */
+	// private void setOrder() {
+	// final CharSequence[] items = { getText(R.string.orderByTime),
+	// getText(R.string.orderById) };
+	// AlertDialog.Builder builder = new AlertDialog.Builder(this);
+	// builder.setTitle(getText(R.string.orderTitle));
+	// builder.setSingleChoiceItems(items, sortOrder == Order.TIME ? 0 : 1,
+	// new DialogInterface.OnClickListener() {
+	// public void onClick(DialogInterface dialog, int item) {
+	// dialog.dismiss();
+	// sortOrder = item == 0 ? Order.TIME : Order.ID;
+	// refresh();
+	// }
+	// });
+	// AlertDialog alert = builder.create();
+	// alert.show();
+	// }
+
 	/**
-	 * Bring up a dialog to change the sort order.
+	 * Format the duration to be hh:mm:ss.
+	 * 
+	 * @param duration
+	 * @return
 	 */
-	private void setOrder() {
-		final CharSequence[] items = { getText(R.string.orderByTime),
-				getText(R.string.orderById) };
-		AlertDialog.Builder builder = new AlertDialog.Builder(this);
-		builder.setTitle(getText(R.string.orderTitle));
-		builder.setSingleChoiceItems(items, sortOrder == Order.TIME ? 0 : 1,
-				new DialogInterface.OnClickListener() {
-					public void onClick(DialogInterface dialog, int item) {
-						dialog.dismiss();
-						sortOrder = item == 0 ? Order.TIME : Order.ID;
-						refresh();
-					}
-				});
-		AlertDialog alert = builder.create();
-		alert.show();
+	public static String formatDuration(String duration) {
+		if (duration == null || duration.length() == 0) {
+			return "<Unknown>";
+		}
+		int seconds = -1;
+		try {
+			seconds = Integer.parseInt(duration);
+		} catch (NumberFormatException ex) {
+			return "<Invalid>";
+		}
+
+		int hours = seconds / 3600;
+		seconds -= hours * 3600;
+		int minutes = seconds / 60;
+		seconds -= minutes * 60;
+
+		return String.format("%d:%02d:%02d", hours, minutes, seconds);
 	}
 
 	/**
-	 * Format the date using the static format.
+	 * Format the type as a string.
 	 * 
-	 * @param dateNum
-	 * @return
-	 * @see #format
-	 */
-	public static String formatDate(Long dateNum) {
-		// Consider using Date.toString() as it might be more locale
-		// independent.
-		if (dateNum == null) {
-			return "<Unknown>";
-		}
-		if (dateNum == -1) {
-			// Means the column was not found in the database
-			return "<Date NA>";
-		}
-		// Consider using Date.toString()
-		// It might be more locale independent.
-		// return new Date(dateNum).toString();
-
-		// Include the dateNum
-		// return dateNum + " " + formatter.format(dateNum);
-
-		return formatter.format(dateNum);
-	}
-
-	/**
-	 * Format the number returned for the address to make it more presentable.
-	 * 
-	 * @param address
+	 * @param type
 	 * @return
 	 */
-	public static String formatAddress(String address) {
-		String retVal = address;
-		if (address == null || address.length() == 0) {
-			return "<Unknown>";
+	public static String formatType(int type) {
+		if (type == CallLog.Calls.INCOMING_TYPE) {
+			return "Incoming";
 		}
-		// Check if it is all digits
-		int len = address.length();
-		boolean isNumeric = true;
-		for (int i = 0; i < len; i++) {
-			if (!Character.isDigit(address.charAt(i))) {
-				isNumeric = false;
-				break;
-			}
+		if (type == CallLog.Calls.OUTGOING_TYPE) {
+			return "Outgoing";
 		}
-		if (!isNumeric) {
-			return address;
+		if (type == CallLog.Calls.MISSED_TYPE) {
+			return "Missed";
 		}
-		// Is all digits
-		if (len == 11) {
-			retVal = address.substring(0, 1) + "-" + address.substring(1, 4)
-					+ "-" + address.substring(4, 7) + "-"
-					+ address.substring(7, 11);
-		} else if (len == 10) {
-			retVal = address.substring(0, 3) + "-" + address.substring(3, 6)
-					+ "-" + address.substring(6, 10);
-		} else if (len == 7) {
-			retVal = address.substring(0, 3) + "-" + address.substring(3, 7);
-		}
-		return retVal;
+		return "<Unknown type>";
 	}
 
 	/**
@@ -309,7 +276,8 @@ public class SMSActivity extends ListActivity implements IConstants {
 			cursor.close();
 
 			// Make an array of the desired ones that are available
-			String[] desiredColumns = { COL_ID, COL_ADDRESS, COL_DATE, COL_BODY };
+			String[] desiredColumns = { COL_ID, COL_NUMBER, COL_DATE,
+					COL_DURATION, COL_TYPE };
 			ArrayList<String> list = new ArrayList<String>();
 			for (String col : desiredColumns) {
 				for (String col1 : avaliableColumns) {
@@ -343,73 +311,7 @@ public class SMSActivity extends ListActivity implements IConstants {
 				adapter.changeCursor(cursor);
 			}
 		} catch (Exception ex) {
-			Utils.excMsg(this, "Error finding messages", ex);
-		}
-	}
-
-	/**
-	 * Method used to test what is happening with a database.
-	 * 
-	 * @param testNum
-	 *            Prefix to log message.
-	 * @param cls
-	 *            The calling class (will be part of the log message).
-	 * @param context
-	 *            The calling context. Used to get the content resolver if the
-	 *            input cursor is null.
-	 * @param cursor
-	 *            The calling cursor or null to use a cursor with all columns.
-	 * @param id
-	 *            The _id.
-	 * @param uri
-	 *            The URI of the content database (will be part of the log
-	 *            message).
-	 */
-	public static void test(int testNum, Class<?> cls, Context context,
-			Cursor cursor, String id, Uri uri) {
-		Cursor cursor1;
-		if (cursor == null) {
-			String selection = COL_ID + "=" + id;
-			// String[] projection = { "*" };
-			String[] projection = null;
-			cursor1 = context.getContentResolver().query(uri, projection,
-					selection, null, null);
-			cursor1.moveToFirst();
-		} else {
-			cursor1 = cursor;
-		}
-
-		int indexId = cursor1.getColumnIndex(COL_ID);
-		int indexDate = cursor1.getColumnIndex(COL_DATE);
-		int indexAddress = cursor1.getColumnIndex(COL_ADDRESS);
-		int indexThreadId = cursor1.getColumnIndex(COL_THREAD_ID);
-
-		do {
-			String id1 = cursor1.getString(indexId);
-			String address = "<Address NA>";
-			if (indexAddress > -1) {
-				address = cursor1.getString(indexAddress);
-			}
-			Long dateNum = -1L;
-			if (indexDate > -1) {
-				dateNum = cursor1.getLong(indexDate);
-			}
-			String threadId = "<ThreadID NA>";
-			if (indexThreadId > -1) {
-				threadId = cursor1.getString(indexThreadId);
-			}
-			Log.d(TAG,
-					testNum + " " + cls.getSimpleName() + ".test" + "id=(" + id
-							+ "," + id1 + ") address=" + address + " dateNum="
-							+ dateNum + " threadId=" + threadId + " uri=" + uri
-							+ " cursor=(" + cursor1.getColumnCount() + ","
-							+ cursor1.getCount() + "," + cursor1.getPosition()
-							+ ")");
-		} while (cursor == null && cursor1.moveToNext());
-
-		if (cursor == null) {
-			// Close the cursor if we created it here
-			cursor1.close();
+			Utils.excMsg(this, "Error finding calls", ex);
 		}
 	}
 
@@ -420,25 +322,22 @@ public class SMSActivity extends ListActivity implements IConstants {
 		return uri;
 	}
 
-	/**
-	 * @return The date multiplier to use.
-	 */
-	public Long getDateMultiplier() {
-		return dateMultiplier;
-	}
-
 	private class CustomCursorAdapter extends CursorAdapter {
 		private LayoutInflater inflater;
 		private int indexDate;
-		private int indexAddress;
+		private int indexNumber;
 		private int indexId;
+		private int indexDuration;
+		private int indexType;
 
 		public CustomCursorAdapter(Context context, Cursor cursor) {
 			super(context, cursor);
 			inflater = LayoutInflater.from(context);
 			indexId = cursor.getColumnIndex(COL_ID);
 			indexDate = cursor.getColumnIndex(COL_DATE);
-			indexAddress = cursor.getColumnIndex(COL_ADDRESS);
+			indexNumber = cursor.getColumnIndex(COL_NUMBER);
+			indexDuration = cursor.getColumnIndex(COL_DURATION);
+			indexType = cursor.getColumnIndex(COL_TYPE);
 		}
 
 		@Override
@@ -446,24 +345,35 @@ public class SMSActivity extends ListActivity implements IConstants {
 			TextView title = (TextView) view.findViewById(R.id.title);
 			TextView subtitle = (TextView) view.findViewById(R.id.subtitle);
 			String id = cursor.getString(indexId);
-			String address = "<Address NA>";
-			if (indexAddress > -1) {
-				address = cursor.getString(indexAddress);
+			String number = "<Number NA>";
+			if (indexNumber > -1) {
+				number = cursor.getString(indexNumber);
 			}
 			Long dateNum = -1L;
 			if (indexDate > -1) {
-				dateNum = cursor.getLong(indexDate) * getDateMultiplier();
+				dateNum = cursor.getLong(indexDate);
 			}
-			title.setText(id + ": " + formatAddress(address));
-			subtitle.setText(formatDate(dateNum));
+			String duration = "<Duration NA>";
+			if (indexDuration > -1) {
+				duration = cursor.getString(indexDuration);
+			}
+			int type = -1;
+			if (indexType > -1) {
+				type = cursor.getInt(indexType);
+			}
+			title.setText(id + ": " + SMSActivity.formatAddress(number) + " ("
+					+ formatType(type) + ") Duration: "
+					+ formatDuration(duration));
+			subtitle.setText(SMSActivity.formatDate(dateNum));
 			Log.d(TAG, getClass().getSimpleName() + ".bindView" + " id=" + id
-					+ " address=" + address + " dateNum=" + dateNum
-					+ " dateMultiplier=" + getDateMultiplier());
+					+ " number=" + number + " dateNum=" + dateNum);
 			// DEBUG
-			if (id.equals(new Integer(76).toString())) {
-				test(1, this.getClass(), SMSActivity.this, cursor, id, getUri());
-				test(2, this.getClass(), SMSActivity.this, null, id, getUri());
-			}
+			// if (id.equals(new Integer(76).toString())) {
+			// test(1, this.getClass(), PhoneHistoryActivity.this, cursor, id,
+			// getUri());
+			// test(2, this.getClass(), PhoneHistoryActivity.this, null, id,
+			// getUri());
+			// }
 		}
 
 		@Override

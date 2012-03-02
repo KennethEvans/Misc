@@ -58,6 +58,18 @@ public interface IConstants {
 	public static final String COL_BODY = "body";
 	/** SMS database column for the thread ID. */
 	public static final String COL_THREAD_ID = "thread_id";
+	
+	/** The URI for calls. */
+	public static final Uri CALLLOG_CALLS_URI = android.provider.CallLog.Calls.CONTENT_URI;
+	/** Callog.Calls database column for the id. Identifies the row. */
+	public static final String COL_NUMBER = "number";
+	/** Callog.Calls database column for the address. */
+	public static final String COL_DURATION = "duration";
+	/** Callog.Calls database column for the date. */
+	public static final String COL_NAME = "name";
+	/** Callog.Calls database column for the type. */
+	public static final String COL_TYPE = "type";
+
 
 	/** The URI for MMS messages. Has all messages. */
 	public static final Uri MMS_URI = Uri.parse("content://mms");
@@ -83,7 +95,7 @@ public interface IConstants {
 
 	// Messages
 	/** Request code for displaying a message. */
-	public static final int ACTIVITY_DISPLAY_MESSAGE = 0;
+	public static final int DISPLAY_MESSAGE = 0;
 	/**
 	 * Result code for ACTIVITY_DISPLAY_MESSAGE indicating the previous message.
 	 */
