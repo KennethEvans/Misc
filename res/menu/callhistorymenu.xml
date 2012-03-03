@@ -1,6 +1,7 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:id="@+id/refresh" android:title="@string/refresh_item" />
     <item android:id="@+id/save" android:title="@string/save_app_info_item" />
-    <item android:id="@+id/filter" android:title="@string/select_item" />
+    <item android:id="@+id/filter" android:title="@string/filter_item" />
+    <item android:id="@+id/sort" android:title="@string/sort_item" />
     <item android:id="@+id/help" android:title="@string/help_item" />
 </menu>

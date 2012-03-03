@@ -21,6 +21,8 @@
 package net.kenevans.android.misc;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
@@ -30,11 +32,15 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.widget.TextView;
+import android.widget.Toast;
 
 /**
  * Class to display a single message.
  */
 public class DisplayCallActivity extends Activity implements IConstants {
+	/** Set this to not make any changes to the database. */
+	private boolean dryRun = false;
+
 	/** The Uri to use. */
 	public Uri uri;
 
@@ -94,6 +100,9 @@ public class DisplayCallActivity extends Activity implements IConstants {
 		case R.id.next:
 			navigate(RESULT_NEXT);
 			return true;
+		case R.id.delete:
+			deleteCall();
+			return true;
 		}
 		return false;
 	}
@@ -131,6 +140,47 @@ public class DisplayCallActivity extends Activity implements IConstants {
 	private void navigate(int resultCode) {
 		setResult(resultCode);
 		finish();
+	}
+
+	/**
+	 * Deletes the message and navigates to the next message.
+	 */
+	private void deleteCall() {
+		AlertDialog.Builder builder = new AlertDialog.Builder(this);
+		builder.setMessage(
+				"Are you sure you want to delete "
+						+ "this call from the call log database? "
+						+ "It cannot be undone.")
+				.setCancelable(false)
+				.setPositiveButton(getText(R.string.yes_label),
+						new DialogInterface.OnClickListener() {
+							public void onClick(DialogInterface dialog, int id) {
+								if (dryRun) {
+									Toast.makeText(getApplicationContext(),
+											"Dry run:\n" + "Message deleted",
+											Toast.LENGTH_LONG).show();
+									navigate(RESULT_NEXT);
+								} else {
+									try {
+										// The following change the database
+										getContentResolver().delete(uri,
+												"_id = " + mRowId, null);
+										navigate(RESULT_NEXT);
+									} catch (Exception ex) {
+										Utils.excMsg(DisplayCallActivity.this,
+												"Problem deleting call", ex);
+									}
+								}
+							}
+						})
+				.setNegativeButton(getText(R.string.cancel_label),
+						new DialogInterface.OnClickListener() {
+							public void onClick(DialogInterface dialog, int id) {
+								dialog.cancel();
+							}
+						});
+		AlertDialog alert = builder.create();
+		alert.show();
 	}
 
 	/**

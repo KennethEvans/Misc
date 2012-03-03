@@ -66,7 +66,7 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
 	 */
 	private int currentPosition;
 
-	/** The Uri to use. */
+	/** The Uri to use for the database. */
 	public static final Uri uri = CALLLOG_CALLS_URI;
 
 	/** Enum to specify the sort order. */
@@ -79,20 +79,15 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
 		}
 	}
 
-	/** The sort order to use. */
-	private Order sortOrder = Order.TIME;
+	/** Array of hard-coded filters */
+	private Filter[] filters;
+	/** The current filter. */
+	private int filter = 0;
 
-	/** Select short, unknown, non-outgoing calls. */
-	private static String selectShortUnknownNotOutgoing = COL_DURATION + "<=20"
-			+ " AND " + COL_NAME + " IS NULL" + " AND " + COL_TYPE + "<>"
-			+ CallLog.Calls.OUTGOING_TYPE;
-	/** Array of selection types. */
-	private static String[] selectionTypes = { null,
-			selectShortUnknownNotOutgoing };
-	/** The current selection type. */
-	private int selectionType = 0;
-	/** The current selection. */
-	private String selection = selectionTypes[selectionType];
+	/** Array of hard-coded sort orders */
+	private SortOrder[] sortOrders;
+	/** The current sort order. */
+	private int sortOrder = 0;
 
 	/** The static format string to use for formatting dates. */
 	public static final String format = "MMM dd, yyyy HH:mm:ss";
@@ -108,7 +103,45 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
+		// Create filters here so getText is available
+		filters = new Filter[] {
+				new Filter(getText(R.string.filter_none), null),
+				new Filter(getText(R.string.filter_known), COL_NAME
+						+ " IS NOT NULL"),
+				new Filter(getText(R.string.filter_unknown), COL_NAME
+						+ " IS NULL"),
+				new Filter(getText(R.string.filter_short_unknown_nonoutgoing),
+						COL_DURATION + "<=20" + " AND " + COL_NAME + " IS NULL"
+								+ " AND " + COL_TYPE + "<>"
+								+ CallLog.Calls.OUTGOING_TYPE),
+				new Filter(getText(R.string.filter_10min), COL_DURATION
+						+ ">600"),
+		// Place holder to prevent reformatting
+		};
+
+		// Create sort orders here so getText is available
+		sortOrders = new SortOrder[] {
+				new SortOrder(getText(R.string.sort_time), COL_DATE + " DESC"),
+				new SortOrder(getText(R.string.sort_id), COL_ID + " DESC"),
+				new SortOrder(getText(R.string.sort_name), COL_NAME),
+				new SortOrder(getText(R.string.sort_duration), COL_DURATION
+						+ " DESC"),
+		// Place holder to prevent reformatting
+		};
+
+		// Get the preferences here before refresh()
+		SharedPreferences prefs = getPreferences(MODE_PRIVATE);
+		filter = prefs.getInt("filter", 0);
+		if (filter < 0 || filter >= filters.length) {
+			filter = 0;
+		}
+		sortOrder = prefs.getInt("sortOrder", 0);
+		if (sortOrder < 0 || sortOrder >= sortOrders.length) {
+			sortOrder = 0;
+		}
+
 		// Call refresh to set the contents
+		// Does not have to be done in resume
 		refresh();
 	}
 
@@ -134,6 +167,9 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
 			return true;
 		case R.id.filter:
 			setFilter();
+			return true;
+		case R.id.sort:
+			setSortOrder();
 			return true;
 		}
 		return false;
@@ -219,9 +255,7 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
 		Log.d(TAG, this.getClass().getSimpleName()
 				+ ".onPause: currentPosition=" + currentPosition);
 		super.onPause();
-		SharedPreferences.Editor editor = getPreferences(MODE_PRIVATE).edit();
-		editor.putInt("selectionType", selectionType);
-		editor.commit();
+		// We save the preferences in refresh
 	}
 
 	@Override
@@ -229,43 +263,58 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
 		Log.d(TAG, this.getClass().getSimpleName()
 				+ ".onResume(1): currentPosition=" + currentPosition);
 		super.onResume();
-		SharedPreferences prefs = getPreferences(MODE_PRIVATE);
-		selectionType = prefs.getInt("selectionType", 0);
-		if (selectionType < 0 || selectionType >= selectionTypes.length) {
-			selectionType = 0;
-		}
-		selection = selectionTypes[selectionType];
+		// We get the preferences in onCreate since it is not necessary to do
+		// refresh() here
 	}
 
 	/**
 	 * Bring up a dialog to change the sort order.
 	 */
 	private void setFilter() {
-		final CharSequence[] items = { getText(R.string.select_none),
-				getText(R.string.select_short_unknown_nonoutgoing) };
+		final CharSequence[] items = new CharSequence[filters.length];
+		for (int i = 0; i < filters.length; i++) {
+			items[i] = filters[i].name;
+		}
 		AlertDialog.Builder builder = new AlertDialog.Builder(this);
-		builder.setTitle(getText(R.string.selectTitle));
-		builder.setSingleChoiceItems(items, selectionType,
+		builder.setTitle(getText(R.string.filter_title));
+		builder.setSingleChoiceItems(items, filter,
 				new DialogInterface.OnClickListener() {
 					public void onClick(DialogInterface dialog, int item) {
 						dialog.dismiss();
-						if (item < 0 || item >= selectionTypes.length) {
+						if (item < 0 || item >= filters.length) {
 							Utils.errMsg(CallHistoryActivity.this,
 									"Invalid filter");
-							selectionType = 0;
+							filter = 0;
 						} else {
-							selectionType = item;
+							filter = item;
 						}
-						selection = selectionTypes[selectionType];
-						switch (item) {
-						case 0:
-							selection = null;
-							break;
-						case 1:
-							selection = selectShortUnknownNotOutgoing;
-							break;
-						default:
-							selection = null;
+						refresh();
+					}
+				});
+		AlertDialog alert = builder.create();
+		alert.show();
+	}
+
+	/**
+	 * Bring up a dialog to change the sort order.
+	 */
+	private void setSortOrder() {
+		final CharSequence[] items = new CharSequence[sortOrders.length];
+		for (int i = 0; i < sortOrders.length; i++) {
+			items[i] = sortOrders[i].name;
+		}
+		AlertDialog.Builder builder = new AlertDialog.Builder(this);
+		builder.setTitle(getText(R.string.sort_title));
+		builder.setSingleChoiceItems(items, sortOrder,
+				new DialogInterface.OnClickListener() {
+					public void onClick(DialogInterface dialog, int item) {
+						dialog.dismiss();
+						if (item < 0 || item >= sortOrders.length) {
+							Utils.errMsg(CallHistoryActivity.this,
+									"Invalid sortOrder");
+							sortOrder = 0;
+						} else {
+							sortOrder = item;
 						}
 						refresh();
 					}
@@ -328,8 +377,7 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
 			intent.setClass(this, InfoActivity.class);
 			intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
 					| Intent.FLAG_ACTIVITY_SINGLE_TOP);
-			intent.putExtra(INFO_URL,
-					"file:///android_asset/callhistory.html");
+			intent.putExtra(INFO_URL, "file:///android_asset/callhistory.html");
 			startActivity(intent);
 		} catch (Exception ex) {
 			Utils.excMsg(this, "Error showing Help", ex);
@@ -364,8 +412,8 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
 					String[] desiredColumns = { COL_ID, COL_NUMBER, COL_DATE,
 							COL_DURATION, COL_TYPE, COL_NAME };
 					cursor = getContentResolver().query(getUri(),
-							desiredColumns, selection, null,
-							sortOrder.sqlCommand);
+							desiredColumns, filters[filter].selection, null,
+							sortOrders[sortOrder].sortOrder);
 					int indexId = cursor.getColumnIndex(COL_ID);
 					int indexDate = cursor.getColumnIndex(COL_DATE);
 					int indexNumber = cursor.getColumnIndex(COL_NUMBER);
@@ -464,8 +512,9 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
 
 			// Get the available columns from all rows using the current
 			// selection
-			cursor = getContentResolver().query(getUri(), columns, selection,
-					null, sortOrder.sqlCommand);
+			cursor = getContentResolver().query(getUri(), columns,
+					filters[filter].selection, null,
+					sortOrders[sortOrder].sortOrder);
 			// editingCursor = getContentResolver().query(editingURI, columns,
 			// "type=?", new String[] { "1" }, "_id DESC");
 			startManagingCursor(cursor);
@@ -484,6 +533,11 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
 		} catch (Exception ex) {
 			Utils.excMsg(this, "Error finding calls", ex);
 		}
+		// Save the preferences
+		SharedPreferences.Editor editor = getPreferences(MODE_PRIVATE).edit();
+		editor.putInt("filter", filter);
+		editor.putInt("sortOrder", sortOrder);
+		editor.commit();
 	}
 
 	/**
@@ -493,6 +547,35 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
 		return uri;
 	}
 
+	/**
+	 * Class to manage a filter.
+	 */
+	private static class Filter {
+		private CharSequence name;
+		private String selection;
+
+		private Filter(CharSequence menuName, String selection) {
+			this.name = menuName;
+			this.selection = selection;
+		}
+	}
+
+	/**
+	 * Class to manage a sort order.
+	 */
+	private static class SortOrder {
+		private CharSequence name;
+		private String sortOrder;
+
+		private SortOrder(CharSequence menuName, String sortOrder) {
+			this.name = menuName;
+			this.sortOrder = sortOrder;
+		}
+	}
+
+	/**
+	 * CursorAdapter for the CallHistoryActivity ListView.
+	 */
 	private class CustomCursorAdapter extends CursorAdapter {
 		private LayoutInflater inflater;
 		private int indexDate;

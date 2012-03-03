@@ -213,10 +213,10 @@ public class SMSActivity extends ListActivity implements IConstants {
 	 * Bring up a dialog to change the sort order.
 	 */
 	private void setOrder() {
-		final CharSequence[] items = { getText(R.string.orderByTime),
-				getText(R.string.orderById) };
+		final CharSequence[] items = { getText(R.string.sort_time),
+				getText(R.string.sort_id) };
 		AlertDialog.Builder builder = new AlertDialog.Builder(this);
-		builder.setTitle(getText(R.string.orderTitle));
+		builder.setTitle(getText(R.string.sort_title));
 		builder.setSingleChoiceItems(items, sortOrder == Order.TIME ? 0 : 1,
 				new DialogInterface.OnClickListener() {
 					public void onClick(DialogInterface dialog, int item) {

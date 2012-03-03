@@ -23,23 +23,29 @@
 	<string name="off">OFF</string>
 	<string name="ok_label">OK</string>
 	<string name="on">ON</string>
-	<string name="orderById">By ID</string>
-	<string name="orderByTime">By Time</string>
-	<string name="orderTitle">Select Sort Order</string>
-	<string name="order_item">Sort Order</string>
+	<string name="sort_time">By Time</string>
+	<string name="sort_id">By ID</string>
+	<string name="sort_name">By Name</string>
+	<string name="sort_duration">By Duration</string>
+	<string name="sort_title">Select Sort Order</string>
+	<string name="sort_item">Sort</string>
 	<string name="phonehistory_title">Calls</string>
 	<string name="prev_item">Previous</string>
 	<string name="refresh_item">Refresh</string>
 	<string name="reset_item">Reset</string>
 	<string name="save_app_info_item">Save to SD Card</string>
-	<string name="select_item">Filter</string>
-	<string name="select_none">None</string>
-	<string name="select_short_unknown_nonoutgoing">Short, Unknown, Not Outgoing</string>
-	<string name="selectTitle">Select Filter</string>
+	<string name="filter_item">Filter</string>
+	<string name="filter_none">None</string>
+	<string name="filter_short_unknown_nonoutgoing">Short, Unknown, Not Outgoing</string>
+	<string name="filter_unknown">Unknown</string>
+	<string name="filter_known">Known</string>
+	<string name="filter_10min">Longer than 10 minutes</string>
+	<string name="filter_title">Select Filter</string>
 	<string name="send_item">Send SMS</string>
 	<string name="settings_item">Settings</string>
 	<string name="sms_title">Messages</string>
 	<string name="timeoffset_dialog_title">Set the Desired Time Change</string>
+	<string name="yes_label">Yes</string>
 	
 	<!-- Utils -->
 	<string name="error">Error</string>
