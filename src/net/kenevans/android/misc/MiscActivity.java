@@ -73,7 +73,9 @@ public class MiscActivity extends ListActivity {
 			new Data("Application Info", "Display Application Information",
 					AppsActivity.class),
 			new Data("Messages", "Display all messages in the SMS database",
-					SMSActivity.class), };
+					SMSActivity.class),
+			new Data("Call History", "Display call history",
+					CallHistoryActivity.class), };
 
 	/** The Array of items actually used to populate the ListView. */
 	private Data[] data = RELEASE_DATA;
