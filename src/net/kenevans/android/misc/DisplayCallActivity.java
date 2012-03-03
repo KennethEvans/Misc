@@ -40,14 +40,13 @@ public class DisplayCallActivity extends Activity implements IConstants {
 
 	private TextView mTitleTextView;
 	private TextView mSubtitleTextView;
-	private TextView mBodyTextView;
 	private Long mRowId;
 
 	/** Called when the activity is first created. */
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.displaymessage);
+		setContentView(R.layout.displaycall);
 
 		// Get the saved state
 		// SharedPreferences prefs = getPreferences(MODE_PRIVATE);
@@ -55,8 +54,6 @@ public class DisplayCallActivity extends Activity implements IConstants {
 		mTitleTextView = (TextView) findViewById(R.id.titleview);
 		mSubtitleTextView = (TextView) findViewById(R.id.subtitleview);
 		mSubtitleTextView.setMovementMethod(new ScrollingMovementMethod());
-		mBodyTextView = (TextView) findViewById(R.id.bodyview);
-		mBodyTextView.setMovementMethod(new ScrollingMovementMethod());
 
 		mRowId = (savedInstanceState == null) ? null
 				: (Long) savedInstanceState.getSerializable(COL_ID);
@@ -96,9 +93,6 @@ public class DisplayCallActivity extends Activity implements IConstants {
 			return true;
 		case R.id.next:
 			navigate(RESULT_NEXT);
-			return true;
-		case R.id.help:
-			showHelp();
 			return true;
 		}
 		return false;
@@ -140,25 +134,6 @@ public class DisplayCallActivity extends Activity implements IConstants {
 	}
 
 	/**
-	 * Show the help.
-	 */
-	private void showHelp() {
-		Utils.errMsg(this, "Not implemented yet");
-//		try {
-//			// Start theInfoActivity
-//			Intent intent = new Intent();
-//			intent.setClass(this, InfoActivity.class);
-//			intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
-//					| Intent.FLAG_ACTIVITY_SINGLE_TOP);
-//			intent.putExtra(INFO_URL,
-//					"file:///android_asset/displaymessage.html");
-//			startActivity(intent);
-//		} catch (Exception ex) {
-//			Utils.excMsg(this, "Error showing Help", ex);
-//		}
-	}
-
-	/**
 	 * Gets a new cursor and redraws the view. Closes the cursor after it is
 	 * done with it.
 	 */
@@ -182,6 +157,7 @@ public class DisplayCallActivity extends Activity implements IConstants {
 			int indexNumber = cursor.getColumnIndex(COL_NUMBER);
 			int indexDuration = cursor.getColumnIndex(COL_DURATION);
 			int indexType = cursor.getColumnIndex(COL_TYPE);
+			int indexName = cursor.getColumnIndex(COL_NAME);
 			Log.d(TAG, this.getClass().getSimpleName() + ".refresh: "
 					+ " mRowId=" + mRowId + " uri=" + uri.toString());
 
@@ -191,7 +167,6 @@ public class DisplayCallActivity extends Activity implements IConstants {
 			if (!found) {
 				mTitleTextView.setText("<Error>");
 				mSubtitleTextView.setText("");
-				mBodyTextView.setText("Failed to find message " + mRowId);
 			} else {
 				String id = cursor.getString(indexId);
 				String number = "<Number NA>";
@@ -210,45 +185,58 @@ public class DisplayCallActivity extends Activity implements IConstants {
 				if (indexType > -1) {
 					type = cursor.getInt(indexType);
 				}
+				String name = "Unknown";
+				if (indexName > -1) {
+					name = cursor.getString(indexName);
+					if (name == null) {
+						name = "Unknown";
+					}
+				}
 				String title = id;
 				// Indicate if more than one found
 				if (cursor.getCount() > 1) {
 					title += " [1/" + cursor.getCount() + "]";
 				}
-				title += ": " + SMSActivity.formatAddress(number) + " ("
-						+ CallHistoryActivity.formatType(type) + ") Duration: "
-						+ CallHistoryActivity.formatDuration(duration) + "\n"
-						+ SMSActivity.formatDate(dateNum) + " ";
+				title += ": "
+						+ SMSActivity.formatAddress(number)
+						+ " ("
+						+ CallHistoryActivity.formatType(type)
+						+ ") "
+						+ name
+						+ "\n"
+						+ SMSActivity.formatDate(CallHistoryActivity.formatter,
+								dateNum) + " Duration: "
+						+ CallHistoryActivity.formatDuration(duration);
 				String subTitle = "";
 				Log.d(TAG, getClass().getSimpleName() + ".refresh" + " id="
 						+ id + " address=" + number + " dateNum=" + dateNum);
 
 				// Add all the fields in the database
-				for (String name : columns) {
+				for (String colName : columns) {
 					try {
-						int index = cursor.getColumnIndex(name);
+						int index = cursor.getColumnIndex(colName);
 						// Don't do a LF the first time
 						if (subTitle.length() != 0) {
 							subTitle += "\n";
 						}
 						// Don't print the body
-						if (name.equals("body")) {
-							subTitle += name + ": <"
+						if (colName.equals("body")) {
+							subTitle += colName + ": <"
 									+ cursor.getString(index).length()
 									+ " chars>";
 						} else {
-							subTitle += name + ": " + cursor.getString(index);
+							subTitle += colName + ": "
+									+ cursor.getString(index);
 						}
 					} catch (Exception ex) {
 						// Shouldn't happen
-						subTitle += name + ": Not found";
+						subTitle += colName + ": Not found";
 					}
 				}
 
 				// Set the TextViews
 				mTitleTextView.setText(title);
 				mSubtitleTextView.setText(subTitle);
-				mBodyTextView.setText("Duration: " + duration);
 
 				// Debug
 				// if (id.equals(new Integer(76).toString())) {
@@ -259,12 +247,7 @@ public class DisplayCallActivity extends Activity implements IConstants {
 			// We are through with the cursor
 			cursor.close();
 		} catch (Exception ex) {
-			String msg = "Error finding message:\n" + ex.getMessage();
 			Utils.excMsg(this, "Error finding message", ex);
-			if (mBodyTextView != null) {
-				mBodyTextView.setTextColor(0xffff0000);
-				mBodyTextView.setText(msg);
-			}
 			if (mTitleTextView != null) {
 				mTitleTextView.setText("<Error>");
 			}

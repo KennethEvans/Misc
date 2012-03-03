@@ -237,6 +237,18 @@ public class SMSActivity extends ListActivity implements IConstants {
 	 * @see #format
 	 */
 	public static String formatDate(Long dateNum) {
+		return formatDate(SMSActivity.formatter, dateNum);
+	}
+
+	/**
+	 * Format the date using the given format.
+	 * 
+	 * @param formatter
+	 * @param dateNum
+	 * @return
+	 * @see #format
+	 */
+	public static String formatDate(SimpleDateFormat formatter, Long dateNum) {
 		// Consider using Date.toString() as it might be more locale
 		// independent.
 		if (dateNum == null) {

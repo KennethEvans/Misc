@@ -1,5 +1,4 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:id="@+id/prev" android:title="@string/prev_item" />
     <item android:id="@+id/next" android:title="@string/next_item" />
-    <item android:id="@+id/help" android:title="@string/help_item" />
 </menu>

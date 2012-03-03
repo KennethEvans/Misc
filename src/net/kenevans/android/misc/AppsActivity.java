@@ -24,6 +24,7 @@ package net.kenevans.android.misc;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -53,8 +54,8 @@ import android.widget.TextView;
  * 
  */
 public class AppsActivity extends Activity implements IConstants {
-	/** Name of the file written to the root of the SD card */
-	private static final String sdCardFileName = "ApplicationInfo.txt";
+	/** Template for the name of the file written to the root of the SD card */
+	private static final String sdCardFileNameTemplate = "ApplicationInfo.%s.txt";
 
 	private TextView mTextView;
 	public boolean doBuildInfo = false;
@@ -196,7 +197,12 @@ public class AppsActivity extends Activity implements IConstants {
 		try {
 			File sdCardRoot = Environment.getExternalStorageDirectory();
 			if (sdCardRoot.canWrite()) {
-				File file = new File(sdCardRoot, sdCardFileName);
+				String format = "yyyy-MM-dd-HHmmss";
+				SimpleDateFormat formatter = new SimpleDateFormat(format);
+				Date now = new Date();
+				String fileName = String.format(sdCardFileNameTemplate,
+						formatter.format(now), now.getTime());
+				File file = new File(sdCardRoot, fileName);
 				FileWriter writer = new FileWriter(file);
 				out = new BufferedWriter(writer);
 				CharSequence charSeq = mTextView.getText();
@@ -204,7 +210,7 @@ public class AppsActivity extends Activity implements IConstants {
 				if (charSeq.length() == 0) {
 					Utils.warnMsg(this, "The file written is empty");
 				}
-				Utils.infoMsg(this, "Wrote " + sdCardFileName);
+				Utils.infoMsg(this, "Wrote " + fileName);
 			} else {
 				Utils.errMsg(this, "Cannot write to SD card");
 				return;
