@@ -69,9 +69,11 @@ public class DisplayCallActivity extends Activity implements IConstants {
 
 		mTitleTextView = (TextView) findViewById(R.id.titleview);
 		mSubtitleTextView = (TextView) findViewById(R.id.subtitleview);
-		mSubtitleTextView.setMovementMethod(new ScrollingMovementMethod());
 		mContactTextView = (TextView) findViewById(R.id.contactview);
 		mImageView = (ImageView) findViewById(R.id.imageview);
+		
+//		mSubtitleTextView.setMovementMethod(new ScrollingMovementMethod());
+//		mContactTextView.setMovementMethod(new ScrollingMovementMethod());
 
 		mRowId = (savedInstanceState == null) ? null
 				: (Long) savedInstanceState.getSerializable(COL_ID);
