@@ -26,7 +26,6 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ContentResolver;
 import android.content.ContentUris;
-import android.content.ContentValues;
 import android.content.DialogInterface;
 import android.database.Cursor;
 import android.graphics.Bitmap;
@@ -504,7 +503,6 @@ public class DisplayCallActivity extends Activity implements IConstants {
 			int indexDuration = cursor.getColumnIndex(COL_DURATION);
 			int indexType = cursor.getColumnIndex(COL_TYPE);
 			int indexName = cursor.getColumnIndex(COL_NAME);
-			int indexRawContactId = cursor.getColumnIndex(COL_RAW_CONTACT_ID);
 			Log.d(TAG, this.getClass().getSimpleName() + ".refresh: "
 					+ " mRowId=" + mRowId + " uri=" + uri.toString());
 
@@ -538,10 +536,6 @@ public class DisplayCallActivity extends Activity implements IConstants {
 					if (name == null) {
 						name = "Unknown";
 					}
-				}
-				long rawContactId = -1;
-				if (indexType > -1) {
-					rawContactId = cursor.getLong(indexRawContactId);
 				}
 
 				String title = id;
