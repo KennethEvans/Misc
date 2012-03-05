@@ -126,6 +126,8 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
 				new SortOrder(getText(R.string.sort_name), COL_NAME),
 				new SortOrder(getText(R.string.sort_duration), COL_DURATION
 						+ " DESC"),
+				new SortOrder(getText(R.string.sort_number), COL_NUMBER
+						+ " DESC"),
 		// Place holder to prevent reformatting
 		};
 

@@ -26,6 +26,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ContentResolver;
 import android.content.ContentUris;
+import android.content.ContentValues;
 import android.content.DialogInterface;
 import android.database.Cursor;
 import android.graphics.Bitmap;
@@ -33,7 +34,6 @@ import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.ContactsContract;
-import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -71,9 +71,9 @@ public class DisplayCallActivity extends Activity implements IConstants {
 		mSubtitleTextView = (TextView) findViewById(R.id.subtitleview);
 		mContactTextView = (TextView) findViewById(R.id.contactview);
 		mImageView = (ImageView) findViewById(R.id.imageview);
-		
-//		mSubtitleTextView.setMovementMethod(new ScrollingMovementMethod());
-//		mContactTextView.setMovementMethod(new ScrollingMovementMethod());
+
+		// mSubtitleTextView.setMovementMethod(new ScrollingMovementMethod());
+		// mContactTextView.setMovementMethod(new ScrollingMovementMethod());
 
 		mRowId = (savedInstanceState == null) ? null
 				: (Long) savedInstanceState.getSerializable(COL_ID);
@@ -163,6 +163,118 @@ public class DisplayCallActivity extends Activity implements IConstants {
 	}
 
 	/**
+	 * Gets a String representation for the given Phone type.
+	 * 
+	 * @param type
+	 *            One of the ContactsContract.CommonDataKinds.Phone.TYPE_xxx
+	 *            types.
+	 * @return
+	 */
+	public static String getPhoneType(int type) {
+		String stringType = null;
+		switch (type) {
+		case ContactsContract.CommonDataKinds.Phone.TYPE_ASSISTANT:
+			stringType = "Assistant";
+			break;
+		case ContactsContract.CommonDataKinds.Phone.TYPE_CALLBACK:
+			stringType = "Callback";
+			break;
+		case ContactsContract.CommonDataKinds.Phone.TYPE_CAR:
+			stringType = "Car";
+			break;
+		case ContactsContract.CommonDataKinds.Phone.TYPE_COMPANY_MAIN:
+			stringType = "Company Main";
+			break;
+		case ContactsContract.CommonDataKinds.Phone.TYPE_FAX_HOME:
+			stringType = "Fax Home";
+			break;
+		case ContactsContract.CommonDataKinds.Phone.TYPE_FAX_WORK:
+			stringType = "Fax Work";
+			break;
+		case ContactsContract.CommonDataKinds.Phone.TYPE_HOME:
+			stringType = "Home";
+			break;
+		case ContactsContract.CommonDataKinds.Phone.TYPE_ISDN:
+			stringType = "ISDN";
+			break;
+		case ContactsContract.CommonDataKinds.Phone.TYPE_MAIN:
+			stringType = "Main";
+			break;
+		case ContactsContract.CommonDataKinds.Phone.TYPE_MMS:
+			stringType = "MMS";
+			break;
+		case ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE:
+			stringType = "Mobile";
+			break;
+		case ContactsContract.CommonDataKinds.Phone.TYPE_OTHER:
+			stringType = "Other";
+			break;
+		case ContactsContract.CommonDataKinds.Phone.TYPE_OTHER_FAX:
+			stringType = "Other Fax";
+			break;
+		case ContactsContract.CommonDataKinds.Phone.TYPE_PAGER:
+			stringType = "Pager";
+			break;
+		case ContactsContract.CommonDataKinds.Phone.TYPE_RADIO:
+			stringType = "Radio";
+			break;
+		case ContactsContract.CommonDataKinds.Phone.TYPE_TELEX:
+			stringType = "TELEX";
+			break;
+		case ContactsContract.CommonDataKinds.Phone.TYPE_TTY_TDD:
+			stringType = "TTY TDD";
+			break;
+		case ContactsContract.CommonDataKinds.Phone.TYPE_WORK:
+			stringType = "Work";
+			break;
+		case ContactsContract.CommonDataKinds.Phone.TYPE_WORK_MOBILE:
+			stringType = "Work Mobile";
+			break;
+		case ContactsContract.CommonDataKinds.Phone.TYPE_WORK_PAGER:
+			stringType = "Work Pager";
+			break;
+		case ContactsContract.CommonDataKinds.Phone.TYPE_CUSTOM:
+			stringType = "Custom";
+			break;
+		default:
+			stringType = "Type " + type;
+		}
+		return stringType;
+	}
+
+	/**
+	 * Gets a String representation for the Email given type.
+	 * 
+	 * @param type
+	 *            One of the ContactsContract.CommonDataKinds.Email.TYPE_xxx
+	 *            types.
+	 * @return
+	 */
+	public static String getEmailType(int type) {
+		String stringType = null;
+		switch (type) {
+		case ContactsContract.CommonDataKinds.Email.TYPE_HOME:
+			stringType = "Home";
+			break;
+		case ContactsContract.CommonDataKinds.Email.TYPE_MOBILE:
+			stringType = "Mobile";
+			break;
+		case ContactsContract.CommonDataKinds.Email.TYPE_WORK:
+			stringType = "Work";
+			break;
+		case ContactsContract.CommonDataKinds.Email.TYPE_CUSTOM:
+			stringType = "Custom";
+			break;
+		case ContactsContract.CommonDataKinds.Email.TYPE_OTHER:
+			stringType = "Other";
+			break;
+		default:
+			stringType = "Type " + type + "";
+		}
+		return stringType;
+	}
+
+	/**
 	 * Get contact information about the given name.
 	 * 
 	 * @param name
@@ -210,6 +322,7 @@ public class DisplayCallActivity extends Activity implements IConstants {
 				displayName = "Not found";
 			}
 		}
+		// These are not kept track of on the EVO 3D
 		// info += ContactsContract.Contacts.DISPLAY_NAME + ": " + displayName
 		// + "\n";
 		// String timesContacted = "Not found";
@@ -246,23 +359,8 @@ public class DisplayCallActivity extends Activity implements IConstants {
 				int phoneType = pCursor
 						.getInt(pCursor
 								.getColumnIndex(ContactsContract.CommonDataKinds.Phone.TYPE));
-				switch (phoneType) {
-				case ContactsContract.CommonDataKinds.Phone.TYPE_HOME:
-					info += "  Home: ";
-					break;
-				case ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE:
-					info += "  Mobile: ";
-					break;
-				case ContactsContract.CommonDataKinds.Phone.TYPE_WORK:
-					info += "  Work: ";
-					break;
-				case ContactsContract.CommonDataKinds.Phone.TYPE_OTHER:
-					info += "  Other: ";
-					break;
-				default:
-					info += "  Type " + phoneType + ": ";
-				}
-				info += phoneNumber + "\n";
+				info += "  " + getPhoneType(phoneType) + ": " + phoneNumber
+						+ "\n";
 			}
 			pCursor.close();
 		}
@@ -282,26 +380,7 @@ public class DisplayCallActivity extends Activity implements IConstants {
 			int emailType = emailCur
 					.getInt(emailCur
 							.getColumnIndex(ContactsContract.CommonDataKinds.Email.TYPE));
-			switch (emailType) {
-			case ContactsContract.CommonDataKinds.Email.TYPE_HOME:
-				info += "  Home: ";
-				break;
-			case ContactsContract.CommonDataKinds.Email.TYPE_MOBILE:
-				info += "  Mobile: ";
-				break;
-			case ContactsContract.CommonDataKinds.Email.TYPE_WORK:
-				info += "  Work: ";
-				break;
-			case ContactsContract.CommonDataKinds.Email.TYPE_CUSTOM:
-				info += "  Custom: ";
-				break;
-			case ContactsContract.CommonDataKinds.Email.TYPE_OTHER:
-				info += "  Other: ";
-				break;
-			default:
-				info += "  Type " + emailType + ": ";
-			}
-			info += email + "\n";
+			info += "  " + getEmailType(emailType) + ": " + email + "\n";
 		}
 		emailCur.close();
 
@@ -374,6 +453,15 @@ public class DisplayCallActivity extends Activity implements IConstants {
 										getContentResolver().delete(uri,
 												"_id = " + mRowId, null);
 										navigate(RESULT_NEXT);
+										// This was used temporarily to change
+										// one record
+										// ContentValues values = new
+										// ContentValues();
+										// values.put(COL_NAME, "Susan Semrod");
+										// Long idd = 790l;
+										// getContentResolver().update(uri,
+										// values,
+										// "_id = " + idd, null);
 									} catch (Exception ex) {
 										Utils.excMsg(DisplayCallActivity.this,
 												"Problem deleting call", ex);

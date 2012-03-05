@@ -26,6 +26,7 @@
 	<string name="sort_time">By Time</string>
 	<string name="sort_id">By ID</string>
 	<string name="sort_name">By Name</string>
+	<string name="sort_number">By Number</string>
 	<string name="sort_duration">By Duration</string>
 	<string name="sort_title">Select Sort Order</string>
 	<string name="sort_item">Sort</string>
