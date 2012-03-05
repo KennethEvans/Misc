@@ -10,11 +10,25 @@
 	    android:layout_height="wrap_content"
 	    android:layout_alignParentTop="true"
 	/>
+	<ImageView  
+	  	android:id="@+id/imageview"
+	    android:layout_width="fill_parent" 
+	    android:layout_height="70dip"
+	    android:gravity="top"
+	    android:layout_alignParentBottom="true"
+	/>
 	<TextView  
 	  	android:id="@+id/subtitleview"
 	    android:layout_width="fill_parent" 
 	    android:layout_height="wrap_content"
-	    android:layout_below="@id/titleview"
 	    android:layout_marginTop="5dip"
+	    android:layout_below="@+id/titleview"
+	/>
+	<TextView  
+	  	android:id="@+id/contactview"
+	    android:layout_width="fill_parent" 
+	    android:layout_height="wrap_content"
+	    android:layout_marginTop="5dip"
+	    android:layout_above="@+id/imageview"
 	/>
 </RelativeLayout>

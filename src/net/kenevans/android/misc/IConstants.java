@@ -69,6 +69,8 @@ public interface IConstants {
 	public static final String COL_NAME = "name";
 	/** Callog.Calls database column for the type. */
 	public static final String COL_TYPE = "type";
+	/** Callog.Calls database column for the raw_contact_id. */
+	public static final String COL_RAW_CONTACT_ID = "raw_contact_id";
 
 
 	/** The URI for MMS messages. Has all messages. */

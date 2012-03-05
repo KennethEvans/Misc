@@ -20,17 +20,25 @@
 
 package net.kenevans.android.misc;
 
+import java.io.InputStream;
+
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.ContentResolver;
+import android.content.ContentUris;
 import android.content.DialogInterface;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.ContactsContract;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -46,6 +54,8 @@ public class DisplayCallActivity extends Activity implements IConstants {
 
 	private TextView mTitleTextView;
 	private TextView mSubtitleTextView;
+	private TextView mContactTextView;
+	private ImageView mImageView;
 	private Long mRowId;
 
 	/** Called when the activity is first created. */
@@ -60,6 +70,8 @@ public class DisplayCallActivity extends Activity implements IConstants {
 		mTitleTextView = (TextView) findViewById(R.id.titleview);
 		mSubtitleTextView = (TextView) findViewById(R.id.subtitleview);
 		mSubtitleTextView.setMovementMethod(new ScrollingMovementMethod());
+		mContactTextView = (TextView) findViewById(R.id.contactview);
+		mImageView = (ImageView) findViewById(R.id.imageview);
 
 		mRowId = (savedInstanceState == null) ? null
 				: (Long) savedInstanceState.getSerializable(COL_ID);
@@ -125,6 +137,200 @@ public class DisplayCallActivity extends Activity implements IConstants {
 		// SharedPreferences prefs = getPreferences(MODE_PRIVATE);
 		// lastTimeOffset = prefs.getInt("timeOffset", lastTimeOffset);
 		// dryRun = prefs.getBoolean("dryrun", dryRun);
+	}
+
+	/**
+	 * Gets a bitmap of a contact photo
+	 * 
+	 * @param cr
+	 * @param id
+	 * @return
+	 */
+	public static Bitmap loadContactPhoto(ContentResolver cr, long id) {
+		if (id < 0 || cr == null) {
+			return null;
+		}
+		Uri uri = ContentUris.withAppendedId(
+				ContactsContract.Contacts.CONTENT_URI, id);
+		InputStream input = ContactsContract.Contacts
+				.openContactPhotoInputStream(cr, uri);
+		if (input == null) {
+			return null;
+		}
+		return BitmapFactory.decodeStream(input);
+	}
+
+	/**
+	 * Get contact information about the given name.
+	 * 
+	 * @param name
+	 * @return The information or null on failure.
+	 */
+	private String getContactInfo(String name) {
+		if (name == null || name.length() == 0) {
+			return null;
+		}
+		String info = "Contact Information for " + name + "\n";
+		String selection = ContactsContract.Contacts.DISPLAY_NAME + "=\""
+				+ name + "\"";
+		Cursor cursor = getContentResolver().query(
+				ContactsContract.Contacts.CONTENT_URI, null, selection, null,
+				null);
+		if (cursor.getCount() == 0) {
+			info += name + " not found\n";
+			return info;
+		}
+		int indexId = cursor.getColumnIndex(COL_ID);
+		int indexDisplayName = cursor
+				.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME);
+		int indexPhotoId = cursor
+				.getColumnIndex(ContactsContract.Contacts.PHOTO_ID);
+		// int indexTmesContacted = cursor
+		// .getColumnIndex(ContactsContract.Contacts.TIMES_CONTACTED);
+		// int indexLastTimeContacted = cursor
+		// .getColumnIndex(ContactsContract.Contacts.LAST_TIME_CONTACTED);
+
+		cursor.moveToNext();
+		String id = cursor.getString(indexId);
+		info += "_id: " + id + "\n";
+		String photoId = "Not found";
+		if (indexPhotoId > -1) {
+			photoId = cursor.getString(indexPhotoId);
+			if (photoId == null) {
+				photoId = "Not found";
+			}
+		}
+		info += ContactsContract.Contacts.PHOTO_ID + ": " + photoId + "\n";
+		String displayName = "Not found";
+		if (indexDisplayName > -1) {
+			displayName = cursor.getString(indexDisplayName);
+			if (displayName == null) {
+				displayName = "Not found";
+			}
+		}
+		// info += ContactsContract.Contacts.DISPLAY_NAME + ": " + displayName
+		// + "\n";
+		// String timesContacted = "Not found";
+		// if (indexTmesContacted > -1) {
+		// timesContacted = cursor.getString(indexTmesContacted);
+		// if (timesContacted == null) {
+		// timesContacted = "Not found";
+		// }
+		// }
+		// info += ContactsContract.Contacts.TIMES_CONTACTED + ": "
+		// + timesContacted + "\n";
+		// String lastTimeContacted = "Not found";
+		// if (indexTmesContacted > -1) {
+		// lastTimeContacted = cursor.getString(indexTmesContacted);
+		// if (lastTimeContacted == null) {
+		// lastTimeContacted = "Not found";
+		// }
+		// }
+		// info += ContactsContract.Contacts.LAST_TIME_CONTACTED + ": "
+		// + lastTimeContacted + "\n";
+
+		// Phones
+		info += "Phones:\n";
+		if (Integer.parseInt(cursor.getString(cursor
+				.getColumnIndex(ContactsContract.Contacts.HAS_PHONE_NUMBER))) > 0) {
+			Cursor pCursor = getContentResolver().query(
+					ContactsContract.CommonDataKinds.Phone.CONTENT_URI, null,
+					ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = ?",
+					new String[] { id }, null);
+			while (pCursor.moveToNext()) {
+				String phoneNumber = pCursor
+						.getString(pCursor
+								.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER));
+				int phoneType = pCursor
+						.getInt(pCursor
+								.getColumnIndex(ContactsContract.CommonDataKinds.Phone.TYPE));
+				switch (phoneType) {
+				case ContactsContract.CommonDataKinds.Phone.TYPE_HOME:
+					info += "  Home: ";
+					break;
+				case ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE:
+					info += "  Mobile: ";
+					break;
+				case ContactsContract.CommonDataKinds.Phone.TYPE_WORK:
+					info += "  Work: ";
+					break;
+				case ContactsContract.CommonDataKinds.Phone.TYPE_OTHER:
+					info += "  Other: ";
+					break;
+				default:
+					info += "  Type " + phoneType + ": ";
+				}
+				info += phoneNumber + "\n";
+			}
+			pCursor.close();
+		}
+
+		// Email
+		info += "Email Addresses:\n";
+		Cursor emailCur = getContentResolver().query(
+				ContactsContract.CommonDataKinds.Email.CONTENT_URI, null,
+				ContactsContract.CommonDataKinds.Email.CONTACT_ID + " = ?",
+				new String[] { id }, null);
+		while (emailCur.moveToNext()) {
+			// This would allow you get several email addresses
+			// if the email addresses were stored in an array
+			String email = emailCur
+					.getString(emailCur
+							.getColumnIndex(ContactsContract.CommonDataKinds.Email.DATA));
+			int emailType = emailCur
+					.getInt(emailCur
+							.getColumnIndex(ContactsContract.CommonDataKinds.Email.TYPE));
+			switch (emailType) {
+			case ContactsContract.CommonDataKinds.Email.TYPE_HOME:
+				info += "  Home: ";
+				break;
+			case ContactsContract.CommonDataKinds.Email.TYPE_MOBILE:
+				info += "  Mobile: ";
+				break;
+			case ContactsContract.CommonDataKinds.Email.TYPE_WORK:
+				info += "  Work: ";
+				break;
+			case ContactsContract.CommonDataKinds.Email.TYPE_CUSTOM:
+				info += "  Custom: ";
+				break;
+			case ContactsContract.CommonDataKinds.Email.TYPE_OTHER:
+				info += "  Other: ";
+				break;
+			default:
+				info += "  Type " + emailType + ": ";
+			}
+			info += email + "\n";
+		}
+		emailCur.close();
+
+		cursor.close();
+		return info;
+	}
+
+	/**
+	 * Gets the id for the given name.
+	 * 
+	 * @param name
+	 * @return The id or -1 on failure.
+	 */
+	private long getContactId(String name) {
+		if (name == null || name.length() == 0) {
+			return -1;
+		}
+		String selection = ContactsContract.Contacts.DISPLAY_NAME + "=\""
+				+ name + "\"";
+		String[] desiredColumns = { COL_ID, };
+		Cursor cursor = getContentResolver().query(
+				ContactsContract.Contacts.CONTENT_URI, desiredColumns,
+				selection, null, null);
+		if (cursor.getCount() == 0) {
+			return -1;
+		}
+		int indexId = cursor.getColumnIndex(COL_ID);
+		cursor.moveToNext();
+		long id = cursor.getLong(indexId);
+		cursor.close();
+		return id;
 	}
 
 	/**
@@ -208,6 +414,7 @@ public class DisplayCallActivity extends Activity implements IConstants {
 			int indexDuration = cursor.getColumnIndex(COL_DURATION);
 			int indexType = cursor.getColumnIndex(COL_TYPE);
 			int indexName = cursor.getColumnIndex(COL_NAME);
+			int indexRawContactId = cursor.getColumnIndex(COL_RAW_CONTACT_ID);
 			Log.d(TAG, this.getClass().getSimpleName() + ".refresh: "
 					+ " mRowId=" + mRowId + " uri=" + uri.toString());
 
@@ -242,6 +449,11 @@ public class DisplayCallActivity extends Activity implements IConstants {
 						name = "Unknown";
 					}
 				}
+				long rawContactId = -1;
+				if (indexType > -1) {
+					rawContactId = cursor.getLong(indexRawContactId);
+				}
+
 				String title = id;
 				// Indicate if more than one found
 				if (cursor.getCount() > 1) {
@@ -288,12 +500,36 @@ public class DisplayCallActivity extends Activity implements IConstants {
 				mTitleTextView.setText(title);
 				mSubtitleTextView.setText(subTitle);
 
-				// Debug
-				// if (id.equals(new Integer(76).toString())) {
-				// SMSActivity.test(3, this.getClass(), this, cursor, id, uri);
-				// SMSActivity.test(4, this.getClass(), this, null, id, uri);
-				// }
+				// Set the contact view
+				if (mContactTextView != null) {
+					String contactInfo = null;
+					if (name != null && name.length() > 0) {
+						contactInfo = getContactInfo(name);
+					} else {
+						contactInfo = "Unknown Contact";
+					}
+					if (contactInfo != null) {
+						mContactTextView.setText(contactInfo);
+					}
+				}
+
+				// Set the image view
+				if (mImageView != null) {
+					long contactId = getContactId(name);
+					Bitmap bitmap = loadContactPhoto(getContentResolver(),
+							contactId);
+					if (bitmap == null) {
+						// bitmap =
+						// BitmapFactory.decodeFile("/sdcard/test2.png");
+						bitmap = BitmapFactory.decodeResource(getResources(),
+								R.drawable.android_icon);
+					}
+					if (bitmap != null) {
+						mImageView.setImageBitmap(bitmap);
+					}
+				}
 			}
+
 			// We are through with the cursor
 			cursor.close();
 		} catch (Exception ex) {
