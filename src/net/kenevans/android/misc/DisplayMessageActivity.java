@@ -407,8 +407,11 @@ public class DisplayMessageActivity extends Activity implements IConstants {
 				mTitleTextView.setText(title);
 				mSubtitleTextView.setText(subTitle);
 				mBodyTextView.setText(body);
-				mInfoTextView.setText(SMSActivity.formatDate(shortFormatter,
-						dateNum));
+
+				// Set the info view
+				String info = SMSActivity.formatDate(shortFormatter, dateNum)
+						+ "\n" + SMSActivity.formatAddress(address);
+				mInfoTextView.setText(info);
 
 				// Debug
 				if (id.equals(new Integer(76).toString())) {
