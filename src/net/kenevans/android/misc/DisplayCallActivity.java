@@ -604,8 +604,11 @@ public class DisplayCallActivity extends Activity implements IConstants {
 				// Set the TextViews
 				mTitleTextView.setText(title);
 				mSubtitleTextView.setText(subTitle);
-				mInfoTextView.setText(SMSActivity.formatDate(shortFormatter,
-						dateNum));
+
+				// Set the info view
+				String info = SMSActivity.formatDate(shortFormatter, dateNum)
+						+ "\n" + name;
+				mInfoTextView.setText(info);
 
 				// Set the contact view
 				if (mContactTextView != null) {
