@@ -21,6 +21,8 @@
 
 package net.kenevans.android.misc;
 
+import java.text.SimpleDateFormat;
+
 import android.net.Uri;
 
 /**
@@ -116,5 +118,20 @@ public interface IConstants {
 	public static final String SID = "net.kenevans.android.misc.sid";
 	/** Value denoting a NID in extras */
 	public static final String NID = "net.kenevans.android.misc.nid";
+	
+	/** The static format string to use for formatting dates. */
+	public static final String longFormat = "MMM dd, yyyy HH:mm:ss Z";
+	public static final SimpleDateFormat lonFormatter = new SimpleDateFormat(
+			longFormat);
+	
+	/** The static format string to use for formatting dates. */
+	public static final String mediumFormat = "MMM dd, yyyy HH:mm:ss";
+	public static final SimpleDateFormat mediumFormatter = new SimpleDateFormat(
+			mediumFormat);
+
+	/** The static short format string to use for formatting dates. */
+	public static final String shortFormat = "M/d/yy h:mm a";
+	public static final SimpleDateFormat shortFormatter = new SimpleDateFormat(
+			shortFormat);
 
 }

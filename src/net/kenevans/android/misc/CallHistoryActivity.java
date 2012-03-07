@@ -89,11 +89,6 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
 	/** The current sort order. */
 	private int sortOrder = 0;
 
-	/** The static format string to use for formatting dates. */
-	public static final String format = "MMM dd, yyyy HH:mm:ss";
-	public static final SimpleDateFormat formatter = new SimpleDateFormat(
-			format);
-
 	/** Template for the name of the file written to the root of the SD card */
 	private static final String sdCardFileNameTemplate = "CallHistory.%s.csv";
 
@@ -453,7 +448,7 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
 						out.write(id
 								+ "\t"
 								+ SMSActivity.formatDate(
-										CallHistoryActivity.formatter, dateNum)
+										CallHistoryActivity.mediumFormatter, dateNum)
 								+ "\t" + SMSActivity.formatAddress(number)
 								+ "\t" + formatType(type) + "\t"
 								+ formatDuration(duration) + "\t" + name + "\n");
@@ -628,7 +623,7 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
 			}
 			title.setText(id + ": " + SMSActivity.formatAddress(number) + " ("
 					+ formatType(type) + ") " + name);
-			subtitle.setText(SMSActivity.formatDate(formatter, dateNum)
+			subtitle.setText(SMSActivity.formatDate(mediumFormatter, dateNum)
 					+ " Duration: " + formatDuration(duration));
 			Log.d(TAG, getClass().getSimpleName() + ".bindView" + " id=" + id
 					+ " number=" + number + " dateNum=" + dateNum);

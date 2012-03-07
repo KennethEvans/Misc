@@ -77,14 +77,10 @@ public class SMSActivity extends ListActivity implements IConstants {
 			this.sqlCommand = sqlCommand;
 		}
 	}
+	
 
 	/** The sort order to use. */
 	private Order sortOrder = Order.TIME;
-
-	/** The static format string to use for formatting dates. */
-	public static final String format = "MMM dd, yyyy HH:mm:ss Z";
-	public static final SimpleDateFormat formatter = new SimpleDateFormat(
-			format);
 
 	private CustomCursorAdapter adapter;
 
@@ -234,10 +230,10 @@ public class SMSActivity extends ListActivity implements IConstants {
 	 * 
 	 * @param dateNum
 	 * @return
-	 * @see #format
+	 * @see #longFormat
 	 */
 	public static String formatDate(Long dateNum) {
-		return formatDate(SMSActivity.formatter, dateNum);
+		return formatDate(SMSActivity.lonFormatter, dateNum);
 	}
 
 	/**
@@ -246,7 +242,7 @@ public class SMSActivity extends ListActivity implements IConstants {
 	 * @param formatter
 	 * @param dateNum
 	 * @return
-	 * @see #format
+	 * @see #longFormat
 	 */
 	public static String formatDate(SimpleDateFormat formatter, Long dateNum) {
 		// Consider using Date.toString() as it might be more locale

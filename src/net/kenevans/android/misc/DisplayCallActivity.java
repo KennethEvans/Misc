@@ -37,6 +37,8 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -54,6 +56,7 @@ public class DisplayCallActivity extends Activity implements IConstants {
 	private TextView mTitleTextView;
 	private TextView mSubtitleTextView;
 	private TextView mContactTextView;
+	private TextView mInfoTextView;
 	private ImageView mImageView;
 	private Long mRowId;
 
@@ -69,10 +72,27 @@ public class DisplayCallActivity extends Activity implements IConstants {
 		mTitleTextView = (TextView) findViewById(R.id.titleview);
 		mSubtitleTextView = (TextView) findViewById(R.id.subtitleview);
 		mContactTextView = (TextView) findViewById(R.id.contactview);
+		mInfoTextView = (TextView) findViewById(R.id.infoview);
 		mImageView = (ImageView) findViewById(R.id.imageview);
 
 		// mSubtitleTextView.setMovementMethod(new ScrollingMovementMethod());
 		// mContactTextView.setMovementMethod(new ScrollingMovementMethod());
+
+		// Buttons
+		ImageButton button = (ImageButton) findViewById(R.id.upbutton);
+		button.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				navigate(RESULT_NEXT);
+			}
+		});
+		button = (ImageButton) findViewById(R.id.downbutton);
+		button.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				navigate(RESULT_PREV);
+			}
+		});
 
 		mRowId = (savedInstanceState == null) ? null
 				: (Long) savedInstanceState.getSerializable(COL_ID);
@@ -550,8 +570,9 @@ public class DisplayCallActivity extends Activity implements IConstants {
 						+ ") "
 						+ name
 						+ "\n"
-						+ SMSActivity.formatDate(CallHistoryActivity.formatter,
-								dateNum) + " Duration: "
+						+ SMSActivity.formatDate(
+								CallHistoryActivity.mediumFormatter, dateNum)
+						+ " Duration: "
 						+ CallHistoryActivity.formatDuration(duration);
 				String subTitle = "";
 				Log.d(TAG, getClass().getSimpleName() + ".refresh" + " id="
@@ -583,6 +604,8 @@ public class DisplayCallActivity extends Activity implements IConstants {
 				// Set the TextViews
 				mTitleTextView.setText(title);
 				mSubtitleTextView.setText(subTitle);
+				mInfoTextView.setText(SMSActivity.formatDate(shortFormatter,
+						dateNum));
 
 				// Set the contact view
 				if (mContactTextView != null) {

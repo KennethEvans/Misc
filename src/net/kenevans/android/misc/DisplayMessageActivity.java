@@ -40,6 +40,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -62,6 +63,7 @@ public class DisplayMessageActivity extends Activity implements IConstants {
 	private TextView mTitleTextView;
 	private TextView mSubtitleTextView;
 	private TextView mBodyTextView;
+	private TextView mInfoTextView;
 	private Long mRowId;
 
 	/** Called when the activity is first created. */
@@ -83,8 +85,25 @@ public class DisplayMessageActivity extends Activity implements IConstants {
 		mTitleTextView = (TextView) findViewById(R.id.titleview);
 		mSubtitleTextView = (TextView) findViewById(R.id.subtitleview);
 		mSubtitleTextView.setMovementMethod(new ScrollingMovementMethod());
+		mInfoTextView = (TextView) findViewById(R.id.infoview);
 		mBodyTextView = (TextView) findViewById(R.id.bodyview);
 		mBodyTextView.setMovementMethod(new ScrollingMovementMethod());
+
+		// Buttons
+		ImageButton button = (ImageButton) findViewById(R.id.upbutton);
+		button.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				navigate(RESULT_NEXT);
+			}
+		});
+		button = (ImageButton) findViewById(R.id.downbutton);
+		button.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				navigate(RESULT_PREV);
+			}
+		});
 
 		mRowId = (savedInstanceState == null) ? null
 				: (Long) savedInstanceState.getSerializable(COL_ID);
@@ -388,6 +407,8 @@ public class DisplayMessageActivity extends Activity implements IConstants {
 				mTitleTextView.setText(title);
 				mSubtitleTextView.setText(subTitle);
 				mBodyTextView.setText(body);
+				mInfoTextView.setText(SMSActivity.formatDate(shortFormatter,
+						dateNum));
 
 				// Debug
 				if (id.equals(new Integer(76).toString())) {
