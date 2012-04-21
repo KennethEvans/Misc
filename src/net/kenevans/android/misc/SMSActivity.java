@@ -58,6 +58,11 @@ public class SMSActivity extends ListActivity implements IConstants {
 	 * with the resultCodes RESULT_PREV and RESULT_NEXT when they are returned.
 	 */
 	private int currentPosition;
+	/**
+	 * The current id when ACTIVITY_DISPLAY_MESSAGE is requested. Used
+	 * with the resultCodes RESULT_PREV and RESULT_NEXT when they are returned.
+	 */
+	private long currentId;
 
 	/** The Uri to use. */
 	public static final Uri uri = SMS_URI;
@@ -77,7 +82,6 @@ public class SMSActivity extends ListActivity implements IConstants {
 			this.sqlCommand = sqlCommand;
 		}
 	}
-	
 
 	/** The sort order to use. */
 	private Order sortOrder = Order.TIME;
@@ -118,6 +122,7 @@ public class SMSActivity extends ListActivity implements IConstants {
 		super.onListItemClick(lv, view, position, id);
 		// Save the position when starting the activity
 		currentPosition = position;
+		currentId = id;
 		Intent i = new Intent(this, DisplayMessageActivity.class);
 		i.putExtra(COL_ID, id);
 		i.putExtra(URI_KEY, getUri().toString());
@@ -152,6 +157,30 @@ public class SMSActivity extends ListActivity implements IConstants {
 					Utils.infoMsg(this, "There are no items in the list");
 					return;
 				}
+				// Check if the item is still at the same position in the list
+				boolean changed = false;
+				long id = -1;
+				if(currentPosition >= count - 1) {
+					changed = true;
+				} else {
+					id = adapter.getItemId(currentPosition);
+					if(id != currentId) {
+						changed = true;
+					}
+				}
+				// Determine the new currentPosition
+				Log.d(TAG, "onActivityResult: position=" + currentPosition
+						+ " id=" + id + " changed=" + changed);
+				if(changed) {
+					for(int i = 0; i < count; i++) {
+						id = adapter.getItemId(i);
+						if(id == currentId) {
+							currentPosition = i;
+							break;
+						}
+					}
+				}
+				
 				// Note that earlier items are at higher positions in the list
 				if (resultCode == RESULT_PREV) {
 					if (currentPosition >= count - 1) {
@@ -177,13 +206,13 @@ public class SMSActivity extends ListActivity implements IConstants {
 					return;
 				}
 				// Request the new message
-				long id = adapter.getItemId(currentPosition);
+				currentId = adapter.getItemId(currentPosition);
 				Intent i = new Intent(this, DisplayMessageActivity.class);
-				i.putExtra(COL_ID, id);
+				i.putExtra(COL_ID, currentId);
 				i.putExtra(URI_KEY, getUri().toString());
 				i.putExtra(DATE_MULTIPLIER_KEY, getDateMultiplier());
 				Log.d(TAG, "onActivityResult: position=" + currentPosition
-						+ " id=" + id);
+						+ " currentId=" + currentId);
 				startActivityForResult(i, DISPLAY_MESSAGE);
 			} catch (Exception ex) {
 				Utils.excMsg(this, "Error displaying new message", ex);
@@ -195,6 +224,8 @@ public class SMSActivity extends ListActivity implements IConstants {
 	protected void onPause() {
 		Log.d(TAG, this.getClass().getSimpleName()
 				+ ".onPause: currentPosition=" + currentPosition);
+		Log.d(TAG, this.getClass().getSimpleName()
+				+ ".onPause: currentId=" + currentId);
 		super.onPause();
 	}
 
@@ -202,6 +233,8 @@ public class SMSActivity extends ListActivity implements IConstants {
 	protected void onResume() {
 		Log.d(TAG, this.getClass().getSimpleName()
 				+ ".onResume(1): currentPosition=" + currentPosition);
+		Log.d(TAG, this.getClass().getSimpleName()
+				+ ".onResume(1): currentId=" + currentId);
 		super.onResume();
 	}
 
@@ -464,14 +497,14 @@ public class SMSActivity extends ListActivity implements IConstants {
 			}
 			title.setText(id + ": " + formatAddress(address));
 			subtitle.setText(formatDate(dateNum));
-//			Log.d(TAG, getClass().getSimpleName() + ".bindView" + " id=" + id
-//					+ " address=" + address + " dateNum=" + dateNum
-//					+ " dateMultiplier=" + getDateMultiplier());
+			// Log.d(TAG, getClass().getSimpleName() + ".bindView" + " id=" + id
+			// + " address=" + address + " dateNum=" + dateNum
+			// + " dateMultiplier=" + getDateMultiplier());
 			// DEBUG
-//			if (id.equals(new Integer(76).toString())) {
-//				test(1, this.getClass(), SMSActivity.this, cursor, id, getUri());
-//				test(2, this.getClass(), SMSActivity.this, null, id, getUri());
-//			}
+			// if (id.equals(new Integer(76).toString())) {
+			// test(1, this.getClass(), SMSActivity.this, cursor, id, getUri());
+			// test(2, this.getClass(), SMSActivity.this, null, id, getUri());
+			// }
 		}
 
 		@Override
