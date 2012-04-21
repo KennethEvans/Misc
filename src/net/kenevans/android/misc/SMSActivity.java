@@ -464,14 +464,14 @@ public class SMSActivity extends ListActivity implements IConstants {
 			}
 			title.setText(id + ": " + formatAddress(address));
 			subtitle.setText(formatDate(dateNum));
-			Log.d(TAG, getClass().getSimpleName() + ".bindView" + " id=" + id
-					+ " address=" + address + " dateNum=" + dateNum
-					+ " dateMultiplier=" + getDateMultiplier());
+//			Log.d(TAG, getClass().getSimpleName() + ".bindView" + " id=" + id
+//					+ " address=" + address + " dateNum=" + dateNum
+//					+ " dateMultiplier=" + getDateMultiplier());
 			// DEBUG
-			if (id.equals(new Integer(76).toString())) {
-				test(1, this.getClass(), SMSActivity.this, cursor, id, getUri());
-				test(2, this.getClass(), SMSActivity.this, null, id, getUri());
-			}
+//			if (id.equals(new Integer(76).toString())) {
+//				test(1, this.getClass(), SMSActivity.this, cursor, id, getUri());
+//				test(2, this.getClass(), SMSActivity.this, null, id, getUri());
+//			}
 		}
 
 		@Override

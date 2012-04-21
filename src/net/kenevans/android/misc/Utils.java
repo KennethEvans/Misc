@@ -22,11 +22,14 @@
 package net.kenevans.android.misc;
 
 import android.app.AlertDialog;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.telephony.SmsManager;
 import android.util.Log;
 
 public class Utils implements IConstants {
@@ -139,6 +142,26 @@ public class Utils implements IConstants {
 			retVal = false;
 		}
 		return retVal;
+	}
+
+	/**
+	 * Sends an SMS message.
+	 * 
+	 * @param context
+	 *            The Context for the sending Activity.
+	 * @param cls
+	 *            The Class of the sending Activity.
+	 * @param phoneNumber
+	 *            The number of the receiver.
+	 * @param message
+	 *            The message to be sent.
+	 */
+	public static void sendSMS(Context context, Class<?> cls,
+			String phoneNumber, String message) {
+		PendingIntent pi = PendingIntent.getActivity(context, 0, new Intent(
+				context, cls), 0);
+		SmsManager sms = SmsManager.getDefault();
+		sms.sendTextMessage(phoneNumber, null, message, pi, null);
 	}
 
 }

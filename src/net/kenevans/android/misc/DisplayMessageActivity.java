@@ -151,6 +151,9 @@ public class DisplayMessageActivity extends Activity implements IConstants {
 		case R.id.dryrun:
 			toggleDryRun();
 			return true;
+		case R.id.reportspam:
+			reportSpam();
+			return true;
 		case R.id.delete:
 			deleteMessage();
 			return true;
@@ -304,6 +307,82 @@ public class DisplayMessageActivity extends Activity implements IConstants {
 	}
 
 	/**
+	 * Reports spam by sending a message to SPAM_NUMBER. This version uses
+	 * Intent.ACTION_SENDTO, which brings up a list to select the application to
+	 * use. It results in a copy of the sent message appearing in the database.
+	 * It does not attach any other information to the message.
+	 * 
+	 * @see IConstants#SPAM_NUMBER
+	 */
+	private void reportSpam() {
+		// Note: Using SmsManager.getDefault() did not put the sent message in
+		// the database
+		try {
+			// Get the message
+			String msg = mBodyTextView.getText().toString();
+
+			// Pop up a message
+			Toast.makeText(
+					getApplicationContext(),
+					"First, forward the message to " + SPAM_NUMBER
+							+ "\nPress the back button when done",
+					Toast.LENGTH_LONG).show();
+
+			// Send the message using ACTION_SENDTO
+			Uri uri = Uri.parse("smsto:" + SPAM_NUMBER);
+			Intent intent = new Intent(Intent.ACTION_SENDTO, uri);
+			intent.putExtra("sms_body", msg);
+			startActivityForResult(intent, SPAM_MESSAGE);
+		} catch (Exception ex) {
+			Utils.excMsg(this, "Problem reporting spam", ex);
+		}
+	}
+
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode,
+			Intent intent) {
+		super.onActivityResult(requestCode, resultCode, intent);
+		// DEBUG
+		Log.d(TAG, this.getClass().getSimpleName()
+				+ ".onActivityResult: requestCode=" + requestCode
+				+ " resultCode=" + resultCode);
+		if (requestCode == SPAM_MESSAGE) {
+			// Handle activity to send spam message finished
+			// Can't check if it was cancelled since it always seems to return 0
+			// Now, send the number
+			try {
+				// Get the number
+				String msg = mTitleTextView.getText().toString();
+
+				// Remove the id
+				int pos = msg.indexOf(":") + 2;
+				if (pos > 1 && !(pos > msg.length())) {
+					msg = msg.substring(pos);
+				}
+
+				// Truncate at the linefeed
+				pos = msg.indexOf("\n");
+				msg = msg.substring(0, pos);
+
+				// Pop up a message for the user
+				Toast.makeText(
+						getApplicationContext(),
+						"Next, send the number"
+								+ "\nPress the back button when done",
+						Toast.LENGTH_LONG).show();
+
+				// Send the number using ACTION_SENDTO
+				uri = Uri.parse("smsto:" + SPAM_NUMBER);
+				intent = new Intent(Intent.ACTION_SENDTO, uri);
+				intent.putExtra("sms_body", msg);
+				startActivity(intent);
+			} catch (Exception ex) {
+				Utils.excMsg(this, "Problem sending spam number", ex);
+			}
+		}
+	}
+
+	/**
 	 * Show the help.
 	 */
 	private void showHelp() {
@@ -319,6 +398,32 @@ public class DisplayMessageActivity extends Activity implements IConstants {
 		} catch (Exception ex) {
 			Utils.excMsg(this, "Error showing Help", ex);
 		}
+	}
+
+	/**
+	 * Toggles whether database changes are real or simulated.
+	 */
+	private void toggleDryRun() {
+		final CharSequence[] items = { getText(R.string.on),
+				getText(R.string.off) };
+		AlertDialog.Builder builder = new AlertDialog.Builder(this);
+		builder.setTitle(getText(R.string.dryRunTitle));
+		builder.setSingleChoiceItems(items, dryRun ? 0 : 1,
+				new DialogInterface.OnClickListener() {
+					public void onClick(DialogInterface dialog, int item) {
+						dialog.dismiss();
+						dryRun = item == 0 ? true : false;
+						String msg;
+						if (dryRun) {
+							msg = "Time changes are simulated.\nDatabase will not be changed.";
+						} else {
+							msg = "Time changes are real.\nDatabase will be changed.";
+						}
+						Utils.infoMsg(DisplayMessageActivity.this, msg);
+					}
+				});
+		AlertDialog alert = builder.create();
+		alert.show();
 	}
 
 	/**
@@ -414,10 +519,10 @@ public class DisplayMessageActivity extends Activity implements IConstants {
 				mInfoTextView.setText(info);
 
 				// Debug
-				if (id.equals(new Integer(76).toString())) {
-					SMSActivity.test(3, this.getClass(), this, cursor, id, uri);
-					SMSActivity.test(4, this.getClass(), this, null, id, uri);
-				}
+//				if (id.equals(new Integer(76).toString())) {
+//					SMSActivity.test(3, this.getClass(), this, cursor, id, uri);
+//					SMSActivity.test(4, this.getClass(), this, null, id, uri);
+//				}
 			}
 			// We are through with the cursor
 			cursor.close();
@@ -435,32 +540,6 @@ public class DisplayMessageActivity extends Activity implements IConstants {
 				mSubtitleTextView.setText("");
 			}
 		}
-	}
-
-	/**
-	 * Toggles whether database changes are real or simulated.
-	 */
-	private void toggleDryRun() {
-		final CharSequence[] items = { getText(R.string.on),
-				getText(R.string.off) };
-		AlertDialog.Builder builder = new AlertDialog.Builder(this);
-		builder.setTitle(getText(R.string.dryRunTitle));
-		builder.setSingleChoiceItems(items, dryRun ? 0 : 1,
-				new DialogInterface.OnClickListener() {
-					public void onClick(DialogInterface dialog, int item) {
-						dialog.dismiss();
-						dryRun = item == 0 ? true : false;
-						String msg;
-						if (dryRun) {
-							msg = "Time changes are simulated.\nDatabase will not be changed.";
-						} else {
-							msg = "Time changes are real.\nDatabase will be changed.";
-						}
-						Utils.infoMsg(DisplayMessageActivity.this, msg);
-					}
-				});
-		AlertDialog alert = builder.create();
-		alert.show();
 	}
 
 }

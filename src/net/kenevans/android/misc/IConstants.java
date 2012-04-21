@@ -60,7 +60,7 @@ public interface IConstants {
 	public static final String COL_BODY = "body";
 	/** SMS database column for the thread ID. */
 	public static final String COL_THREAD_ID = "thread_id";
-	
+
 	/** The URI for calls. */
 	public static final Uri CALLLOG_CALLS_URI = android.provider.CallLog.Calls.CONTENT_URI;
 	/** Callog.Calls database column for the id. Identifies the row. */
@@ -73,7 +73,6 @@ public interface IConstants {
 	public static final String COL_TYPE = "type";
 	/** Callog.Calls database column for the raw_contact_id. */
 	public static final String COL_RAW_CONTACT_ID = "raw_contact_id";
-
 
 	/** The URI for MMS messages. Has all messages. */
 	public static final Uri MMS_URI = Uri.parse("content://mms");
@@ -108,6 +107,13 @@ public interface IConstants {
 	 * Result code for ACTIVITY_DISPLAY_MESSAGE indicating the next message.
 	 */
 	public static final int RESULT_NEXT = 1001;
+	/** Request code for sending a spam message. */
+	public static final int SPAM_MESSAGE = 1;
+	
+	/** The number (7726) used for forwarding spam. */
+	public static final String SPAM_NUMBER = "7726";
+	// DEBUG
+//	 public static final String SPAM_NUMBER = "5554";
 
 	// Mapping
 	/** Value denoting a latitude in extras */
@@ -118,12 +124,12 @@ public interface IConstants {
 	public static final String SID = "net.kenevans.android.misc.sid";
 	/** Value denoting a NID in extras */
 	public static final String NID = "net.kenevans.android.misc.nid";
-	
+
 	/** The static format string to use for formatting dates. */
 	public static final String longFormat = "MMM dd, yyyy HH:mm:ss Z";
 	public static final SimpleDateFormat lonFormatter = new SimpleDateFormat(
 			longFormat);
-	
+
 	/** The static format string to use for formatting dates. */
 	public static final String mediumFormat = "MMM dd, yyyy HH:mm:ss";
 	public static final SimpleDateFormat mediumFormatter = new SimpleDateFormat(
