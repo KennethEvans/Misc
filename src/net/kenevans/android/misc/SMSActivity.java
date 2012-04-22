@@ -59,8 +59,8 @@ public class SMSActivity extends ListActivity implements IConstants {
 	 */
 	private int currentPosition;
 	/**
-	 * The current id when ACTIVITY_DISPLAY_MESSAGE is requested. Used
-	 * with the resultCodes RESULT_PREV and RESULT_NEXT when they are returned.
+	 * The current id when ACTIVITY_DISPLAY_MESSAGE is requested. Used with the
+	 * resultCodes RESULT_PREV and RESULT_NEXT when they are returned.
 	 */
 	private long currentId;
 
@@ -160,27 +160,27 @@ public class SMSActivity extends ListActivity implements IConstants {
 				// Check if the item is still at the same position in the list
 				boolean changed = false;
 				long id = -1;
-				if(currentPosition >= count - 1) {
+				if (currentPosition >= count - 1) {
 					changed = true;
 				} else {
 					id = adapter.getItemId(currentPosition);
-					if(id != currentId) {
+					if (id != currentId) {
 						changed = true;
 					}
 				}
 				// Determine the new currentPosition
 				Log.d(TAG, "onActivityResult: position=" + currentPosition
 						+ " id=" + id + " changed=" + changed);
-				if(changed) {
-					for(int i = 0; i < count; i++) {
+				if (changed) {
+					for (int i = 0; i < count; i++) {
 						id = adapter.getItemId(i);
-						if(id == currentId) {
+						if (id == currentId) {
 							currentPosition = i;
 							break;
 						}
 					}
 				}
-				
+
 				// Note that earlier items are at higher positions in the list
 				if (resultCode == RESULT_PREV) {
 					if (currentPosition >= count - 1) {
@@ -224,8 +224,8 @@ public class SMSActivity extends ListActivity implements IConstants {
 	protected void onPause() {
 		Log.d(TAG, this.getClass().getSimpleName()
 				+ ".onPause: currentPosition=" + currentPosition);
-		Log.d(TAG, this.getClass().getSimpleName()
-				+ ".onPause: currentId=" + currentId);
+		Log.d(TAG, this.getClass().getSimpleName() + ".onPause: currentId="
+				+ currentId);
 		super.onPause();
 	}
 
@@ -233,8 +233,8 @@ public class SMSActivity extends ListActivity implements IConstants {
 	protected void onResume() {
 		Log.d(TAG, this.getClass().getSimpleName()
 				+ ".onResume(1): currentPosition=" + currentPosition);
-		Log.d(TAG, this.getClass().getSimpleName()
-				+ ".onResume(1): currentId=" + currentId);
+		Log.d(TAG, this.getClass().getSimpleName() + ".onResume(1): currentId="
+				+ currentId);
 		super.onResume();
 	}
 
