@@ -350,7 +350,8 @@ public class SMSActivity extends ListActivity implements IConstants {
 			cursor.close();
 
 			// Make an array of the desired ones that are available
-			String[] desiredColumns = { COL_ID, COL_ADDRESS, COL_DATE, COL_BODY };
+			String[] desiredColumns = { COL_ID, COL_ADDRESS, COL_DATE,
+					COL_BODY, COL_TYPE };
 			ArrayList<String> list = new ArrayList<String>();
 			for (String col : desiredColumns) {
 				for (String col1 : avaliableColumns) {
@@ -462,6 +463,35 @@ public class SMSActivity extends ListActivity implements IConstants {
 	}
 
 	/**
+	 * Format the type as a string.
+	 * 
+	 * @param type
+	 * @return
+	 */
+	public static String formatSmsType(int type) {
+		// TODO Find where these constants are defined
+		// Internally in Telephony.TextBasesSmsColumns
+		switch (type) {
+		case 0:
+			return "All ";
+		case 1:
+			return "From ";
+		case 2:
+			return "To ";
+		case 3:
+			return "Draft ";
+		case 4:
+			return "Outbox ";
+		case 5:
+			return "Failed ";
+		case 6:
+			return "Queued ";
+		default:
+			return "";
+		}
+	}
+
+	/**
 	 * @return The date multiplier to use.
 	 */
 	public Long getDateMultiplier() {
@@ -473,6 +503,7 @@ public class SMSActivity extends ListActivity implements IConstants {
 		private int indexDate;
 		private int indexAddress;
 		private int indexId;
+		private int indexType;
 
 		public CustomCursorAdapter(Context context, Cursor cursor) {
 			super(context, cursor);
@@ -480,6 +511,7 @@ public class SMSActivity extends ListActivity implements IConstants {
 			indexId = cursor.getColumnIndex(COL_ID);
 			indexDate = cursor.getColumnIndex(COL_DATE);
 			indexAddress = cursor.getColumnIndex(COL_ADDRESS);
+			indexType = cursor.getColumnIndex(COL_TYPE);
 		}
 
 		@Override
@@ -495,7 +527,12 @@ public class SMSActivity extends ListActivity implements IConstants {
 			if (indexDate > -1) {
 				dateNum = cursor.getLong(indexDate) * getDateMultiplier();
 			}
-			title.setText(id + ": " + formatAddress(address));
+			int type = -1;
+			if (indexType > -1) {
+				type = cursor.getInt(indexType);
+			}
+			title.setText(id + ": " + formatSmsType(type)
+					+ formatAddress(address));
 			subtitle.setText(formatDate(dateNum));
 			// Log.d(TAG, getClass().getSimpleName() + ".bindView" + " id=" + id
 			// + " address=" + address + " dateNum=" + dateNum
