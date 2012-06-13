@@ -20,6 +20,9 @@
 
 package net.kenevans.android.misc;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -32,6 +35,7 @@ import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.Menu;
@@ -59,6 +63,8 @@ public class DisplayMessageActivity extends Activity implements IConstants {
 	 * not ms.
 	 */
 	public Long dateMultiplier = 1L;
+	/** Name of the file written to the root of the SD card */
+	private static final String SAVE_FILE_NAME = "SavedMessageText.txt";
 
 	private TextView mTitleTextView;
 	private TextView mSubtitleTextView;
@@ -153,6 +159,12 @@ public class DisplayMessageActivity extends Activity implements IConstants {
 			return true;
 		case R.id.reportspam:
 			reportSpam();
+			return true;
+		case R.id.savetext:
+			saveToTextFile(false);
+			return true;
+		case R.id.cleartext:
+			saveToTextFile(true);
 			return true;
 		case R.id.delete:
 			deleteMessage();
@@ -383,6 +395,50 @@ public class DisplayMessageActivity extends Activity implements IConstants {
 	}
 
 	/**
+	 * Saves the info to the SD card
+	 */
+	private void saveToTextFile(boolean clear) {
+		BufferedWriter out = null;
+		try {
+			File sdCardRoot = Environment.getExternalStorageDirectory();
+			if (sdCardRoot.canWrite()) {
+				File file = new File(sdCardRoot, SAVE_FILE_NAME);
+				// Append if clear is false
+				FileWriter writer = new FileWriter(file, !clear);
+				out = new BufferedWriter(writer);
+				if (clear) {
+					out.write("");
+					Utils.infoMsg(this, "Cleared " + SAVE_FILE_NAME);
+				} else {
+					// Get the number
+					String msg = mTitleTextView.getText().toString();
+					// Remove the id
+					int pos = msg.indexOf(":") + 2;
+					if (pos > 1 && !(pos > msg.length())) {
+						msg = msg.substring(pos);
+					}
+					String string = SMSActivity.formatSmsType(getSmsType())
+							+ msg + "\n" + mBodyTextView.getText().toString()
+							+ "\n\n";
+					out.append(string);
+					Utils.infoMsg(this, "Wrote " + SAVE_FILE_NAME);
+				}
+			} else {
+				Utils.errMsg(this, "Cannot write to SD card");
+				return;
+			}
+		} catch (Exception ex) {
+			Utils.excMsg(this, "Error saving to SD card", ex);
+		} finally {
+			try {
+				out.close();
+			} catch (Exception ex) {
+				// Do nothing
+			}
+		}
+	}
+
+	/**
 	 * Show the help.
 	 */
 	private void showHelp() {
@@ -427,6 +483,41 @@ public class DisplayMessageActivity extends Activity implements IConstants {
 	}
 
 	/**
+	 * Gets the type for this message.
+	 * 
+	 * @return The type or -1 on failure.
+	 */
+	private int getSmsType() {
+		try {
+			// Only get the row with mRowId
+			String selection = COL_ID + "=" + mRowId.longValue();
+
+			// Then get the columns for this row
+			String sort = COL_DATE + " DESC";
+			String[] columns = { COL_TYPE };
+
+			Cursor cursor = getContentResolver().query(uri, columns, selection,
+					null, sort);
+			int indexType = cursor.getColumnIndex(COL_TYPE);
+
+			// There should only be one row returned, the last will be the most
+			// recent if more are returned owing to the sort above
+			boolean found = cursor.moveToFirst();
+			if (!found) {
+				return -1;
+			} else {
+				int type = -1;
+				if (indexType > -1) {
+					type = cursor.getInt(indexType);
+				}
+				return type;
+			}
+		} catch (Exception ex) {
+			return -1;
+		}
+	}
+
+	/**
 	 * Gets a new cursor and redraws the view. Closes the cursor after it is
 	 * done with it.
 	 */
@@ -448,6 +539,7 @@ public class DisplayMessageActivity extends Activity implements IConstants {
 			int indexId = cursor.getColumnIndex(COL_ID);
 			int indexDate = cursor.getColumnIndex(COL_DATE);
 			int indexAddress = cursor.getColumnIndex(COL_ADDRESS);
+			int indexType = cursor.getColumnIndex(COL_TYPE);
 			int indexBody = cursor.getColumnIndex(COL_BODY);
 			Log.d(TAG, this.getClass().getSimpleName() + ".refresh: "
 					+ " mRowId=" + mRowId + " uri=" + uri.toString()
@@ -465,6 +557,10 @@ public class DisplayMessageActivity extends Activity implements IConstants {
 				String address = "<Address NA>";
 				if (indexAddress > -1) {
 					address = cursor.getString(indexAddress);
+				}
+				int type = -1;
+				if (indexType > -1) {
+					type = cursor.getInt(indexType);
 				}
 				Long dateNum = -1L;
 				if (indexDate > -1) {
@@ -515,14 +611,15 @@ public class DisplayMessageActivity extends Activity implements IConstants {
 
 				// Set the info view
 				String info = SMSActivity.formatDate(shortFormatter, dateNum)
-						+ "\n" + SMSActivity.formatAddress(address);
+						+ "\n" + SMSActivity.formatSmsType(type)
+						+ SMSActivity.formatAddress(address);
 				mInfoTextView.setText(info);
 
 				// Debug
-//				if (id.equals(new Integer(76).toString())) {
-//					SMSActivity.test(3, this.getClass(), this, cursor, id, uri);
-//					SMSActivity.test(4, this.getClass(), this, null, id, uri);
-//				}
+				// if (id.equals(new Integer(76).toString())) {
+				// SMSActivity.test(3, this.getClass(), this, cursor, id, uri);
+				// SMSActivity.test(4, this.getClass(), this, null, id, uri);
+				// }
 			}
 			// We are through with the cursor
 			cursor.close();
