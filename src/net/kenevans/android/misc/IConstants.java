@@ -127,7 +127,7 @@ public interface IConstants {
 
 	/** The static format string to use for formatting dates. */
 	public static final String longFormat = "MMM dd, yyyy HH:mm:ss Z";
-	public static final SimpleDateFormat lonFormatter = new SimpleDateFormat(
+	public static final SimpleDateFormat longFormatter = new SimpleDateFormat(
 			longFormat);
 
 	/** The static format string to use for formatting dates. */

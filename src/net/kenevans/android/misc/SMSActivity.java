@@ -266,7 +266,7 @@ public class SMSActivity extends ListActivity implements IConstants {
 	 * @see #longFormat
 	 */
 	public static String formatDate(Long dateNum) {
-		return formatDate(SMSActivity.lonFormatter, dateNum);
+		return formatDate(SMSActivity.longFormatter, dateNum);
 	}
 
 	/**
