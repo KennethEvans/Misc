@@ -299,7 +299,7 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
 	}
 
 	/**
-	 * Bring up a dialog to change the sort order.
+	 * Bring up a dialog to change the filter order.
 	 */
 	private void setFilter() {
 		final CharSequence[] items = new CharSequence[filters.length];
