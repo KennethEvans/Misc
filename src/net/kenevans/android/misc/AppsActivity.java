@@ -36,6 +36,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
@@ -103,11 +104,41 @@ public class AppsActivity extends Activity implements IConstants {
 			setOptions();
 			return true;
 		case R.id.help:
+			// DEBUG install issue
+			// test();
 			showHelp();
 			return true;
 		}
 		return false;
 	}
+
+	// // DEBUG install issue
+	// /**
+	// * A test routine that tries to install Zen Bound 2, which is failing.
+	// */
+	// protected void test() {
+	// String fileName =
+	// "humblebundle/downloads/zenbound2-png-humble-1339542477_22344689c133319c.apk";
+	// File sdCardRoot = Environment.getExternalStorageDirectory();
+	// File file = new File(sdCardRoot, fileName);
+	//
+	// Intent intent = new Intent(Intent.ACTION_VIEW);
+	// intent.setDataAndType(Uri.fromFile(file),
+	// "application/vnd.android.package-archive");
+	// Log.d(TAG, this.getClass().getSimpleName()
+	// + ": Starting install intent for " + fileName);
+	// startActivityForResult(intent, 1000);
+	// }
+	//
+	// // DEBUG install issue
+	// @Override
+	// protected void onActivityResult(int requestCode, int resultCode,
+	// Intent intent) {
+	// super.onActivityResult(requestCode, resultCode, intent);
+	// Log.d(TAG, this.getClass().getSimpleName()
+	// + ".onActivityResult: requestCode=" + requestCode
+	// + " resultCode=" + resultCode);
+	// }
 
 	@Override
 	protected void onPause() {
@@ -480,7 +511,8 @@ public class AppsActivity extends Activity implements IConstants {
 			info += pname + "\n";
 			info += "Version: " + versionName + "\n";
 			// info += "Version code: " + versionCode + "\n";
-			Log.d(TAG, info);
+			// DEBUG
+			// Log.d(TAG, info);
 			return info;
 		}
 

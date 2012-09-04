@@ -178,6 +178,7 @@ public class DisplayMessageActivity extends Activity implements IConstants {
 
 	@Override
 	protected void onPause() {
+		Log.d(TAG, this.getClass().getSimpleName() + ".onPause: ");
 		super.onPause();
 		// Retain the offset so the user can use it again
 		SharedPreferences.Editor editor = getPreferences(MODE_PRIVATE).edit();
@@ -188,6 +189,7 @@ public class DisplayMessageActivity extends Activity implements IConstants {
 
 	@Override
 	protected void onResume() {
+		Log.d(TAG, this.getClass().getSimpleName() + ".onResume: ");
 		// Restore the offset so the user can use it again
 		super.onResume();
 		SharedPreferences prefs = getPreferences(MODE_PRIVATE);

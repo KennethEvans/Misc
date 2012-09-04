@@ -99,21 +99,17 @@ public interface IConstants {
 	// Messages
 	/** Request code for displaying a message. */
 	public static final int DISPLAY_MESSAGE = 0;
-	/**
-	 * Result code for ACTIVITY_DISPLAY_MESSAGE indicating the previous message.
-	 */
-	public static final int RESULT_PREV = 1000;
-	/**
-	 * Result code for ACTIVITY_DISPLAY_MESSAGE indicating the next message.
-	 */
-	public static final int RESULT_NEXT = 1001;
 	/** Request code for sending a spam message. */
 	public static final int SPAM_MESSAGE = 1;
-	
+	/** Result code for DISPLAY_MESSAGE indicating the previous message. */
+	public static final int RESULT_PREV = 1000;
+	/** Result code for DISPLAY_MESSAGE indicating the next message. */
+	public static final int RESULT_NEXT = 1001;
+
 	/** The number (7726) used for forwarding spam. */
 	public static final String SPAM_NUMBER = "7726";
 	// DEBUG
-//	 public static final String SPAM_NUMBER = "5554";
+	// public static final String SPAM_NUMBER = "5554";
 
 	// Mapping
 	/** Value denoting a latitude in extras */

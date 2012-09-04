@@ -61,15 +61,19 @@ import android.widget.Toast;
  */
 public class CallHistoryActivity extends ListActivity implements IConstants {
 	/**
-	 * The current position when ACTIVITY_DISPLAY_MESSAGE is requested. Used
-	 * with the resultCodes RESULT_PREV and RESULT_NEXT when they are returned.
+	 * The current position when DISPLAY_MESSAGE is requested. Used with the
+	 * resultCodes RESULT_PREV and RESULT_NEXT when they are returned.
 	 */
 	private int currentPosition;
+
 	/**
-	 * The current id when ACTIVITY_DISPLAY_MESSAGE is requested. Used with the
+	 * The current id when DISPLAY_MESSAGE is requested. Used with the
 	 * resultCodes RESULT_PREV and RESULT_NEXT when they are returned.
 	 */
 	private long currentId;
+
+	/** The increment for displaying the next message. */
+	private long increment = 0;
 
 	/** The Uri to use for the database. */
 	public static final Uri uri = CALLLOG_CALLS_URI;
@@ -183,14 +187,8 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
 		// Save the position when starting the activity
 		currentPosition = position;
 		currentId = id;
-		Intent i = new Intent(this, DisplayCallActivity.class);
-		i.putExtra(COL_ID, id);
-		i.putExtra(URI_KEY, getUri().toString());
-		// DEBUG
-		Log.d(TAG, this.getClass().getSimpleName() + ".onListItemClick: "
-				+ " position=" + position + " id=" + id + " uri="
-				+ getUri().toString());
-		startActivityForResult(i, DISPLAY_MESSAGE);
+		increment = 0;
+		displayMessage();
 	}
 
 	@Override
@@ -198,81 +196,17 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
 			Intent intent) {
 		super.onActivityResult(requestCode, resultCode, intent);
 		// DEBUG
-		Log.d(TAG, "onActivityResult: requestCode=" + requestCode
+		Log.d(TAG, this.getClass().getSimpleName()
+				+ ".onActivityResult: requestCode=" + requestCode
 				+ " resultCode=" + resultCode + " currentPosition="
 				+ currentPosition);
 		if (requestCode == DISPLAY_MESSAGE) {
-			// There will be no items until the list is refreshed
-			refresh();
-			ListAdapter adapter = getListAdapter();
-			if (adapter == null) {
-				return;
-			}
-			try {
-				int count = adapter.getCount();
-				Log.d(TAG, "onActivityResult: count=" + count);
-				if (count == 0) {
-					Utils.infoMsg(this, "There are no items in the list");
-					return;
-				}
-				// Check if the item is still at the same position in the list
-				boolean changed = false;
-				long id = -1;
-				if (currentPosition >= count - 1) {
-					changed = true;
-				} else {
-					id = adapter.getItemId(currentPosition);
-					if (id != currentId) {
-						changed = true;
-					}
-				}
-				// Determine the new currentPosition
-				Log.d(TAG, "onActivityResult: position=" + currentPosition
-						+ " id=" + id + " changed=" + changed);
-				if (changed) {
-					for (int i = 0; i < count; i++) {
-						id = adapter.getItemId(i);
-						if (id == currentId) {
-							currentPosition = i;
-							break;
-						}
-					}
-				}
-
-				// Note that earlier items are at higher positions in the list
-				if (resultCode == RESULT_PREV) {
-					if (currentPosition >= count - 1) {
-						Toast.makeText(getApplicationContext(),
-								"At the last item in the list",
-								Toast.LENGTH_LONG).show();
-						currentPosition = count - 1;
-					} else {
-						currentPosition++;
-					}
-				} else if (resultCode == RESULT_NEXT) {
-					if (currentPosition <= 0) {
-						Toast.makeText(getApplicationContext(),
-								"At the first item in the list",
-								Toast.LENGTH_LONG).show();
-
-						currentPosition = 0;
-					} else {
-						currentPosition--;
-					}
-				} else {
-					// Is something else like RESULT_CANCELLED
-					return;
-				}
-				// Request the new message
-				currentId = adapter.getItemId(currentPosition);
-				Intent i = new Intent(this, DisplayCallActivity.class);
-				i.putExtra(COL_ID, currentId);
-				i.putExtra(URI_KEY, getUri().toString());
-				Log.d(TAG, "onActivityResult: position=" + currentPosition
-						+ " id=" + currentId);
-				startActivityForResult(i, DISPLAY_MESSAGE);
-			} catch (Exception ex) {
-				Utils.excMsg(this, "Error displaying new message", ex);
+			increment = 0;
+			// Note that earlier items are at higher positions in the list
+			if (resultCode == RESULT_PREV) {
+				increment = 1;
+			} else if (resultCode == RESULT_NEXT) {
+				increment = -1;
 			}
 		}
 	}
@@ -290,10 +224,13 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
 	@Override
 	protected void onResume() {
 		Log.d(TAG, this.getClass().getSimpleName()
-				+ ".onResume(1): currentPosition=" + currentPosition);
-		Log.d(TAG, this.getClass().getSimpleName() + ".onResume(1): currentId="
-				+ currentId);
+				+ ".onResume: currentPosition=" + currentPosition
+				+ " currentId=" + currentId + " increment=" + increment);
 		super.onResume();
+		// If increment is set display a new message
+		if (increment != 0) {
+			displayMessage();
+		}
 		// We get the preferences in onCreate since it is not necessary to do
 		// refresh() here
 	}
@@ -513,11 +450,95 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
 	}
 
 	/**
+	 * Displays the message at the current position plus the current increment,
+	 * adjusting for being within range. Resets the increment to 0 after.
+	 */
+	private void displayMessage() {
+		ListAdapter adapter = getListAdapter();
+		if (adapter == null) {
+			return;
+		}
+		try {
+			int count = adapter.getCount();
+			Log.d(TAG, this.getClass().getSimpleName()
+					+ ".displayNewMessage: count=" + count);
+			if (count == 0) {
+				Utils.infoMsg(this, "There are no items in the list");
+				return;
+			}
+			// Check if the item is still at the same position in the list
+			boolean changed = false;
+			long id = -1;
+			if (currentPosition > count - 1 || currentPosition < 0) {
+				changed = true;
+			} else {
+				id = adapter.getItemId(currentPosition);
+				if (id != currentId) {
+					changed = true;
+				}
+			}
+			// Determine the new currentPosition
+			Log.d(TAG, this.getClass().getSimpleName()
+					+ ".displayNewMessage: position=" + currentPosition
+					+ " id=" + id + " changed=" + changed);
+			if (changed) {
+				for (int i = 0; i < count; i++) {
+					id = adapter.getItemId(i);
+					if (id == currentId) {
+						currentPosition = i;
+						break;
+					}
+				}
+			}
+			// currentPosition may still be invalid, check it is in range
+			if (currentPosition < 0) {
+				currentPosition = 0;
+			} else if (currentPosition > count - 1) {
+				currentPosition = count - 1;
+			}
+
+			// Display messages if a requested increment is not possible
+			if (increment > 0) {
+				currentPosition += increment;
+				if (currentPosition > count - 1) {
+					Toast.makeText(getApplicationContext(),
+							"At the last item in the list", Toast.LENGTH_LONG)
+							.show();
+					currentPosition = count - 1;
+				}
+			} else if (increment < 0) {
+				currentPosition += increment;
+				if (currentPosition < 0) {
+					Toast.makeText(getApplicationContext(),
+							"At the first item in the list", Toast.LENGTH_LONG)
+							.show();
+					currentPosition = 0;
+				}
+			}
+
+			// Request the new message
+			currentId = adapter.getItemId(currentPosition);
+			Intent i = new Intent(this, DisplayMessageActivity.class);
+			i.putExtra(COL_ID, currentId);
+			i.putExtra(URI_KEY, getUri().toString());
+			Log.d(TAG, this.getClass().getSimpleName()
+					+ ".displayNewMessage: position=" + currentPosition
+					+ " currentId=" + currentId);
+			startActivityForResult(i, DISPLAY_MESSAGE);
+		} catch (Exception ex) {
+			Utils.excMsg(this, "Error displaying new message", ex);
+		} finally {
+			// Reset increment
+			increment = 0;
+		}
+	}
+
+	/**
 	 * Gets a new cursor and starts managing it.
 	 */
 	private void refresh() {
 		// TODO is refresh necessary? See the Notepad example where it is used.
-		// TODO does calling this more than onece cause memory leaks or extra
+		// TODO does calling this more than once cause memory leaks or extra
 		// work?
 		// TODO Probably causes extra work but does insure a refresh.
 		try {
@@ -547,8 +568,6 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
 			cursor = getContentResolver().query(getUri(), columns,
 					filters[filter].selection, null,
 					sortOrders[sortOrder].sortOrder);
-			// editingCursor = getContentResolver().query(editingURI, columns,
-			// "type=?", new String[] { "1" }, "_id DESC");
 			startManagingCursor(cursor);
 
 			// Manage the adapter
