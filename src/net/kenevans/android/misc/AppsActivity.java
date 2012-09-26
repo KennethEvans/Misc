@@ -36,14 +36,12 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
-import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.text.ClipboardManager;
 import android.text.method.ScrollingMovementMethod;
-import android.util.Log;
 import android.util.SparseBooleanArray;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -60,6 +58,7 @@ public class AppsActivity extends Activity implements IConstants {
 
 	private TextView mTextView;
 	public boolean doBuildInfo = false;
+	public boolean doMemoryInfo = false;
 	// public boolean doComponentList = false;
 	public boolean doNonSystemApps = true;
 	public boolean doSystemApps = false;
@@ -145,6 +144,7 @@ public class AppsActivity extends Activity implements IConstants {
 		super.onPause();
 		SharedPreferences.Editor editor = getPreferences(MODE_PRIVATE).edit();
 		editor.putBoolean("doBuildInfo", doBuildInfo);
+		editor.putBoolean("doMemoryInfo", doMemoryInfo);
 		editor.putBoolean("doNonSystemApps", doNonSystemApps);
 		editor.putBoolean("doSystemApps", doSystemApps);
 		editor.commit();
@@ -155,6 +155,7 @@ public class AppsActivity extends Activity implements IConstants {
 		super.onResume();
 		SharedPreferences prefs = getPreferences(MODE_PRIVATE);
 		doBuildInfo = prefs.getBoolean("doBuildInfo", doBuildInfo);
+		doMemoryInfo = prefs.getBoolean("doMemoryInfo", doMemoryInfo);
 		doNonSystemApps = prefs.getBoolean("doNonSystemApps", doNonSystemApps);
 		doSystemApps = prefs.getBoolean("doSystemApps", doSystemApps);
 
@@ -262,8 +263,10 @@ public class AppsActivity extends Activity implements IConstants {
 	 */
 	private void setOptions() {
 		final CharSequence[] items = { "Build Information",
-				"Downloaded Applications", "System Applications" };
-		boolean[] states = { doBuildInfo, doNonSystemApps, doSystemApps };
+				"Memory Information", "Downloaded Applications",
+				"System Applications" };
+		boolean[] states = { doBuildInfo, doMemoryInfo, doNonSystemApps,
+				doSystemApps };
 		AlertDialog.Builder builder = new AlertDialog.Builder(this);
 		builder.setTitle("Settings");
 		builder.setMultiChoiceItems(items, states,
@@ -272,17 +275,17 @@ public class AppsActivity extends Activity implements IConstants {
 							int item, boolean state) {
 					}
 				});
-		builder.setPositiveButton("Okay",
-				new DialogInterface.OnClickListener() {
-					public void onClick(DialogInterface dialog, int id) {
-						SparseBooleanArray checked = ((AlertDialog) dialog)
-								.getListView().getCheckedItemPositions();
-						doBuildInfo = checked.get(0);
-						doNonSystemApps = checked.get(1);
-						doSystemApps = checked.get(2);
-						refresh();
-					}
-				});
+		builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+			public void onClick(DialogInterface dialog, int id) {
+				SparseBooleanArray checked = ((AlertDialog) dialog)
+						.getListView().getCheckedItemPositions();
+				doBuildInfo = checked.get(0);
+				doMemoryInfo = checked.get(1);
+				doNonSystemApps = checked.get(2);
+				doSystemApps = checked.get(3);
+				refresh();
+			}
+		});
 		builder.setNegativeButton("Cancel",
 				new DialogInterface.OnClickListener() {
 					public void onClick(DialogInterface dialog, int id) {
@@ -327,6 +330,28 @@ public class AppsActivity extends Activity implements IConstants {
 		buf.append("ID=" + Build.ID + "\n");
 		return buf.toString();
 	}
+
+	// /**
+	// * Gets the Memory information.
+	// *
+	// * @return
+	// */
+	// private String getMemoryInfo() {
+	// StringBuffer buf = new StringBuffer();
+	// buf.append("Total Internal Memory="
+	// + MemoryUtils.getTotalInternalMemorySize() + "\n");
+	// buf.append("Available Internal Memory="
+	// + MemoryUtils.getAvailableInternalMemorySize() + "\n");
+	// if (!MemoryUtils.externalMemoryAvailable()) {
+	// buf.append("No Extenal Memory Found\n");
+	// } else {
+	// buf.append("Total External Memory="
+	// + MemoryUtils.getTotalExternalMemorySize() + "\n");
+	// buf.append("Available External Memory="
+	// + MemoryUtils.getAvailableExternalMemorySize() + "\n");
+	// }
+	// return buf.toString();
+	// }
 
 	// /**
 	// * Return whether the given ResolveInfo represents a system package or
@@ -418,6 +443,14 @@ public class AppsActivity extends Activity implements IConstants {
 		if (doBuildInfo) {
 			info += "Build Information\n\n";
 			info += getBuildInfo() + "\n";
+		}
+
+		// Memory information
+		if (doMemoryInfo) {
+			info += "Memory Information\n\n";
+			info += MemoryUtils.getMemoryInfo() + "\n";
+//			info += "\n";
+//			info += getMemoryInfo() + "\n";
 		}
 
 		// // Installed component list
