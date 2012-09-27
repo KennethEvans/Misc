@@ -280,7 +280,7 @@ public class SMSActivity extends ListActivity implements IConstants {
 		try {
 			int count = adapter.getCount();
 			Log.d(TAG, this.getClass().getSimpleName()
-					+ ".displayNewMessage: count=" + count);
+					+ ".displayMessage: count=" + count);
 			if (count == 0) {
 				Utils.infoMsg(this, "There are no items in the list");
 				return;
@@ -298,7 +298,7 @@ public class SMSActivity extends ListActivity implements IConstants {
 			}
 			// Determine the new currentPosition
 			Log.d(TAG, this.getClass().getSimpleName()
-					+ ".displayNewMessage: position=" + currentPosition
+					+ ".displayMessage: position=" + currentPosition
 					+ " id=" + id + " changed=" + changed);
 			if (changed) {
 				for (int i = 0; i < count; i++) {
@@ -342,11 +342,11 @@ public class SMSActivity extends ListActivity implements IConstants {
 			i.putExtra(URI_KEY, getUri().toString());
 			i.putExtra(DATE_MULTIPLIER_KEY, getDateMultiplier());
 			Log.d(TAG, this.getClass().getSimpleName()
-					+ ".displayNewMessage: position=" + currentPosition
+					+ ".displayMessage: position=" + currentPosition
 					+ " currentId=" + currentId);
 			startActivityForResult(i, DISPLAY_MESSAGE);
 		} catch (Exception ex) {
-			Utils.excMsg(this, "Error displaying new message", ex);
+			Utils.excMsg(this, "Error displaying message", ex);
 		} finally {
 			// Reset increment
 			increment = 0;

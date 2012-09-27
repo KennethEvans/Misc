@@ -53,7 +53,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 /**
- * Manages a ListView of all the messages in the database specified by the URI field.
+ * Manages a ListView of all the calls in the database specified by the URI field.
  */
 /**
  * @author evans
@@ -61,18 +61,18 @@ import android.widget.Toast;
  */
 public class CallHistoryActivity extends ListActivity implements IConstants {
 	/**
-	 * The current position when DISPLAY_MESSAGE is requested. Used with the
+	 * The current position when DISPLAY_CALL is requested. Used with the
 	 * resultCodes RESULT_PREV and RESULT_NEXT when they are returned.
 	 */
 	private int currentPosition;
 
 	/**
-	 * The current id when DISPLAY_MESSAGE is requested. Used with the
+	 * The current id when DISPLAY_CALL is requested. Used with the
 	 * resultCodes RESULT_PREV and RESULT_NEXT when they are returned.
 	 */
 	private long currentId;
 
-	/** The increment for displaying the next message. */
+	/** The increment for displaying the next call. */
 	private long increment = 0;
 
 	/** The Uri to use for the database. */
@@ -188,7 +188,7 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
 		currentPosition = position;
 		currentId = id;
 		increment = 0;
-		displayMessage();
+		displayCall();
 	}
 
 	@Override
@@ -200,7 +200,7 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
 				+ ".onActivityResult: requestCode=" + requestCode
 				+ " resultCode=" + resultCode + " currentPosition="
 				+ currentPosition);
-		if (requestCode == DISPLAY_MESSAGE) {
+		if (requestCode == DISPLAY_CALL) {
 			increment = 0;
 			// Note that earlier items are at higher positions in the list
 			if (resultCode == RESULT_PREV) {
@@ -227,9 +227,9 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
 				+ ".onResume: currentPosition=" + currentPosition
 				+ " currentId=" + currentId + " increment=" + increment);
 		super.onResume();
-		// If increment is set display a new message
+		// If increment is set display a new call
 		if (increment != 0) {
-			displayMessage();
+			displayCall();
 		}
 		// We get the preferences in onCreate since it is not necessary to do
 		// refresh() here
@@ -450,10 +450,10 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
 	}
 
 	/**
-	 * Displays the message at the current position plus the current increment,
+	 * Displays the call at the current position plus the current increment,
 	 * adjusting for being within range. Resets the increment to 0 after.
 	 */
-	private void displayMessage() {
+	private void displayCall() {
 		ListAdapter adapter = getListAdapter();
 		if (adapter == null) {
 			return;
@@ -461,7 +461,7 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
 		try {
 			int count = adapter.getCount();
 			Log.d(TAG, this.getClass().getSimpleName()
-					+ ".displayNewMessage: count=" + count);
+					+ ".displayCall: count=" + count);
 			if (count == 0) {
 				Utils.infoMsg(this, "There are no items in the list");
 				return;
@@ -479,7 +479,7 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
 			}
 			// Determine the new currentPosition
 			Log.d(TAG, this.getClass().getSimpleName()
-					+ ".displayNewMessage: position=" + currentPosition
+					+ ".displayCall: position=" + currentPosition
 					+ " id=" + id + " changed=" + changed);
 			if (changed) {
 				for (int i = 0; i < count; i++) {
@@ -497,7 +497,7 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
 				currentPosition = count - 1;
 			}
 
-			// Display messages if a requested increment is not possible
+			// Display calls if a requested increment is not possible
 			if (increment > 0) {
 				currentPosition += increment;
 				if (currentPosition > count - 1) {
@@ -516,17 +516,17 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
 				}
 			}
 
-			// Request the new message
+			// Request the new call
 			currentId = adapter.getItemId(currentPosition);
-			Intent i = new Intent(this, DisplayMessageActivity.class);
+			Intent i = new Intent(this, DisplayCallActivity.class);
 			i.putExtra(COL_ID, currentId);
 			i.putExtra(URI_KEY, getUri().toString());
 			Log.d(TAG, this.getClass().getSimpleName()
-					+ ".displayNewMessage: position=" + currentPosition
+					+ ".displayCall: position=" + currentPosition
 					+ " currentId=" + currentId);
-			startActivityForResult(i, DISPLAY_MESSAGE);
+			startActivityForResult(i, DISPLAY_CALL);
 		} catch (Exception ex) {
-			Utils.excMsg(this, "Error displaying new message", ex);
+			Utils.excMsg(this, "Error displaying call", ex);
 		} finally {
 			// Reset increment
 			increment = 0;

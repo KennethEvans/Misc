@@ -61,6 +61,8 @@ public interface IConstants {
 	/** SMS database column for the thread ID. */
 	public static final String COL_THREAD_ID = "thread_id";
 
+	/** Request code for displaying a call. */
+	public static final int DISPLAY_CALL = 0;
 	/** The URI for calls. */
 	public static final Uri CALLLOG_CALLS_URI = android.provider.CallLog.Calls.CONTENT_URI;
 	/** Callog.Calls database column for the id. Identifies the row. */
@@ -135,5 +137,12 @@ public interface IConstants {
 	public static final String shortFormat = "M/d/yy h:mm a";
 	public static final SimpleDateFormat shortFormatter = new SimpleDateFormat(
 			shortFormat);
+
+	/** KB/byte. Converts bytes to KB. */
+	public static final double KB = 1. / 1024.;
+	/** MB/byte. Converts bytes to MB. */
+	public static final double MB = 1. / (1024. * 1024.);
+	/** GB/byte. Converts bytes to GB. */
+	public static final double GB = 1. / (1024. * 1024. * 1024.);
 
 }

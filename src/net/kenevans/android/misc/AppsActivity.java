@@ -21,15 +21,20 @@
 
 package net.kenevans.android.misc;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
 import android.app.Activity;
+import android.app.ActivityManager;
+import android.app.ActivityManager.MemoryInfo;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -40,6 +45,7 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.StatFs;
 import android.text.ClipboardManager;
 import android.text.method.ScrollingMovementMethod;
 import android.util.SparseBooleanArray;
@@ -331,27 +337,115 @@ public class AppsActivity extends Activity implements IConstants {
 		return buf.toString();
 	}
 
-	// /**
-	// * Gets the Memory information.
-	// *
-	// * @return
-	// */
-	// private String getMemoryInfo() {
-	// StringBuffer buf = new StringBuffer();
-	// buf.append("Total Internal Memory="
-	// + MemoryUtils.getTotalInternalMemorySize() + "\n");
-	// buf.append("Available Internal Memory="
-	// + MemoryUtils.getAvailableInternalMemorySize() + "\n");
-	// if (!MemoryUtils.externalMemoryAvailable()) {
-	// buf.append("No Extenal Memory Found\n");
-	// } else {
-	// buf.append("Total External Memory="
-	// + MemoryUtils.getTotalExternalMemorySize() + "\n");
-	// buf.append("Available External Memory="
-	// + MemoryUtils.getAvailableExternalMemorySize() + "\n");
-	// }
-	// return buf.toString();
-	// }
+	/**
+	 * Gets the Memory information.
+	 * 
+	 * @return
+	 */
+	public String getMemoryInfo() {
+		StringBuffer buf = new StringBuffer();
+
+		// Internal Memory
+		File path = Environment.getDataDirectory();
+		StatFs stat = new StatFs(path.getPath());
+		int blockSize = stat.getBlockSize();
+		double total = (double) stat.getBlockCount() * blockSize;
+		double available = (double) stat.getAvailableBlocks() * blockSize;
+		double free = (double) stat.getFreeBlocks() * blockSize;
+		double used = total - available;
+		String format = ": %.0f KB = %.2f MB = %.2f GB\n";
+		buf.append("Internal Memory\n");
+		buf.append(String.format("  Total" + format, total * KB, total * MB,
+				total * GB));
+		buf.append(String.format("  Used" + format, used * KB, used * MB, used
+				* GB));
+		buf.append(String.format("  Available" + format, available * KB,
+				available * MB, available * GB));
+		buf.append(String.format("  Free" + format, free * KB, free * MB, free
+				* GB));
+		buf.append(String.format("  Block Size: %d Bytes\n", blockSize));
+
+		// External Memory
+		buf.append("\nExternal Memory\n");
+		if (!Environment.getExternalStorageState().equals(
+				Environment.MEDIA_MOUNTED)) {
+			buf.append("  No Extenal Memory\n");
+		} else {
+			path = Environment.getExternalStorageDirectory();
+			stat = new StatFs(path.getPath());
+			blockSize = stat.getBlockSize();
+			total = (double) stat.getBlockCount() * blockSize;
+			available = (double) stat.getAvailableBlocks() * blockSize;
+			free = (double) stat.getFreeBlocks() * blockSize;
+			used = total - available;
+			buf.append(String.format("  Total" + format, total * KB,
+					total * MB, total * GB));
+			buf.append(String.format("  Used" + format, used * KB, used * MB,
+					used * GB));
+			buf.append(String.format("  Available" + format, available * KB,
+					available * MB, available * GB));
+			buf.append(String.format("  Free" + format, free * KB, free * MB,
+					free * GB));
+			buf.append(String.format("  Block Size: %d Bytes\n", blockSize));
+		}
+
+		// RAM
+		MemoryInfo mi = new MemoryInfo();
+		ActivityManager activityManager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
+		activityManager.getMemoryInfo(mi);
+		available = (double) mi.availMem;
+		double threshold = (double) mi.threshold;
+		boolean low = mi.lowMemory;
+		buf.append("\nRAM\n");
+		Long ram = getTotalRAM();
+		if (ram == null) {
+			buf.append("  Total: Not found\n");
+		} else {
+			total = ram / KB;
+			used = total - available;
+			buf.append(String.format("  Total" + format, total * KB,
+					total * MB, total * GB));
+			buf.append(String.format("  Used" + format, used * KB, used * MB,
+					used * GB));
+		}
+		buf.append(String.format("  Available" + format, available * KB,
+				available * MB, available * GB));
+		buf.append(String.format("  Threshold" + format, threshold * KB,
+				threshold * MB, threshold * GB));
+		if (low) {
+			buf.append("  Memory is low\n");
+		}
+
+		return buf.toString();
+	}
+
+	/**
+	 * Gets the total ram by parsing /proc/meminfo.
+	 * 
+	 * @return The memory in KB or null on failure.
+	 */
+	public static Long getTotalRAM() {
+		String path = "/proc/meminfo";
+		BufferedReader br = null;
+		String[] tokens;
+		try {
+			br = new BufferedReader(new FileReader(path));
+			// Assume it is in the first line and assume it is in kb
+			String line = br.readLine();
+			tokens = line.split("\\s+");
+			return Long.parseLong(tokens[1]);
+		} catch (Exception ex) {
+			return null;
+		} finally {
+			if (br != null) {
+				try {
+					br.close();
+				} catch (Exception ex) {
+					// Do nothing
+				}
+			}
+		}
+	}
 
 	// /**
 	// * Return whether the given ResolveInfo represents a system package or
@@ -448,9 +542,7 @@ public class AppsActivity extends Activity implements IConstants {
 		// Memory information
 		if (doMemoryInfo) {
 			info += "Memory Information\n\n";
-			info += MemoryUtils.getMemoryInfo() + "\n";
-//			info += "\n";
-//			info += getMemoryInfo() + "\n";
+			info += getMemoryInfo() + "\n";
 		}
 
 		// // Installed component list
