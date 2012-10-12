@@ -56,10 +56,23 @@ public interface IConstants {
 	public static final String COL_ADDRESS = "address";
 	/** SMS database column for the date. */
 	public static final String COL_DATE = "date";
+	/**
+	 * MMS-SMS database variable for the normalized date. Only valid for sort
+	 * order.
+	 */
+	public static final String VAR_NORMALIZED_DATE = "normalized_date";
 	/** SMS database column for the body. */
 	public static final String COL_BODY = "body";
 	/** SMS database column for the thread ID. */
 	public static final String COL_THREAD_ID = "thread_id";
+	/** SMS-MMS database column for the Message Type (SMS or MMS). */
+	public static final String COL_CT_T = "ct_t";
+	/** MMS database column for the Mime Type. */
+	public static final String COL_CT = "ct";
+	/** MMS database column for the Mime data. */
+	public static final String COL_DATA = "_data";
+	/** MMS database column for the text. */
+	public static final String COL_TEXT = "text";
 
 	/** Request code for displaying a call. */
 	public static final int DISPLAY_CALL = 0;
@@ -78,6 +91,8 @@ public interface IConstants {
 
 	/** The URI for MMS messages. Has all messages. */
 	public static final Uri MMS_URI = Uri.parse("content://mms");
+	/** The URI for MMS part where the body, etc. are found. */
+	public static final Uri MMS_PART_URI = Uri.parse("content://mms/part");
 	/** The URI for SMS and MMS messages. Wasn't successful. */
 	public static final Uri MMS__SMS_URI = Uri.parse("content://mms-sms");
 	/** The URI for MMS and SMS conversations. */
@@ -86,6 +101,13 @@ public interface IConstants {
 	/** The URI for MMS and SMS complete conversations. Wasn't successful. */
 	public static final Uri MMS_SMS_COMPLETE_CONVERSATIONS_URI = Uri
 			.parse("content://mms-sms/complete-conversations");
+
+	// Date multipliers MMS messages have the time in seconds. SMS messages have
+	// the time in ms.
+	/** Date multiplier for SMS messages. */
+	public long SMS_DATE_MULTIPLIER = 1L;
+	/** Date multiplier for MMS messages. */
+	public long MMS_DATE_MULTIPLIER = 1000L;
 
 	// Conversations database
 	// From SMS Fix Time:
@@ -122,21 +144,6 @@ public interface IConstants {
 	public static final String SID = "net.kenevans.android.misc.sid";
 	/** Value denoting a NID in extras */
 	public static final String NID = "net.kenevans.android.misc.nid";
-
-	/** The static format string to use for formatting dates. */
-	public static final String longFormat = "MMM dd, yyyy HH:mm:ss Z";
-	public static final SimpleDateFormat longFormatter = new SimpleDateFormat(
-			longFormat);
-
-	/** The static format string to use for formatting dates. */
-	public static final String mediumFormat = "MMM dd, yyyy HH:mm:ss";
-	public static final SimpleDateFormat mediumFormatter = new SimpleDateFormat(
-			mediumFormat);
-
-	/** The static short format string to use for formatting dates. */
-	public static final String shortFormat = "M/d/yy h:mm a";
-	public static final SimpleDateFormat shortFormatter = new SimpleDateFormat(
-			shortFormat);
 
 	/** KB/byte. Converts bytes to KB. */
 	public static final double KB = 1. / 1024.;

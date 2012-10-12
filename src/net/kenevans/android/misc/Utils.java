@@ -21,6 +21,9 @@
 
 package net.kenevans.android.misc;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+
 import android.app.AlertDialog;
 import android.app.PendingIntent;
 import android.content.Context;
@@ -162,6 +165,19 @@ public class Utils implements IConstants {
 				context, cls), 0);
 		SmsManager sms = SmsManager.getDefault();
 		sms.sendTextMessage(phoneNumber, null, message, pi, null);
+	}
+	
+	/**
+	 * Get the stack trace for an exception as a String.
+	 * @param ex
+	 * @return
+	 */
+	public static String getStackTraceString(Exception ex) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        PrintStream ps = new PrintStream(baos);
+        ex.printStackTrace(ps);
+        ps.close();
+        return baos.toString();
 	}
 
 }

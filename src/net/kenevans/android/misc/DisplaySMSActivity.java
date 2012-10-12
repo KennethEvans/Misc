@@ -51,7 +51,7 @@ import android.widget.Toast;
 /**
  * Class to display a single message.
  */
-public class DisplayMessageActivity extends Activity implements IConstants {
+public class DisplaySMSActivity extends Activity implements IConstants {
 	/** Set this to not make any changes to the database. */
 	private boolean dryRun = true;
 	/** The current default value for the user's offset. */
@@ -64,7 +64,7 @@ public class DisplayMessageActivity extends Activity implements IConstants {
 	 */
 	public Long dateMultiplier = 1L;
 	/** Name of the file written to the root of the SD card */
-	private static final String SAVE_FILE_NAME = "SavedMessageText.txt";
+	private static final String SAVE_FILE_NAME = "SavedSMSMessageText.txt";
 
 	private TextView mTitleTextView;
 	private TextView mSubtitleTextView;
@@ -215,6 +215,7 @@ public class DisplayMessageActivity extends Activity implements IConstants {
 			// recent if more are returned owing to the sort above
 			boolean found = cursor.moveToFirst();
 			if (!found) {
+				cursor.close();
 				Utils.errMsg(this, "Did not find message");
 				return;
 			}
@@ -235,7 +236,7 @@ public class DisplayMessageActivity extends Activity implements IConstants {
 					if (v == okButton) {
 						Integer offset = dialog.getTimeOffset();
 						if (offset == null) {
-							Utils.errMsg(DisplayMessageActivity.this,
+							Utils.errMsg(DisplaySMSActivity.this,
 									"Got invalid value for the time offset");
 						} else {
 							// Save this value as the default
@@ -246,10 +247,10 @@ public class DisplayMessageActivity extends Activity implements IConstants {
 										getApplicationContext(),
 										"Dry run:\n"
 												+ "Old Time="
-												+ SMSActivity
+												+ MessageUtils
 														.formatDate(curDate)
 												+ "\nNew Time="
-												+ SMSActivity
+												+ MessageUtils
 														.formatDate(newDate),
 										Toast.LENGTH_LONG).show();
 							} else {
@@ -283,7 +284,7 @@ public class DisplayMessageActivity extends Activity implements IConstants {
 			});
 			dialog.show();
 		} catch (Exception ex) {
-			Utils.excMsg(this, "Error finding message", ex);
+			Utils.excMsg(this, "Error finding SMS message", ex);
 		}
 	}
 
@@ -419,7 +420,7 @@ public class DisplayMessageActivity extends Activity implements IConstants {
 					if (pos > 1 && !(pos > msg.length())) {
 						msg = msg.substring(pos);
 					}
-					String string = SMSActivity.formatSmsType(getSmsType())
+					String string = MessageUtils.formatSmsType(getSmsType())
 							+ msg + "\n" + mBodyTextView.getText().toString()
 							+ "\n\n";
 					out.append(string);
@@ -477,7 +478,7 @@ public class DisplayMessageActivity extends Activity implements IConstants {
 						} else {
 							msg = "Time changes are real.\nDatabase will be changed.";
 						}
-						Utils.infoMsg(DisplayMessageActivity.this, msg);
+						Utils.infoMsg(DisplaySMSActivity.this, msg);
 					}
 				});
 		AlertDialog alert = builder.create();
@@ -556,6 +557,10 @@ public class DisplayMessageActivity extends Activity implements IConstants {
 				mBodyTextView.setText("Failed to find message " + mRowId);
 			} else {
 				String id = cursor.getString(indexId);
+				Long dateNum = -1L;
+				if (indexDate > -1) {
+					dateNum = cursor.getLong(indexDate) * dateMultiplier;
+				}
 				String address = "<Address NA>";
 				if (indexAddress > -1) {
 					address = cursor.getString(indexAddress);
@@ -563,10 +568,6 @@ public class DisplayMessageActivity extends Activity implements IConstants {
 				int type = -1;
 				if (indexType > -1) {
 					type = cursor.getInt(indexType);
-				}
-				Long dateNum = -1L;
-				if (indexDate > -1) {
-					dateNum = cursor.getLong(indexDate) * dateMultiplier;
 				}
 				String body = "<Body NA>";
 				if (indexBody > -1) {
@@ -577,34 +578,15 @@ public class DisplayMessageActivity extends Activity implements IConstants {
 				if (cursor.getCount() > 1) {
 					title += " [1/" + cursor.getCount() + "]";
 				}
-				title += ": " + SMSActivity.formatAddress(address) + "\n"
-						+ SMSActivity.formatDate(dateNum);
+				title += ": " + MessageUtils.formatAddress(address) + "\n"
+						+ MessageUtils.formatDate(dateNum);
 				String subTitle = "";
 				Log.d(TAG, getClass().getSimpleName() + ".refresh" + " id="
 						+ id + " address=" + address + " dateNum=" + dateNum
 						+ " dateMultiplier=" + dateMultiplier);
 
 				// Add all the fields in the database
-				for (String name : columns) {
-					try {
-						int index = cursor.getColumnIndex(name);
-						// Don't do a LF the first time
-						if (subTitle.length() != 0) {
-							subTitle += "\n";
-						}
-						// Don't print the body
-						if (name.equals("body")) {
-							subTitle += name + ": <"
-									+ cursor.getString(index).length()
-									+ " chars>";
-						} else {
-							subTitle += name + ": " + cursor.getString(index);
-						}
-					} catch (Exception ex) {
-						// Shouldn't happen
-						subTitle += name + ": Not found";
-					}
-				}
+				subTitle += MessageUtils.getColumnNamesAndValues(cursor);
 
 				// Set the TextViews
 				mTitleTextView.setText(title);
@@ -612,9 +594,16 @@ public class DisplayMessageActivity extends Activity implements IConstants {
 				mBodyTextView.setText(body);
 
 				// Set the info view
-				String info = SMSActivity.formatDate(shortFormatter, dateNum)
-						+ "\n" + SMSActivity.formatSmsType(type)
-						+ SMSActivity.formatAddress(address);
+				String info = MessageUtils.formatDate(
+						MessageUtils.shortFormatter, dateNum)
+						+ "\n"
+						+ MessageUtils.formatSmsType(type)
+						+ MessageUtils.formatAddress(address);
+				String contactName = MessageUtils.getContactNameFromNumber(
+						this, address);
+				if (!contactName.equals("Unknown")) {
+					info += "\n" + contactName;
+				}
 				mInfoTextView.setText(info);
 
 				// Debug
@@ -626,8 +615,8 @@ public class DisplayMessageActivity extends Activity implements IConstants {
 			// We are through with the cursor
 			cursor.close();
 		} catch (Exception ex) {
-			String msg = "Error finding message:\n" + ex.getMessage();
-			Utils.excMsg(this, "Error finding message", ex);
+			String msg = "Error finding SMS message:\n" + ex.getMessage();
+			Utils.excMsg(this, "Error finding SMS message", ex);
 			if (mBodyTextView != null) {
 				mBodyTextView.setTextColor(0xffff0000);
 				mBodyTextView.setText(msg);

@@ -29,8 +29,11 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.ContactsContract;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -39,19 +42,20 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CursorAdapter;
+import android.widget.ImageView;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 /**
- * Manages a ListView of all the messages in the database specified by the URI field.
+ * Manages a ListView of all the contacts in the database specified by the URI field.
  */
 /**
  * @author evans
  * 
  */
-public class SMSActivity extends ListActivity implements IConstants {
+public class ContactsActivity extends ListActivity implements IConstants {
 	/**
 	 * The current position when ACTIVITY_DISPLAY_MESSAGE is requested. Used
 	 * with the resultCodes RESULT_PREV and RESULT_NEXT when they are returned.
@@ -68,17 +72,12 @@ public class SMSActivity extends ListActivity implements IConstants {
 	private long increment = 0;
 
 	/** The Uri to use. */
-	public static final Uri uri = SMS_URI;
-
-	/**
-	 * The date multiplier to use to get ms. MMS message timestamps are in sec
-	 * not ms.
-	 */
-	public static final Long dateMultiplier = 1L;
+	public static final Uri uri = ContactsContract.Contacts.CONTENT_URI;
 
 	/** Enum to specify the sort order. */
 	enum Order {
-		TIME(COL_DATE + " DESC"), ID(COL_ID + " DESC");
+		NAME(ContactsContract.Contacts.DISPLAY_NAME + " ASC"), ID(COL_ID
+				+ " ASC");
 		public String sqlCommand;
 
 		Order(String sqlCommand) {
@@ -87,7 +86,7 @@ public class SMSActivity extends ListActivity implements IConstants {
 	}
 
 	/** The sort order to use. */
-	private Order sortOrder = Order.TIME;
+	private Order sortOrder = Order.NAME;
 
 	private CustomCursorAdapter adapter;
 
@@ -127,7 +126,7 @@ public class SMSActivity extends ListActivity implements IConstants {
 		currentPosition = position;
 		currentId = id;
 		increment = 0;
-		displayMessage();
+		displayContact();
 	}
 
 	@Override
@@ -167,7 +166,7 @@ public class SMSActivity extends ListActivity implements IConstants {
 		super.onResume();
 		// If increment is set display a new message
 		if (increment != 0) {
-			displayMessage();
+			displayContact();
 		}
 	}
 
@@ -175,15 +174,15 @@ public class SMSActivity extends ListActivity implements IConstants {
 	 * Bring up a dialog to change the sort order.
 	 */
 	private void setOrder() {
-		final CharSequence[] items = { getText(R.string.sort_time),
+		final CharSequence[] items = { getText(R.string.sort_name),
 				getText(R.string.sort_id) };
 		AlertDialog.Builder builder = new AlertDialog.Builder(this);
 		builder.setTitle(getText(R.string.sort_title));
-		builder.setSingleChoiceItems(items, sortOrder == Order.TIME ? 0 : 1,
+		builder.setSingleChoiceItems(items, sortOrder == Order.NAME ? 0 : 1,
 				new DialogInterface.OnClickListener() {
 					public void onClick(DialogInterface dialog, int item) {
 						dialog.dismiss();
-						sortOrder = item == 0 ? Order.TIME : Order.ID;
+						sortOrder = item == 0 ? Order.NAME : Order.ID;
 						refresh();
 					}
 				});
@@ -195,7 +194,7 @@ public class SMSActivity extends ListActivity implements IConstants {
 	 * Displays the message at the current position plus the current increment,
 	 * adjusting for being within range. Resets the increment to 0 after.
 	 */
-	private void displayMessage() {
+	private void displayContact() {
 		ListAdapter adapter = getListAdapter();
 		if (adapter == null) {
 			return;
@@ -260,16 +259,15 @@ public class SMSActivity extends ListActivity implements IConstants {
 
 			// Request the new message
 			currentId = adapter.getItemId(currentPosition);
-			Intent i = new Intent(this, DisplaySMSActivity.class);
+			Intent i = new Intent(this, DisplayContactActivity.class);
 			i.putExtra(COL_ID, currentId);
 			i.putExtra(URI_KEY, getUri().toString());
-			i.putExtra(DATE_MULTIPLIER_KEY, getDateMultiplier());
 			Log.d(TAG, this.getClass().getSimpleName()
 					+ ".displayMessage: position=" + currentPosition
 					+ " currentId=" + currentId);
 			startActivityForResult(i, DISPLAY_MESSAGE);
 		} catch (Exception ex) {
-			Utils.excMsg(this, "Error displaying message", ex);
+			Utils.excMsg(this, "Error displaying contact", ex);
 		} finally {
 			// Reset increment
 			increment = 0;
@@ -288,8 +286,8 @@ public class SMSActivity extends ListActivity implements IConstants {
 			cursor.close();
 
 			// Make an array of the desired ones that are available
-			String[] desiredColumns = { COL_ID, COL_ADDRESS, COL_DATE,
-					COL_BODY, COL_TYPE };
+			String[] desiredColumns = { COL_ID,
+					ContactsContract.Contacts.DISPLAY_NAME };
 			ArrayList<String> list = new ArrayList<String>();
 			for (String col : desiredColumns) {
 				for (String col1 : avaliableColumns) {
@@ -321,75 +319,9 @@ public class SMSActivity extends ListActivity implements IConstants {
 				adapter.changeCursor(cursor);
 			}
 		} catch (Exception ex) {
-			Utils.excMsg(this, "Error finding SMS messages", ex);
+			Utils.excMsg(this, "Error finding contacts", ex);
 		}
 	}
-
-	// /**
-	// * Method used to test what is happening with a database.
-	// *
-	// * @param testNum
-	// * Prefix to log message.
-	// * @param cls
-	// * The calling class (will be part of the log message).
-	// * @param context
-	// * The calling context. Used to get the content resolver if the
-	// * input cursor is null.
-	// * @param cursor
-	// * The calling cursor or null to use a cursor with all columns.
-	// * @param id
-	// * The _id.
-	// * @param uri
-	// * The URI of the content database (will be part of the log
-	// * message).
-	// */
-	// public static void test(int testNum, Class<?> cls, Context context,
-	// Cursor cursor, String id, Uri uri) {
-	// Cursor cursor1;
-	// if (cursor == null) {
-	// String selection = COL_ID + "=" + id;
-	// // String[] projection = { "*" };
-	// String[] projection = null;
-	// cursor1 = context.getContentResolver().query(uri, projection,
-	// selection, null, null);
-	// cursor1.moveToFirst();
-	// } else {
-	// cursor1 = cursor;
-	// }
-	//
-	// int indexId = cursor1.getColumnIndex(COL_ID);
-	// int indexDate = cursor1.getColumnIndex(COL_DATE);
-	// int indexAddress = cursor1.getColumnIndex(COL_ADDRESS);
-	// int indexThreadId = cursor1.getColumnIndex(COL_THREAD_ID);
-	//
-	// do {
-	// String id1 = cursor1.getString(indexId);
-	// String address = "<Address NA>";
-	// if (indexAddress > -1) {
-	// address = cursor1.getString(indexAddress);
-	// }
-	// Long dateNum = -1L;
-	// if (indexDate > -1) {
-	// dateNum = cursor1.getLong(indexDate);
-	// }
-	// String threadId = "<ThreadID NA>";
-	// if (indexThreadId > -1) {
-	// threadId = cursor1.getString(indexThreadId);
-	// }
-	// Log.d(TAG,
-	// testNum + " " + cls.getSimpleName() + ".test" + "id=(" + id
-	// + "," + id1 + ") address=" + address + " dateNum="
-	// + dateNum + " threadId=" + threadId + " uri=" + uri
-	// + " cursor=(" + cursor1.getColumnCount() + ","
-	// + cursor1.getCount() + "," + cursor1.getPosition()
-	// + ")");
-	// } while (cursor == null && cursor1.moveToNext());
-	//
-	// if (cursor == null) {
-	// // Close the cursor if we created it here
-	// cursor1.close();
-	// }
-	// }
 
 	/**
 	 * @return The content provider URI used.
@@ -398,68 +330,51 @@ public class SMSActivity extends ListActivity implements IConstants {
 		return uri;
 	}
 
-	/**
-	 * @return The date multiplier to use.
-	 */
-	public Long getDateMultiplier() {
-		return dateMultiplier;
-	}
-
 	private class CustomCursorAdapter extends CursorAdapter {
 		private LayoutInflater inflater;
-		private int indexDate;
-		private int indexAddress;
+		private int indexName;
 		private int indexId;
-		private int indexType;
 
 		public CustomCursorAdapter(Context context, Cursor cursor) {
 			super(context, cursor);
 			inflater = LayoutInflater.from(context);
 			indexId = cursor.getColumnIndex(COL_ID);
-			indexDate = cursor.getColumnIndex(COL_DATE);
-			indexAddress = cursor.getColumnIndex(COL_ADDRESS);
-			indexType = cursor.getColumnIndex(COL_TYPE);
+			indexName = cursor
+					.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME);
 		}
 
 		@Override
 		public void bindView(View view, Context context, Cursor cursor) {
 			TextView title = (TextView) view.findViewById(R.id.title);
-			TextView subtitle = (TextView) view.findViewById(R.id.subtitle);
+			ImageView imageView = (ImageView) view.findViewById(R.id.imageview);
 			String id = cursor.getString(indexId);
-			String address = "<Address NA>";
-			if (indexAddress > -1) {
-				address = cursor.getString(indexAddress);
+			String displayName = "Unknown";
+			if (indexName > -1) {
+				displayName = cursor.getString(indexName);
 			}
-			Long dateNum = -1L;
-			if (indexDate > -1) {
-				dateNum = cursor.getLong(indexDate) * getDateMultiplier();
+			title.setText(id + ": " + displayName);
+			// Set the image
+			if (imageView != null) {
+				long contactId = MessageUtils.getContactIdFromName(
+						ContactsActivity.this, displayName);
+				Bitmap bitmap = MessageUtils.loadContactPhoto(
+						getContentResolver(), contactId);
+				if (bitmap == null) {
+					// DEBUG
+					// bitmap =
+					// BitmapFactory.decodeFile("/sdcard/Pictures/Art/Wildcat.jpg");
+					bitmap = BitmapFactory.decodeResource(getResources(),
+							R.drawable.android_icon);
+				}
+				if (bitmap != null) {
+					imageView.setImageBitmap(bitmap);
+				}
 			}
-			int type = -1;
-			if (indexType > -1) {
-				type = cursor.getInt(indexType);
-			}
-			String titleText = id + ": " + MessageUtils.formatSmsType(type)
-					+ MessageUtils.formatAddress(address);
-			String contactName = MessageUtils.getContactNameFromNumber(
-					SMSActivity.this, address);
-			if (!contactName.equals("Unknown")) {
-				titleText += " " + contactName;
-			}
-			title.setText(titleText);
-			subtitle.setText(MessageUtils.formatDate(dateNum));
-			// Log.d(TAG, getClass().getSimpleName() + ".bindView" + " id=" + id
-			// + " address=" + address + " dateNum=" + dateNum
-			// + " dateMultiplier=" + getDateMultiplier());
-			// DEBUG
-			// if (id.equals(new Integer(76).toString())) {
-			// test(1, this.getClass(), SMSActivity.this, cursor, id, getUri());
-			// test(2, this.getClass(), SMSActivity.this, null, id, getUri());
-			// }
 		}
 
 		@Override
 		public View newView(Context context, Cursor cursor, ViewGroup parent) {
-			return inflater.inflate(R.layout.list_row, null);
+			return inflater.inflate(R.layout.list_row_image, null);
 		}
 
 	}

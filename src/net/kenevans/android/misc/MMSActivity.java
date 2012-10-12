@@ -51,7 +51,7 @@ import android.widget.Toast;
  * @author evans
  * 
  */
-public class SMSActivity extends ListActivity implements IConstants {
+public class MMSActivity extends ListActivity implements IConstants {
 	/**
 	 * The current position when ACTIVITY_DISPLAY_MESSAGE is requested. Used
 	 * with the resultCodes RESULT_PREV and RESULT_NEXT when they are returned.
@@ -68,13 +68,13 @@ public class SMSActivity extends ListActivity implements IConstants {
 	private long increment = 0;
 
 	/** The Uri to use. */
-	public static final Uri uri = SMS_URI;
+	public static final Uri uri = MMS_URI;
 
 	/**
 	 * The date multiplier to use to get ms. MMS message timestamps are in sec
 	 * not ms.
 	 */
-	public static final Long dateMultiplier = 1L;
+	public static final Long dateMultiplier = 1000L;
 
 	/** Enum to specify the sort order. */
 	enum Order {
@@ -260,7 +260,7 @@ public class SMSActivity extends ListActivity implements IConstants {
 
 			// Request the new message
 			currentId = adapter.getItemId(currentPosition);
-			Intent i = new Intent(this, DisplaySMSActivity.class);
+			Intent i = new Intent(this, DisplayMMSActivity.class);
 			i.putExtra(COL_ID, currentId);
 			i.putExtra(URI_KEY, getUri().toString());
 			i.putExtra(DATE_MULTIPLIER_KEY, getDateMultiplier());
@@ -280,6 +280,10 @@ public class SMSActivity extends ListActivity implements IConstants {
 	 * Gets a new cursor and starts managing it.
 	 */
 	private void refresh() {
+		// TODO is refresh necessary? See the Notepad example where it is used.
+		// TODO does calling this more than once cause memory leaks or extra
+		// work?
+		// TODO Probably causes extra work but does insure a refresh.
 		try {
 			// First get the names of all the columns in the database
 			Cursor cursor = getContentResolver().query(getUri(), null, null,
@@ -321,75 +325,9 @@ public class SMSActivity extends ListActivity implements IConstants {
 				adapter.changeCursor(cursor);
 			}
 		} catch (Exception ex) {
-			Utils.excMsg(this, "Error finding SMS messages", ex);
+			Utils.excMsg(this, "Error finding MMS messages", ex);
 		}
 	}
-
-	// /**
-	// * Method used to test what is happening with a database.
-	// *
-	// * @param testNum
-	// * Prefix to log message.
-	// * @param cls
-	// * The calling class (will be part of the log message).
-	// * @param context
-	// * The calling context. Used to get the content resolver if the
-	// * input cursor is null.
-	// * @param cursor
-	// * The calling cursor or null to use a cursor with all columns.
-	// * @param id
-	// * The _id.
-	// * @param uri
-	// * The URI of the content database (will be part of the log
-	// * message).
-	// */
-	// public static void test(int testNum, Class<?> cls, Context context,
-	// Cursor cursor, String id, Uri uri) {
-	// Cursor cursor1;
-	// if (cursor == null) {
-	// String selection = COL_ID + "=" + id;
-	// // String[] projection = { "*" };
-	// String[] projection = null;
-	// cursor1 = context.getContentResolver().query(uri, projection,
-	// selection, null, null);
-	// cursor1.moveToFirst();
-	// } else {
-	// cursor1 = cursor;
-	// }
-	//
-	// int indexId = cursor1.getColumnIndex(COL_ID);
-	// int indexDate = cursor1.getColumnIndex(COL_DATE);
-	// int indexAddress = cursor1.getColumnIndex(COL_ADDRESS);
-	// int indexThreadId = cursor1.getColumnIndex(COL_THREAD_ID);
-	//
-	// do {
-	// String id1 = cursor1.getString(indexId);
-	// String address = "<Address NA>";
-	// if (indexAddress > -1) {
-	// address = cursor1.getString(indexAddress);
-	// }
-	// Long dateNum = -1L;
-	// if (indexDate > -1) {
-	// dateNum = cursor1.getLong(indexDate);
-	// }
-	// String threadId = "<ThreadID NA>";
-	// if (indexThreadId > -1) {
-	// threadId = cursor1.getString(indexThreadId);
-	// }
-	// Log.d(TAG,
-	// testNum + " " + cls.getSimpleName() + ".test" + "id=(" + id
-	// + "," + id1 + ") address=" + address + " dateNum="
-	// + dateNum + " threadId=" + threadId + " uri=" + uri
-	// + " cursor=(" + cursor1.getColumnCount() + ","
-	// + cursor1.getCount() + "," + cursor1.getPosition()
-	// + ")");
-	// } while (cursor == null && cursor1.moveToNext());
-	//
-	// if (cursor == null) {
-	// // Close the cursor if we created it here
-	// cursor1.close();
-	// }
-	// }
 
 	/**
 	 * @return The content provider URI used.
@@ -408,7 +346,6 @@ public class SMSActivity extends ListActivity implements IConstants {
 	private class CustomCursorAdapter extends CursorAdapter {
 		private LayoutInflater inflater;
 		private int indexDate;
-		private int indexAddress;
 		private int indexId;
 		private int indexType;
 
@@ -417,7 +354,6 @@ public class SMSActivity extends ListActivity implements IConstants {
 			inflater = LayoutInflater.from(context);
 			indexId = cursor.getColumnIndex(COL_ID);
 			indexDate = cursor.getColumnIndex(COL_DATE);
-			indexAddress = cursor.getColumnIndex(COL_ADDRESS);
 			indexType = cursor.getColumnIndex(COL_TYPE);
 		}
 
@@ -426,9 +362,11 @@ public class SMSActivity extends ListActivity implements IConstants {
 			TextView title = (TextView) view.findViewById(R.id.title);
 			TextView subtitle = (TextView) view.findViewById(R.id.subtitle);
 			String id = cursor.getString(indexId);
+			// We need to get the address from another provider
 			String address = "<Address NA>";
-			if (indexAddress > -1) {
-				address = cursor.getString(indexAddress);
+			String text = MessageUtils.getMMSAddress(MMSActivity.this, id);
+			if (text != null) {
+				address = text;
 			}
 			Long dateNum = -1L;
 			if (indexDate > -1) {
@@ -441,7 +379,7 @@ public class SMSActivity extends ListActivity implements IConstants {
 			String titleText = id + ": " + MessageUtils.formatSmsType(type)
 					+ MessageUtils.formatAddress(address);
 			String contactName = MessageUtils.getContactNameFromNumber(
-					SMSActivity.this, address);
+					MMSActivity.this, address);
 			if (!contactName.equals("Unknown")) {
 				titleText += " " + contactName;
 			}

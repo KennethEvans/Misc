@@ -36,6 +36,7 @@ import android.net.Uri;
  */
 public class SMSTest2Activity extends SMSActivity {
 	/** The Uri to use. */
+//	public static final Uri uri = MMS_SMS_CONVERSATIONS_URI;
 	public static final Uri uri = MMS_SMS_CONVERSATIONS_URI;
 	/** The date multiplier to use to get ms.  MMS message timestamps are in sec not ms. */
 	public static final Long dateMultiplier = 1L;

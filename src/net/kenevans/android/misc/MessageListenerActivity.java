@@ -81,18 +81,18 @@ public class MessageListenerActivity extends Activity implements IConstants {
 					SmsMessage message = SmsMessage
 							.createFromPdu((byte[]) pdus[i]);
 					info += "From: "
-							+ SMSActivity.formatAddress(message
+							+ MessageUtils.formatAddress(message
 									.getOriginatingAddress()) + "\n";
 					info += "From (Display): "
-							+ SMSActivity.formatAddress(message
+							+ MessageUtils.formatAddress(message
 									.getDisplayOriginatingAddress()) + "\n";
 					if (message.isEmail()) {
 						info += "Is Email: " + message.isEmail() + "\n";
 					}
 					info += "Time received: "
-							+ SMSActivity.formatDate(now.getTime()) + "\n";
+							+ MessageUtils.formatDate(now.getTime()) + "\n";
 					info += "Timestamp: "
-							+ SMSActivity.formatDate(message
+							+ MessageUtils.formatDate(message
 									.getTimestampMillis()) + "\n";
 					info += "TimestampMillis: " + message.getTimestampMillis()
 							+ "\n";
@@ -101,7 +101,7 @@ public class MessageListenerActivity extends Activity implements IConstants {
 					// DEBUG
 					Log.d(TAG,
 							"BroadcastReceiver.onReceive: date="
-									+ SMSActivity.formatDate(message
+									+ MessageUtils.formatDate(message
 											.getTimestampMillis()));
 					Log.d(TAG, getDatabaseMessages(2));
 
@@ -217,8 +217,8 @@ public class MessageListenerActivity extends Activity implements IConstants {
 				id = cursor.getString(indexId);
 				address = cursor.getString(indexAddress);
 				dateNum = cursor.getLong(indexDate);
-				info += "  " + id + " " + SMSActivity.formatAddress(address)
-						+ " " + SMSActivity.formatDate(dateNum) + "\n";
+				info += "  " + id + " " + MessageUtils.formatAddress(address)
+						+ " " + MessageUtils.formatDate(dateNum) + "\n";
 			}
 		} catch (Exception ex) {
 			Utils.excMsg(this, "Error finding messages", ex);

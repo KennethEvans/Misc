@@ -13,6 +13,7 @@
 	    >
 		<ImageButton
 		    android:id="@+id/upbutton"
+			android:contentDescription="@string/content_image_up_arrow"
 			android:src="@drawable/arrowup"
 			android:layout_width="wrap_content"
 			android:layout_height="wrap_content"
@@ -21,6 +22,7 @@
 		/>
 		<ImageButton
 		    android:id="@+id/downbutton"
+			android:contentDescription="@string/content_image_down_arrow"
 		    android:src="@drawable/arrowdown"
 		    android:layout_width="wrap_content"
 		    android:layout_height="wrap_content"
@@ -48,7 +50,7 @@
 		<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
 		    android:orientation="vertical"
 		    android:layout_width="fill_parent"
-		    android:layout_height="fill_parent"
+		    android:layout_height="wrap_content"
 		    >
 			<TextView  
 			  	android:id="@+id/titleview"
@@ -57,24 +59,25 @@
 			    android:layout_alignParentTop="true"
 			/>
 			<TextView  
-			  	android:id="@+id/subtitleview"
+			  	android:id="@+id/contactview"
 			    android:layout_width="fill_parent" 
 			    android:layout_height="wrap_content"
 			    android:layout_marginTop="5dip"
 			    android:layout_below="@+id/titleview"
 			/>
-			<TextView  
-			  	android:id="@+id/contactview"
-			    android:layout_width="fill_parent" 
-			    android:layout_height="wrap_content"
-			    android:layout_marginTop="5dip"
-			    android:layout_below="@+id/subtitleview"
-			/>
 			<ImageView  
 			  	android:id="@+id/imageview"
+				android:contentDescription="@string/content_image"
 			    android:layout_width="fill_parent" 
-			    android:layout_height="70dip"
+			    android:layout_height="100dip"
 			    android:layout_below="@+id/contactview"
+			/>
+			<TextView  
+			  	android:id="@+id/subtitleview"
+			    android:layout_width="fill_parent" 
+			    android:layout_height="wrap_content"
+			    android:layout_marginTop="10dip"
+			    android:layout_below="@+id/imageview"
 			/>
 		</RelativeLayout>
 	</ScrollView>

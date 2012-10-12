@@ -51,7 +51,7 @@ import android.widget.Toast;
  * @author evans
  * 
  */
-public class SMSActivity extends ListActivity implements IConstants {
+public class MessageActivity extends ListActivity implements IConstants {
 	/**
 	 * The current position when ACTIVITY_DISPLAY_MESSAGE is requested. Used
 	 * with the resultCodes RESULT_PREV and RESULT_NEXT when they are returned.
@@ -68,17 +68,11 @@ public class SMSActivity extends ListActivity implements IConstants {
 	private long increment = 0;
 
 	/** The Uri to use. */
-	public static final Uri uri = SMS_URI;
-
-	/**
-	 * The date multiplier to use to get ms. MMS message timestamps are in sec
-	 * not ms.
-	 */
-	public static final Long dateMultiplier = 1L;
+	public static final Uri uri = MMS_SMS_CONVERSATIONS_URI;
 
 	/** Enum to specify the sort order. */
 	enum Order {
-		TIME(COL_DATE + " DESC"), ID(COL_ID + " DESC");
+		TIME(VAR_NORMALIZED_DATE + " DESC"), ID(COL_ID + " DESC");
 		public String sqlCommand;
 
 		Order(String sqlCommand) {
@@ -192,6 +186,19 @@ public class SMSActivity extends ListActivity implements IConstants {
 	}
 
 	/**
+	 * Returns whether the given id corresponds to an MMS message.
+	 * 
+	 * @param id
+	 * @return
+	 */
+	public boolean isMMS(long id) {
+		String[] values = MessageUtils.getStringValues(this, id, uri,
+				new String[] { COL_CT_T });
+		return values != null
+				&& "application/vnd.wap.multipart.related".equals(values[0]);
+	}
+
+	/**
 	 * Displays the message at the current position plus the current increment,
 	 * adjusting for being within range. Resets the increment to 0 after.
 	 */
@@ -258,12 +265,24 @@ public class SMSActivity extends ListActivity implements IConstants {
 				}
 			}
 
-			// Request the new message
+			// Request the new message from the appropriate activity
 			currentId = adapter.getItemId(currentPosition);
-			Intent i = new Intent(this, DisplaySMSActivity.class);
-			i.putExtra(COL_ID, currentId);
-			i.putExtra(URI_KEY, getUri().toString());
-			i.putExtra(DATE_MULTIPLIER_KEY, getDateMultiplier());
+			Intent i = null;
+			if (isMMS(currentId)) {
+				i = new Intent(this, DisplayMMSActivity.class);
+				i.putExtra(COL_ID, currentId);
+				i.putExtra(URI_KEY, MMS_URI.toString());
+				i.putExtra(DATE_MULTIPLIER_KEY, MMS_DATE_MULTIPLIER);
+				Log.d(TAG, this.getClass().getSimpleName()
+						+ ".displayMessage: MMS");
+			} else {
+				i = new Intent(this, DisplaySMSActivity.class);
+				i.putExtra(COL_ID, currentId);
+				i.putExtra(URI_KEY, SMS_URI.toString());
+				i.putExtra(DATE_MULTIPLIER_KEY, SMS_DATE_MULTIPLIER);
+				Log.d(TAG, this.getClass().getSimpleName()
+						+ ".displayMessage: SMS");
+			}
 			Log.d(TAG, this.getClass().getSimpleName()
 					+ ".displayMessage: position=" + currentPosition
 					+ " currentId=" + currentId);
@@ -289,7 +308,7 @@ public class SMSActivity extends ListActivity implements IConstants {
 
 			// Make an array of the desired ones that are available
 			String[] desiredColumns = { COL_ID, COL_ADDRESS, COL_DATE,
-					COL_BODY, COL_TYPE };
+					COL_BODY, COL_TYPE, COL_CT_T };
 			ArrayList<String> list = new ArrayList<String>();
 			for (String col : desiredColumns) {
 				for (String col1 : avaliableColumns) {
@@ -303,7 +322,6 @@ public class SMSActivity extends ListActivity implements IConstants {
 			list.toArray(columns);
 
 			// Get the available columns from all rows
-			// String selection = COL_ID + "<=76" + " OR " + COL_ID + "=13";
 			String selection = null;
 			cursor = getContentResolver().query(getUri(), columns, selection,
 					null, sortOrder.sqlCommand);
@@ -321,75 +339,9 @@ public class SMSActivity extends ListActivity implements IConstants {
 				adapter.changeCursor(cursor);
 			}
 		} catch (Exception ex) {
-			Utils.excMsg(this, "Error finding SMS messages", ex);
+			Utils.excMsg(this, "Error finding messages", ex);
 		}
 	}
-
-	// /**
-	// * Method used to test what is happening with a database.
-	// *
-	// * @param testNum
-	// * Prefix to log message.
-	// * @param cls
-	// * The calling class (will be part of the log message).
-	// * @param context
-	// * The calling context. Used to get the content resolver if the
-	// * input cursor is null.
-	// * @param cursor
-	// * The calling cursor or null to use a cursor with all columns.
-	// * @param id
-	// * The _id.
-	// * @param uri
-	// * The URI of the content database (will be part of the log
-	// * message).
-	// */
-	// public static void test(int testNum, Class<?> cls, Context context,
-	// Cursor cursor, String id, Uri uri) {
-	// Cursor cursor1;
-	// if (cursor == null) {
-	// String selection = COL_ID + "=" + id;
-	// // String[] projection = { "*" };
-	// String[] projection = null;
-	// cursor1 = context.getContentResolver().query(uri, projection,
-	// selection, null, null);
-	// cursor1.moveToFirst();
-	// } else {
-	// cursor1 = cursor;
-	// }
-	//
-	// int indexId = cursor1.getColumnIndex(COL_ID);
-	// int indexDate = cursor1.getColumnIndex(COL_DATE);
-	// int indexAddress = cursor1.getColumnIndex(COL_ADDRESS);
-	// int indexThreadId = cursor1.getColumnIndex(COL_THREAD_ID);
-	//
-	// do {
-	// String id1 = cursor1.getString(indexId);
-	// String address = "<Address NA>";
-	// if (indexAddress > -1) {
-	// address = cursor1.getString(indexAddress);
-	// }
-	// Long dateNum = -1L;
-	// if (indexDate > -1) {
-	// dateNum = cursor1.getLong(indexDate);
-	// }
-	// String threadId = "<ThreadID NA>";
-	// if (indexThreadId > -1) {
-	// threadId = cursor1.getString(indexThreadId);
-	// }
-	// Log.d(TAG,
-	// testNum + " " + cls.getSimpleName() + ".test" + "id=(" + id
-	// + "," + id1 + ") address=" + address + " dateNum="
-	// + dateNum + " threadId=" + threadId + " uri=" + uri
-	// + " cursor=(" + cursor1.getColumnCount() + ","
-	// + cursor1.getCount() + "," + cursor1.getPosition()
-	// + ")");
-	// } while (cursor == null && cursor1.moveToNext());
-	//
-	// if (cursor == null) {
-	// // Close the cursor if we created it here
-	// cursor1.close();
-	// }
-	// }
 
 	/**
 	 * @return The content provider URI used.
@@ -398,19 +350,13 @@ public class SMSActivity extends ListActivity implements IConstants {
 		return uri;
 	}
 
-	/**
-	 * @return The date multiplier to use.
-	 */
-	public Long getDateMultiplier() {
-		return dateMultiplier;
-	}
-
 	private class CustomCursorAdapter extends CursorAdapter {
 		private LayoutInflater inflater;
 		private int indexDate;
 		private int indexAddress;
 		private int indexId;
 		private int indexType;
+		private int indexCtt;
 
 		public CustomCursorAdapter(Context context, Cursor cursor) {
 			super(context, cursor);
@@ -419,6 +365,9 @@ public class SMSActivity extends ListActivity implements IConstants {
 			indexDate = cursor.getColumnIndex(COL_DATE);
 			indexAddress = cursor.getColumnIndex(COL_ADDRESS);
 			indexType = cursor.getColumnIndex(COL_TYPE);
+			indexCtt = cursor.getColumnIndex(COL_CT_T);
+			Log.d(TAG, this.getClass().getSimpleName() + " uri=" + getUri()
+					+ " indexCtt=" + indexCtt);
 		}
 
 		@Override
@@ -432,29 +381,41 @@ public class SMSActivity extends ListActivity implements IConstants {
 			}
 			Long dateNum = -1L;
 			if (indexDate > -1) {
-				dateNum = cursor.getLong(indexDate) * getDateMultiplier();
+				dateNum = cursor.getLong(indexDate);
 			}
 			int type = -1;
 			if (indexType > -1) {
 				type = cursor.getInt(indexType);
 			}
-			String titleText = id + ": " + MessageUtils.formatSmsType(type)
-					+ MessageUtils.formatAddress(address);
-			String contactName = MessageUtils.getContactNameFromNumber(
-					SMSActivity.this, address);
-			if (!contactName.equals("Unknown")) {
-				titleText += " " + contactName;
+			String ctt = "ct_t NA";
+			String messageType = "";
+			Long multiplier = SMS_DATE_MULTIPLIER;
+			if (indexCtt > -1) {
+				ctt = cursor.getString(indexCtt);
+				// Doing it this way handles null ctt
+				if ("application/vnd.wap.multipart.related".equals(ctt)) {
+					messageType = "MMS ";
+					multiplier = MMS_DATE_MULTIPLIER;
+					// We need to get the address from another provider
+					String text = MessageUtils.getMMSAddress(
+							MessageActivity.this, id);
+					if (text != null) {
+						address = text;
+					}
+				} else {
+					messageType = "SMS ";
+					if (indexAddress > -1) {
+						address = cursor.getString(indexAddress);
+					}
+				}
 			}
-			title.setText(titleText);
-			subtitle.setText(MessageUtils.formatDate(dateNum));
+			title.setText(id + ": " + messageType
+					+ MessageUtils.formatSmsType(type)
+					+ MessageUtils.formatAddress(address));
+			subtitle.setText(MessageUtils.formatDate(dateNum * multiplier));
 			// Log.d(TAG, getClass().getSimpleName() + ".bindView" + " id=" + id
 			// + " address=" + address + " dateNum=" + dateNum
 			// + " dateMultiplier=" + getDateMultiplier());
-			// DEBUG
-			// if (id.equals(new Integer(76).toString())) {
-			// test(1, this.getClass(), SMSActivity.this, cursor, id, getUri());
-			// test(2, this.getClass(), SMSActivity.this, null, id, getUri());
-			// }
 		}
 
 		@Override

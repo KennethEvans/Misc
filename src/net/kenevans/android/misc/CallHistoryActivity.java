@@ -67,8 +67,8 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
 	private int currentPosition;
 
 	/**
-	 * The current id when DISPLAY_CALL is requested. Used with the
-	 * resultCodes RESULT_PREV and RESULT_NEXT when they are returned.
+	 * The current id when DISPLAY_CALL is requested. Used with the resultCodes
+	 * RESULT_PREV and RESULT_NEXT when they are returned.
 	 */
 	private long currentId;
 
@@ -418,11 +418,10 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
 						}
 						out.write(id
 								+ "\t"
-								+ SMSActivity.formatDate(
-										CallHistoryActivity.mediumFormatter,
-										dateNum) + "\t"
-								+ SMSActivity.formatAddress(number) + "\t"
-								+ formatType(type) + "\t"
+								+ MessageUtils.formatDate(
+										MessageUtils.mediumFormatter, dateNum)
+								+ "\t" + MessageUtils.formatAddress(number)
+								+ "\t" + formatType(type) + "\t"
 								+ formatDuration(duration) + "\t" + name + "\n");
 						cursor.moveToNext();
 					}
@@ -460,8 +459,8 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
 		}
 		try {
 			int count = adapter.getCount();
-			Log.d(TAG, this.getClass().getSimpleName()
-					+ ".displayCall: count=" + count);
+			Log.d(TAG, this.getClass().getSimpleName() + ".displayCall: count="
+					+ count);
 			if (count == 0) {
 				Utils.infoMsg(this, "There are no items in the list");
 				return;
@@ -479,8 +478,8 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
 			}
 			// Determine the new currentPosition
 			Log.d(TAG, this.getClass().getSimpleName()
-					+ ".displayCall: position=" + currentPosition
-					+ " id=" + id + " changed=" + changed);
+					+ ".displayCall: position=" + currentPosition + " id=" + id
+					+ " changed=" + changed);
 			if (changed) {
 				for (int i = 0; i < count; i++) {
 					id = adapter.getItemId(i);
@@ -675,10 +674,12 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
 					name = "Unknown";
 				}
 			}
-			title.setText(id + ": " + SMSActivity.formatAddress(number) + " ("
+			title.setText(id + ": " + MessageUtils.formatAddress(number) + " ("
 					+ formatType(type) + ") " + name);
-			subtitle.setText(SMSActivity.formatDate(mediumFormatter, dateNum)
-					+ " Duration: " + formatDuration(duration));
+			subtitle.setText(MessageUtils.formatDate(
+					MessageUtils.mediumFormatter, dateNum)
+					+ " Duration: "
+					+ formatDuration(duration));
 			Log.d(TAG, getClass().getSimpleName() + ".bindView" + " id=" + id
 					+ " number=" + number + " dateNum=" + dateNum);
 			// DEBUG

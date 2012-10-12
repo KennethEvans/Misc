@@ -1,21 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
 	package="net.kenevans.android.misc" android:installLocation="preferExternal"
-	android:versionName="1.2.0" android:versionCode="6">
+	android:versionName="1.3.0" android:versionCode="7">
 
+    <!-- Messaging -->
 	<uses-sdk android:minSdkVersion="8" android:targetSdkVersion="10"  />
 	<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+	<uses-permission android:name="android.permission.READ_PHONE_STATE" />
 	<uses-permission android:name="android.permission.READ_SMS" />
 	<uses-permission android:name="android.permission.RECEIVE_SMS" />
 	<uses-permission android:name="android.permission.SEND_SMS" />
 	<uses-permission android:name="android.permission.WRITE_SMS" />
-	<!-- Call Logs -->
+	<!-- Call History, Contacts -->
 	<uses-permission android:name="android.permission.READ_CONTACTS" />
 	<uses-permission android:name="android.permission.WRITE_CONTACTS" />
 	<!-- Google Maps API -->
 	<uses-permission android:name="android.permission.INTERNET" />
 	<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-	<!-- Application Info -->
+	<!-- Application Info, others -->
 	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
 	<application android:icon="@drawable/bluemouse"
@@ -27,35 +29,47 @@
 				<category android:name="android.intent.category.LAUNCHER" />
 			</intent-filter>
 		</activity>
+		<activity android:name=".AppsActivity" android:label="@string/apps_title">
+		</activity>
+		<activity android:name=".ContactsActivity" android:label="@string/contacts_title">
+		</activity>
+		<activity android:name=".CallHistoryActivity" android:label="@string/phonehistory_title">
+		</activity>
+		<activity android:name=".DisplayCallActivity" android:label="@string/displayphonehistory_title">
+		</activity>
+		<activity android:name=".DisplayContactActivity" android:label="@string/display_contacts_title">
+		</activity>
+		<activity android:name=".DisplayMMSActivity" android:label="@string/display_mms_message_title">
+		</activity>
+		<activity android:name=".DisplaySMSActivity" android:label="@string/display_sms_message_title">
+		</activity>
+		<activity android:name=".MapLocationActivity" android:label="@string/map_location_title">
+		</activity>
 		<activity android:name=".NetworkActivity" android:label="@string/network_title">
 		</activity>
-		<activity android:name=".CurrentTimeActivity" android:label="@string/current_time_title">
+		<activity android:name=".MessageActivity" android:label="@string/sms_mms_title">
+		</activity>
+		<activity android:name=".MMSActivity" android:label="@string/mms_title">
 		</activity>
 		<activity android:name=".SMSActivity" android:label="@string/sms_title">
+		</activity>
+		<!-- Debug -->
+		<activity android:name=".CurrentTimeActivity" android:label="@string/current_time_title">
+		</activity>
+		<activity android:name=".InfoActivity" android:label="@string/info_title">
+		</activity>
+		<activity android:name=".MessageListenerActivity" android:label="@string/messagelistener_title">
 		</activity>
 		<activity android:name=".SMSTestActivity" android:label="@string/sms_title">
 		</activity>
 		<activity android:name=".SMSTest2Activity" android:label="@string/sms_title">
 		</activity>
-		<activity android:name=".DisplayMessageActivity"
-			android:label="@string/displaymessage_title">
-		</activity>
-		<activity android:name=".MessageListenerActivity"
-			android:label="@string/messagelistener_title">
-		</activity>
-		<activity android:name=".CallHistoryActivity" android:label="@string/phonehistory_title">
-		</activity>
-		<activity android:name=".DisplayCallActivity"
-			android:label="@string/displayphonehistory_title">
-		</activity>
-		<activity android:name=".MapLocationActivity" android:label="@string/map_location_title">
-		</activity>
-		<activity android:name=".InfoActivity" android:label="@string/info_title">
-		</activity>
-		<activity android:name=".AppsActivity" android:label="@string/apps_title">
-		</activity>
-		<!-- <receiver android:name=".SMSMessageReceiver"> <intent-filter> <action 
-			android:name="android.provider.Telephony.SMS_RECEIVED" /> </intent-filter> 
-			</receiver> -->
+<!--
+		<receiver android:name=".SMSMessageReceiver">
+			<intent-filter>
+				<action android:name="android.provider.Telephony.SMS_RECEIVED" />
+			</intent-filter> 
+		</receiver>
+-->
 	</application>
 </manifest>

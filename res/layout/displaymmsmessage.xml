@@ -62,11 +62,18 @@
 			  	android:id="@+id/bodyview"
 			    android:layout_width="fill_parent" 
 		    	android:layout_height="70dip"
-			    android:layout_marginTop="5dip"
 		    	android:gravity="top"
 		    	android:textColor="#ff000000"
 		    	android:background="#ffffffff"
 			    android:layout_below="@+id/titleview"
+			/>
+			<ImageView  
+			  	android:id="@+id/imageview"
+			  	android:contentDescription="@string/content_image"
+			    android:layout_width="fill_parent" 
+			    android:layout_height="wrap_content"
+			    android:layout_marginTop="10dip"
+			    android:layout_below="@+id/bodyview"
 			/>
 			<TextView  
 			  	android:id="@+id/subtitleview"
@@ -74,7 +81,7 @@
 			    android:layout_height="wrap_content"
 			    android:layout_marginTop="5dip"
 		    	android:layout_alignParentBottom="true"
-			    android:layout_below="@+id/bodyview"
+			    android:layout_below="@+id/imageview"
 			/>
 		</RelativeLayout>
 	</ScrollView>

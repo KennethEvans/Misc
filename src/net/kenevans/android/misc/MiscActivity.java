@@ -48,19 +48,26 @@ public class MiscActivity extends ListActivity {
 			// new Data("Current Time",
 			// "Get the current time in several formats",
 			// CurrentTimeActivity.class),
-//			new Data("WebView", "Test WebView", InfoActivity.class),
+			// new Data("WebView", "Test WebView", InfoActivity.class),
 			new Data("Application Info", "Display Application Information",
 					AppsActivity.class),
-//			new Data("Message Listener", "Listen to received messages",
-//					MessageListenerActivity.class),
-//			new Data("Messages Test1", "Display all messages in "
-//					+ SMSTestActivity.uri, SMSTestActivity.class),
-//			new Data("Messages Test2", "Display all messages in "
-//					+ SMSTest2Activity.uri, SMSTest2Activity.class),
-			new Data("Messages", "Display all messages in the SMS database",
+			// new Data("Message Listener", "Listen to received messages",
+			// MessageListenerActivity.class),
+			// new Data("Messages Test1", "Display all messages in "
+			// + SMSTestActivity.uri, SMSTestActivity.class),
+			// new Data("Messages Test2", "Display all messages in "
+			// + SMSTest2Activity.uri, SMSTest2Activity.class),
+			new Data("SMS Messages",
+					"Display all messages in the SMS database",
 					SMSActivity.class),
+			new Data("MMS Messages",
+					"Display all messages in the MMS database",
+					MMSActivity.class),
+			// new Data("Messages", "Display all SMS and MMS messages",
+			// MessageActivity.class),
 			new Data("Call History", "Display call history",
 					CallHistoryActivity.class),
+			new Data("Contacts", "Display contacts", ContactsActivity.class),
 	// new Data("Test", "Not implemented", null),
 	};
 
