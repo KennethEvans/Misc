@@ -364,7 +364,7 @@ public class MMSActivity extends ListActivity implements IConstants {
 			String id = cursor.getString(indexId);
 			// We need to get the address from another provider
 			String address = "<Address NA>";
-			String text = MessageUtils.getMMSAddress(MMSActivity.this, id);
+			String text = MessageUtils.getMmsAddress(MMSActivity.this, id);
 			if (text != null) {
 				address = text;
 			}

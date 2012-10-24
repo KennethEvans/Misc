@@ -605,7 +605,7 @@ public class DisplayMMSActivity extends Activity implements IConstants {
 				}
 				// We need to get the address from another provider
 				String address = "<Address NA>";
-				String text = MessageUtils.getMMSAddress(this, id);
+				String text = MessageUtils.getMmsAddress(this, id);
 				if (text != null) {
 					address = text;
 				}
@@ -616,17 +616,17 @@ public class DisplayMMSActivity extends Activity implements IConstants {
 				Uri partUri = MMS_PART_URI;
 				Cursor partCursor = getContentResolver().query(partUri, null,
 						partSelection, null, null);
-				// DEBUG
-				// String debugString = "";
-				// int nPart = 0;
+				 // DEBUG
+				 String debugString = "";
+				 int nPart = 0;
 
 				if (partCursor.moveToFirst()) {
 					String data = null;
 					do {
-						// DEBUG
-						// debugString += "\n\nPart " + nPart++;
-						// debugString +=
-						// MessageUtils.getColumnNamesAndValues(partCursor);
+						 // DEBUG
+						 debugString += "\n\nPart " + nPart++;
+						 debugString +=
+						 MessageUtils.getColumnNamesAndValues(partCursor);
 
 						// Get the part ID
 						String partId = partCursor.getString(partCursor
@@ -690,8 +690,8 @@ public class DisplayMMSActivity extends Activity implements IConstants {
 				subTitle += "\n";
 
 				// Add all the addresses
-				subTitle += "Associated Addresses and Type\n";
-				String[] addresses = MessageUtils.getAllMMSAddresses(this, id);
+				subTitle += "Associated Addresses\n";
+				String[] addresses = MessageUtils.getAllMmsAddresses(this, id);
 				for (String addr : addresses) {
 					subTitle += "  " + addr + "\n";
 				}
@@ -699,9 +699,9 @@ public class DisplayMMSActivity extends Activity implements IConstants {
 
 				// DEBUG
 				// Add the part column names
-				// if (debugString != null) {
-				// subTitle += "Part Data" + debugString + "\n";
-				// }
+				if (debugString != null) {
+					subTitle += "Part Data" + debugString + "\n";
+				}
 
 				// Add all the fields in the database
 				subTitle += MessageUtils.getColumnNamesAndValues(cursor);

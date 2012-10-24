@@ -397,7 +397,7 @@ public class MessageActivity extends ListActivity implements IConstants {
 					messageType = "MMS ";
 					multiplier = MMS_DATE_MULTIPLIER;
 					// We need to get the address from another provider
-					String text = MessageUtils.getMMSAddress(
+					String text = MessageUtils.getMmsAddress(
 							MessageActivity.this, id);
 					if (text != null) {
 						address = text;

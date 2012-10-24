@@ -142,7 +142,8 @@ public class MessageUtils implements IConstants {
 	 */
 	public static String formatSmsType(int type) {
 		// TODO Find where these constants are defined
-		// Internally in Telephony.TextBasesSmsColumns
+		// Internally in Telephony.BaseSmsColumns
+		// Internally in TextBasedSmsColumns
 		switch (type) {
 		case 0:
 			return "All ";
@@ -160,6 +161,23 @@ public class MessageUtils implements IConstants {
 			return "Queued ";
 		default:
 			return "";
+		}
+	}
+
+	/**
+	 * Format the MMS address type type as a string.
+	 * 
+	 * @param type
+	 * @return
+	 */
+	public static String formatMmsAddressType(String type) {
+		// TODO Find where these constants are defined
+		if (type.equals("151")) {
+			return "To ";
+		} else if (type.equals("137")) {
+			return "From ";
+		} else {
+			return "Type " + type + " ";
 		}
 	}
 
@@ -224,7 +242,7 @@ public class MessageUtils implements IConstants {
 	 * @param id
 	 * @return
 	 */
-	public static String getMMSAddress(Context context, String id) {
+	public static String getMmsAddress(Context context, String id) {
 		String addrSelection = "type=137 AND msg_id=" + id;
 		String uriStr = MessageFormat.format("content://mms/{0}/addr", id);
 		Uri uriAddress = Uri.parse(uriStr);
@@ -233,7 +251,7 @@ public class MessageUtils implements IConstants {
 				addrSelection, null, null);
 		// DEBUG
 		// String[] columnNames = addrCursor.getColumnNames();
-		Log.d(TAG, MessageUtils.class.getSimpleName() + ".getMMSAddress: "
+		Log.d(TAG, MessageUtils.class.getSimpleName() + ".getMmsAddress: "
 				+ uriAddress.toString() + " count=" + cursor.getCount());
 		// for (String string : columnNames) {
 		// Log.d(TAG, string);
@@ -277,7 +295,7 @@ public class MessageUtils implements IConstants {
 		if (cursor != null) {
 			cursor.close();
 		}
-		Log.d(TAG, MessageUtils.class.getSimpleName() + ".getMMSAddress: "
+		Log.d(TAG, MessageUtils.class.getSimpleName() + ".getMmsAddress: "
 				+ " address=" + address);
 		return address;
 	}
@@ -291,14 +309,14 @@ public class MessageUtils implements IConstants {
 	 * @param id
 	 * @return
 	 */
-	public static String[] getAllMMSAddresses(Context context, String id) {
+	public static String[] getAllMmsAddresses(Context context, String id) {
 		String selection = "msg_id=" + id;
 		String uriStr = MessageFormat.format("content://mms/{0}/addr", id);
 		Uri uri = Uri.parse(uriStr);
 		String[] columns = { "address", "type", "contact_id" };
 		Cursor cursor = context.getContentResolver().query(uri, columns,
 				selection, null, null);
-		Log.d(TAG, MessageUtils.class.getSimpleName() + ".getAllMMSAddresses: "
+		Log.d(TAG, MessageUtils.class.getSimpleName() + ".getAllMmsAddresses: "
 				+ uri.toString() + " count=" + cursor.getCount()
 				+ " columnCount=" + cursor.getColumnCount());
 		int indexAddr = cursor.getColumnIndex("address");
@@ -310,9 +328,7 @@ public class MessageUtils implements IConstants {
 		String type;
 		String contactId;
 		String contactName = "";
-		String thisPhoneNumber = getThisPhoneNumber(context).replaceAll(
-				"[^0-9]", "");
-		long longId;
+		String thisPhoneNumber = compressPhoneNumber(getThisPhoneNumber(context));
 		if (cursor.moveToFirst()) {
 			do {
 				addr = type = contactId = "";
@@ -333,7 +349,7 @@ public class MessageUtils implements IConstants {
 				}
 				if (contactName.equals("Unknown")) {
 					// Check if it is this phone as a last ditch resort
-					if (addr.replaceAll("[^0-9]", "").equals(thisPhoneNumber)) {
+					if (compressPhoneNumber(addr).equals(thisPhoneNumber)) {
 						contactName = " This Phone";
 					} else {
 						contactName = "";
@@ -341,7 +357,8 @@ public class MessageUtils implements IConstants {
 				} else {
 					contactName = " " + contactName;
 				}
-				list.add(formatAddress(addr) + " " + type + contactName);
+				list.add(formatMmsAddressType(type) + formatAddress(addr) + " "
+						+ type + contactName);
 			} while (cursor.moveToNext());
 		}
 		if (cursor != null) {
@@ -780,7 +797,7 @@ public class MessageUtils implements IConstants {
 			return -1L;
 		}
 		// Get rid of everything but numerals for comparison
-		String number1 = number.replaceAll("[^0-9]", "");
+		String number1 = compressPhoneNumber(number);
 		if (number1 == null || number1.length() == 0) {
 			return -1L;
 		}
@@ -808,7 +825,7 @@ public class MessageUtils implements IConstants {
 			if (number2 == null) {
 				continue;
 			}
-			number2 = number2.replaceAll("[^0-9]", "");
+			number2 = compressPhoneNumber(number2);
 			lVal = cursor.getLong(indexId);
 			Log.d(TAG, MessageUtils.class.getSimpleName()
 					+ ".getContactIdFromNumber: " + "number1,number2="
@@ -837,7 +854,7 @@ public class MessageUtils implements IConstants {
 			return name;
 		}
 		// Get rid of everything but numerals for comparison
-		String number1 = number.replaceAll("[^0-9]", "");
+		String number1 = compressPhoneNumber(number);
 		if (number1 == null || number1.length() == 0) {
 			return name;
 		}
@@ -847,8 +864,7 @@ public class MessageUtils implements IConstants {
 		}
 		if (name.equals("Unknown")) {
 			// Check if it is this phone as a last ditch resort
-			String thisPhoneNumber = getThisPhoneNumber(context).replaceAll(
-					"[^0-9]", "");
+			String thisPhoneNumber = compressPhoneNumber(getThisPhoneNumber(context));
 			if (number1.equals(thisPhoneNumber)) {
 				name = " This Phone";
 			}
@@ -863,10 +879,28 @@ public class MessageUtils implements IConstants {
 	 *            The calling context.
 	 * @return
 	 */
-	private static String getThisPhoneNumber(Context context) {
+	public static String getThisPhoneNumber(Context context) {
 		TelephonyManager tMgr = (TelephonyManager) context
 				.getSystemService(Context.TELEPHONY_SERVICE);
 		return tMgr.getLine1Number();
+	}
+
+	/**
+	 * Compresses a phone number leaving only numerals and eliminating a leading
+	 * 1 if there are 11 numerals.
+	 * 
+	 * @param number
+	 * @return
+	 */
+	public static String compressPhoneNumber(String number) {
+		if (number == null) {
+			return null;
+		}
+		String compressed = number.replaceAll("[^0-9]", "");
+		if (compressed.length() == 11 && compressed.startsWith("1")) {
+			compressed = compressed.substring(1);
+		}
+		return compressed;
 	}
 
 }
