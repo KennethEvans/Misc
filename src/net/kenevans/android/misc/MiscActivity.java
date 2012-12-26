@@ -79,10 +79,17 @@ public class MiscActivity extends ListActivity {
 					"Get information about the carrier", NetworkActivity.class),
 			new Data("Application Info", "Display Application Information",
 					AppsActivity.class),
-			new Data("Messages", "Display all messages in the SMS database",
+			new Data("SMS Messages",
+					"Display all messages in the SMS database",
 					SMSActivity.class),
+			new Data("MMS Messages",
+					"Display all messages in the MMS database",
+					MMSActivity.class),
 			new Data("Call History", "Display call history",
-					CallHistoryActivity.class), };
+					CallHistoryActivity.class),
+			new Data("Contacts", "Display contacts", ContactsActivity.class),
+	// Spacer to keep bracket on next line
+	};
 
 	/** The Array of items actually used to populate the ListView. */
 	private Data[] data = RELEASE_DATA;
