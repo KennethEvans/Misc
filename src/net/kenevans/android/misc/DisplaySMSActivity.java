@@ -128,6 +128,7 @@ public class DisplaySMSActivity extends Activity implements IConstants {
 			Utils.errMsg(this, "Null content provider database Uri");
 			return;
 		}
+		// TODO Note this is inconsistent with what is done above
 		mRowId = extras != null ? extras.getLong(COL_ID) : null;
 
 		// Call refresh to set the contents
