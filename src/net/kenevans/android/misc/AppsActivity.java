@@ -28,6 +28,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -490,6 +491,7 @@ public class AppsActivity extends Activity implements IConstants {
 			PInfo newInfo = new PInfo(pkg);
 			res.add(newInfo);
 		}
+		Collections.sort(res);
 		return res;
 	}
 
@@ -610,7 +612,7 @@ public class AppsActivity extends Activity implements IConstants {
 	 * Class to manage a single PackageInfo.
 	 * 
 	 */
-	class PInfo {
+	class PInfo implements Comparable<PInfo> {
 		private String appname = "";
 		private String pname = "";
 		private String versionName = "";
@@ -642,6 +644,12 @@ public class AppsActivity extends Activity implements IConstants {
 
 		public boolean isSystem() {
 			return isSystem;
+		}
+
+		@Override
+		public int compareTo(PInfo another) {
+			// TODO Auto-generated method stub
+			return this.appname.compareTo(another.appname);
 		}
 
 	}
