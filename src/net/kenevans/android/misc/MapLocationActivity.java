@@ -417,14 +417,33 @@ public class MapLocationActivity extends MapActivity implements IConstants {
 	private MarkerItemizedOverlay createMarkerOverlay(int lat, int lon,
 			int nid, int sid, int bid) {
 		MarkerItemizedOverlay markerOverlay = null;
+		OverlayItem overlayItem = null;
 		try {
-			markerOverlay = new MarkerItemizedOverlay(this, this.getResources()
-					.getDrawable(R.drawable.tower));
-			GeoPoint point = new GeoPoint(lat, lon);
-			OverlayItem overlayItem = new OverlayItem(point, "Cell Tower",
-					"NID=" + nid + " SID=" + sid + " BID=" + bid + "\nLat="
-							+ String.format("%.6f", lat * 1.e-6) + " Lon="
-							+ String.format("%.6f", lon * 1.e-6));
+			if (lat == Integer.MAX_VALUE || lon == Integer.MAX_VALUE) {
+				markerOverlay = new MarkerItemizedOverlay(this, this
+						.getResources().getDrawable(R.drawable.unknown));
+				GeoPoint point = new GeoPoint(0, 0);
+				overlayItem = new OverlayItem(point, "Cell Tower", "NID="
+						+ nid
+						+ " SID="
+						+ sid
+						+ " BID="
+						+ bid
+						+ "\nLat="
+						+ (lat == Integer.MAX_VALUE ? "Unknown"
+								: String.format("%.6f", lat * 1.e-6))
+						+ " Lon="
+						+ (lon == Integer.MAX_VALUE ? "Unknown"
+								: String.format("%.6f", lon * 1.e-6)));
+			} else {
+				markerOverlay = new MarkerItemizedOverlay(this, this
+						.getResources().getDrawable(R.drawable.tower));
+				GeoPoint point = new GeoPoint(lat, lon);
+				overlayItem = new OverlayItem(point, "Cell Tower", "NID=" + nid
+						+ " SID=" + sid + " BID=" + bid + "\nLat="
+						+ String.format("%.6f", lat * 1.e-6) + " Lon="
+						+ String.format("%.6f", lon * 1.e-6));
+			}
 			markerOverlay.addOverlay(overlayItem);
 		} catch (Exception ex) {
 			Utils.excMsg(this, "Cannot create a new MarkerItemizedOverlay", ex);

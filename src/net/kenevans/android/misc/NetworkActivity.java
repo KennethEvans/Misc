@@ -83,24 +83,25 @@ public class NetworkActivity extends Activity implements IConstants {
 		Log.d(TAG, this.getClass().getSimpleName() + ": onPause: mLatitude="
 				+ mLatitude + " mLongitude=" + mLongitude);
 		super.onPause();
-//		// Retain the state
-//		SharedPreferences.Editor editor = getPreferences(MODE_PRIVATE).edit();
-//		editor.putInt("latitude", mLatitude);
-//		editor.putInt("longitude", mLongitude);
-//		editor.putInt("nid", mNid);
-//		editor.putInt("sid", mSid);
-//		editor.commit();
+		// // Retain the state
+		// SharedPreferences.Editor editor =
+		// getPreferences(MODE_PRIVATE).edit();
+		// editor.putInt("latitude", mLatitude);
+		// editor.putInt("longitude", mLongitude);
+		// editor.putInt("nid", mNid);
+		// editor.putInt("sid", mSid);
+		// editor.commit();
 	}
 
 	@Override
 	protected void onResume() {
 		super.onResume();
-//		// Restore the state
-//		SharedPreferences prefs = getPreferences(MODE_PRIVATE);
-//		mLatitude = prefs.getInt("latitude", mLatitude);
-//		mLongitude = prefs.getInt("longitude", mLongitude);
-//		mNid = prefs.getInt("nid", mNid);
-//		mSid = prefs.getInt("sid", mSid);
+		// // Restore the state
+		// SharedPreferences prefs = getPreferences(MODE_PRIVATE);
+		// mLatitude = prefs.getInt("latitude", mLatitude);
+		// mLongitude = prefs.getInt("longitude", mLongitude);
+		// mNid = prefs.getInt("nid", mNid);
+		// mSid = prefs.getInt("sid", mSid);
 		Log.d(TAG, this.getClass().getSimpleName() + ": onResume: mLatitude="
 				+ mLatitude + " mLongitude=" + mLongitude);
 	}
@@ -158,24 +159,33 @@ public class NetworkActivity extends Activity implements IConstants {
 				info += "Base Station ID: " + cdmacl.getBaseStationId() + "\n";
 
 				int loc = cdmacl.getBaseStationLatitude();
-				info += "Base Station Lat: " + loc + " [" + locToDeg(loc)
-						+ " deg]\n";
+				if (loc == Integer.MAX_VALUE) {
+					info += "Base Station Lat: Unknown\n";
+				} else {
+					info += "Base Station Lat: " + loc + " [" + locToDeg(loc)
+							+ " deg]\n";
+				}
 				mLatitude = locToGoogle(loc);
 
 				loc = cdmacl.getBaseStationLongitude();
-				info += "Base Station Lon: " + loc + " [" + locToDeg(loc)
-						+ " deg]\n";
+				if (loc == Integer.MAX_VALUE) {
+					info += "Base Station Lon: Unknown\n";
+				} else {
+					info += "Base Station Lon: " + loc + " [" + locToDeg(loc)
+							+ " deg]\n";
+				}
 				mLongitude = locToGoogle(loc);
 				Log.d(TAG, "getNetworkInfo: mLatitude=" + mLatitude
 						+ " mLongitude=" + mLongitude);
-//				// Retain the state as these values
-//				SharedPreferences.Editor editor = getPreferences(MODE_PRIVATE)
-//						.edit();
-//				editor.putInt("latitude", mLatitude);
-//				editor.putInt("longitude", mLongitude);
-//				editor.putInt("nid", mNid);
-//				editor.putInt("sid", mSid);
-//				editor.commit();
+				// // Retain the state as these values
+				// SharedPreferences.Editor editor =
+				// getPreferences(MODE_PRIVATE)
+				// .edit();
+				// editor.putInt("latitude", mLatitude);
+				// editor.putInt("longitude", mLongitude);
+				// editor.putInt("nid", mNid);
+				// editor.putInt("sid", mSid);
+				// editor.commit();
 			} else if (cl instanceof GsmCellLocation) {
 				GsmCellLocation gsmcl = (GsmCellLocation) cl;
 				info += "GSM Cell Location:\n";
@@ -234,7 +244,7 @@ public class NetworkActivity extends Activity implements IConstants {
 	 */
 	public static String locToDeg(int loc) {
 		if (loc == Integer.MAX_VALUE) {
-			return "Invalid";
+			return "Unknown";
 		}
 		double val = 90. * loc / 1296000.;
 		return String.format("%.6f", val);
