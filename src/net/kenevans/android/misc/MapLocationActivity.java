@@ -60,9 +60,9 @@ public class MapLocationActivity extends MapActivity implements IConstants {
 	private int mInterval = 10000;
 
 	/** The last known value for the latitude. */
-	private int mLatitude;
+	private int mLatitude = Integer.MAX_VALUE;
 	/** The last known value for the longitude. */
-	private int mLongitude;
+	private int mLongitude = Integer.MAX_VALUE;
 	/** The last known value for the NID. */
 	private int mNid;
 	/** The last known value for the SID. */
