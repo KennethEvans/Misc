@@ -31,16 +31,22 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.ActivityManager.MemoryInfo;
 import android.app.AlertDialog;
+import android.content.ComponentName;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
@@ -48,6 +54,7 @@ import android.os.Environment;
 import android.os.StatFs;
 import android.text.ClipboardManager;
 import android.text.method.ScrollingMovementMethod;
+import android.util.Log;
 import android.util.SparseBooleanArray;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -65,9 +72,9 @@ public class AppsActivity extends Activity implements IConstants {
 	private TextView mTextView;
 	public boolean doBuildInfo = false;
 	public boolean doMemoryInfo = false;
-	// public boolean doComponentList = false;
 	public boolean doNonSystemApps = true;
 	public boolean doSystemApps = false;
+	public boolean doPreferredApplications = false;
 
 	/** Called when the activity is first created. */
 	@Override
@@ -151,6 +158,7 @@ public class AppsActivity extends Activity implements IConstants {
 		SharedPreferences.Editor editor = getPreferences(MODE_PRIVATE).edit();
 		editor.putBoolean("doBuildInfo", doBuildInfo);
 		editor.putBoolean("doMemoryInfo", doMemoryInfo);
+		editor.putBoolean("doPreferredApplications", doPreferredApplications);
 		editor.putBoolean("doNonSystemApps", doNonSystemApps);
 		editor.putBoolean("doSystemApps", doSystemApps);
 		editor.commit();
@@ -162,6 +170,8 @@ public class AppsActivity extends Activity implements IConstants {
 		SharedPreferences prefs = getPreferences(MODE_PRIVATE);
 		doBuildInfo = prefs.getBoolean("doBuildInfo", doBuildInfo);
 		doMemoryInfo = prefs.getBoolean("doMemoryInfo", doMemoryInfo);
+		doPreferredApplications = prefs.getBoolean("doPreferredApplications",
+				doPreferredApplications);
 		doNonSystemApps = prefs.getBoolean("doNonSystemApps", doNonSystemApps);
 		doSystemApps = prefs.getBoolean("doSystemApps", doSystemApps);
 
@@ -236,7 +246,8 @@ public class AppsActivity extends Activity implements IConstants {
 			File sdCardRoot = Environment.getExternalStorageDirectory();
 			if (sdCardRoot.canWrite()) {
 				String format = "yyyy-MM-dd-HHmmss";
-				SimpleDateFormat formatter = new SimpleDateFormat(format);
+				SimpleDateFormat formatter = new SimpleDateFormat(format,
+						Locale.US);
 				Date now = new Date();
 				String fileName = String.format(sdCardFileNameTemplate,
 						formatter.format(now), now.getTime());
@@ -269,10 +280,10 @@ public class AppsActivity extends Activity implements IConstants {
 	 */
 	private void setOptions() {
 		final CharSequence[] items = { "Build Information",
-				"Memory Information", "Downloaded Applications",
-				"System Applications" };
-		boolean[] states = { doBuildInfo, doMemoryInfo, doNonSystemApps,
-				doSystemApps };
+				"Memory Information", "Preferred Applications",
+				"Downloaded Applications", "System Applications" };
+		boolean[] states = { doBuildInfo, doMemoryInfo,
+				doPreferredApplications, doNonSystemApps, doSystemApps };
 		AlertDialog.Builder builder = new AlertDialog.Builder(this);
 		builder.setTitle("Settings");
 		builder.setMultiChoiceItems(items, states,
@@ -287,8 +298,9 @@ public class AppsActivity extends Activity implements IConstants {
 						.getListView().getCheckedItemPositions();
 				doBuildInfo = checked.get(0);
 				doMemoryInfo = checked.get(1);
-				doNonSystemApps = checked.get(2);
-				doSystemApps = checked.get(3);
+				doPreferredApplications = checked.get(2);
+				doNonSystemApps = checked.get(3);
+				doSystemApps = checked.get(4);
 				refresh();
 			}
 		});
@@ -447,19 +459,6 @@ public class AppsActivity extends Activity implements IConstants {
 		}
 	}
 
-	// /**
-	// * Return whether the given ResolveInfo represents a system package or
-	// not.
-	// *
-	// * @param ri
-	// * @return
-	// */
-	// private boolean isSystemPackage(ResolveInfo ri) {
-	// return ((ri.activityInfo.applicationInfo.flags &
-	// ApplicationInfo.FLAG_SYSTEM) != 0) ? true
-	// : false;
-	// }
-
 	/**
 	 * Return whether the given PackgeInfo represents a system package or not.
 	 * User-installed packages (Market or otherwise) should not be denoted as
@@ -483,38 +482,132 @@ public class AppsActivity extends Activity implements IConstants {
 		ArrayList<PInfo> res = new ArrayList<PInfo>();
 		List<PackageInfo> packages = getPackageManager()
 				.getInstalledPackages(0);
+		PInfo newInfo = null;
 		for (int i = 0; i < packages.size(); i++) {
 			PackageInfo pkg = packages.get(i);
 			if ((!getSysPackages) && (pkg.versionName == null)) {
 				continue;
 			}
-			PInfo newInfo = new PInfo(pkg);
+			newInfo = new PInfo(pkg);
 			res.add(newInfo);
 		}
 		Collections.sort(res);
 		return res;
 	}
 
-	// private List<String> getComponentList(String action, String category) {
-	// Intent intent = new Intent(action);
-	// intent.addCategory(category);
-	//
-	// List<ResolveInfo> ril = getPackageManager().queryIntentActivities(
-	// intent, PackageManager.MATCH_DEFAULT_ONLY);
-	// List<String> componentList = new ArrayList<String>();
-	// String componentString;
-	// for (ResolveInfo ri : ril) {
-	// if (ri.activityInfo != null) {
-	// componentString =
-	// // ri.activityInfo.packageName
-	// // +
-	// (isSystemPackage(ri) ? "S " : "") + ri.activityInfo.name;
-	// componentList.add(componentString);
-	//
-	// }
-	// }
-	// return componentList;
-	// }
+	/**
+	 * Gets a List of preferred packages.
+	 * 
+	 * @param getSysPackages
+	 * @return
+	 */
+	private ArrayList<PInfo> getPreferredApps() {
+		ArrayList<PInfo> res = new ArrayList<PInfo>();
+		// This returns nothing
+		// List<PackageInfo> packages = getPackageManager()
+		// .getPreferredPackages(0);
+		List<PackageInfo> packages = getPackageManager()
+				.getInstalledPackages(0);
+		Log.d(TAG,
+				this.getClass().getSimpleName()
+						+ ".getPreferredApps: installed packages size="
+						+ packages.size());
+
+		List<IntentFilter> filters = new ArrayList<IntentFilter>();
+		List<ComponentName> activities = new ArrayList<ComponentName>();
+		PInfo newInfo = null;
+		int nPref = 0, nFilters = 0, nActivities = 0;
+		for (int i = 0; i < packages.size(); i++) {
+			PackageInfo pkg = packages.get(i);
+			if (pkg.versionName == null) {
+				continue;
+			}
+			nPref = getPackageManager().getPreferredActivities(filters,
+					activities, pkg.packageName);
+			nFilters = filters.size();
+			nActivities = activities.size();
+			Log.d(TAG, pkg.packageName + " nPref=" + nPref + " nFilters="
+					+ nFilters + " nActivities=" + nActivities);
+			if (nPref > 0 || nFilters > 0 || nActivities > 0) {
+				newInfo = new PInfo(pkg);
+				newInfo.setInfo("");
+				// newInfo.setInfo(pkg.packageName + " nPref=" + nPref
+				// + " nFilters=" + nFilters + " nActivities="
+				// + nActivities + "\n");
+				for (IntentFilter filter : filters) {
+					// newInfo.appendInfo("IntentFilter: " + " actions="
+					// + filter.countActions() + " categories="
+					// + filter.countCategories() + " types="
+					// + filter.countDataTypes() + " authorities="
+					// + filter.countDataAuthorities() + " paths="
+					// + filter.countDataPaths() + " schemes="
+					// + filter.countDataSchemes() + "\n");
+					newInfo.appendInfo("IntentFilter:\n");
+					for (int j = 0; j < filter.countActions(); j++) {
+						newInfo.appendInfo("    action: " + filter.getAction(j)
+								+ "\n");
+					}
+					for (int j = 0; j < filter.countCategories(); j++) {
+						newInfo.appendInfo("    category: "
+								+ filter.getCategory(j) + "\n");
+					}
+					for (int j = 0; j < filter.countDataTypes(); j++) {
+						newInfo.appendInfo("    type: " + filter.getDataType(j)
+								+ "\n");
+					}
+					for (int j = 0; j < filter.countDataAuthorities(); j++) {
+						newInfo.appendInfo("    data authority: "
+								+ filter.getDataAuthority(j) + "\n");
+					}
+					for (int j = 0; j < filter.countDataPaths(); j++) {
+						newInfo.appendInfo("    data path: "
+								+ filter.getDataPath(j) + "\n");
+					}
+					for (int j = 0; j < filter.countDataSchemes(); j++) {
+						newInfo.appendInfo("    data path: "
+								+ filter.getDataScheme(j) + "\n");
+					}
+					// for (ComponentName activity : activities) {
+					// newInfo.appendInfo("activity="
+					// + activity.flattenToString() + "\n");
+					// }
+				}
+				res.add(newInfo);
+			}
+		}
+		Collections.sort(res);
+		return res;
+	}
+
+	private void testReader() {
+		// Open a file with Adobe Reader
+		File file = new File("/storage/extSdCard/PDF/Images Book.pdf");
+		Intent intent = new Intent(Intent.ACTION_VIEW);
+		intent.setDataAndType(Uri.fromFile(file), "application/pdf");
+		intent.setFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
+		// startActivity(intent);
+
+		Log.d(TAG, this.getClass().getSimpleName() + ".testReader: "
+				+ "intent: " + intent);
+
+		// Log.d(TAG, "intent URI: " + intent.toURI());
+		final List<ResolveInfo> list = getPackageManager()
+				.queryIntentActivities(intent, 0);
+		Log.d(TAG, "Packages:");
+		for (ResolveInfo rInfo : list) {
+			String pkgName = rInfo.activityInfo.applicationInfo.packageName;
+			Log.d(TAG, "  " + pkgName);
+		}
+
+		ResolveInfo rDefault = getPackageManager().resolveActivity(intent,
+				PackageManager.MATCH_DEFAULT_ONLY);
+		if (rDefault == null) {
+			Log.d(TAG, " Default=null");
+		} else {
+			Log.d(TAG, " Default="
+					+ rDefault.activityInfo.applicationInfo.packageName);
+		}
+	}
 
 	/**
 	 * Gets information about the applications.
@@ -546,22 +639,24 @@ public class AppsActivity extends Activity implements IConstants {
 			info += getMemoryInfo() + "\n";
 		}
 
-		// // Installed component list
-		// if (doComponentList) {
-		// info += "Launcher Components\n\n";
-		// List<String> components = getComponentList(Intent.ACTION_MAIN,
-		// Intent.CATEGORY_LAUNCHER);
-		// if (components == null) {
-		// info += "<null>\n";
-		// } else if (components.isEmpty()) {
-		// info += "<none>\n";
-		// } else {
-		// for (String component : components) {
-		// info += component + "\n";
-		// }
-		// info += "\n";
-		// }
-		// }
+		if (doPreferredApplications) {
+			info += "Preferred Applications (Launch by Default)\n\n";
+			try {
+				// false = no system packages
+				ArrayList<PInfo> apps = getPreferredApps();
+				final int max = apps.size();
+				PInfo app;
+				for (int i = 0; i < max; i++) {
+					app = apps.get(i);
+					// No "\n" here
+					info += app.prettyPrint();
+				}
+			} catch (Exception ex) {
+				info += "Error gettingPreferred Applications:\n\n";
+				info += ex.getMessage() + "\n\n";
+				Log.d(TAG, "Error gettingPreferred Applications:", ex);
+			}
+		}
 
 		// Non-system applications information
 		if (doNonSystemApps) {
@@ -579,7 +674,7 @@ public class AppsActivity extends Activity implements IConstants {
 				}
 			} catch (Exception ex) {
 				info += "Error getting Application Information:\n";
-				info += ex.getMessage();
+				info += ex.getMessage() + "\n\n";
 			}
 		}
 
@@ -598,8 +693,8 @@ public class AppsActivity extends Activity implements IConstants {
 					}
 				}
 			} catch (Exception ex) {
-				info += "Error getting Application Information:\n";
-				info += ex.getMessage();
+				info += "Error getting System Application Information:\n";
+				info += ex.getMessage() + "\n\n";
 			}
 		}
 
@@ -616,6 +711,7 @@ public class AppsActivity extends Activity implements IConstants {
 		private String appname = "";
 		private String pname = "";
 		private String versionName = "";
+		private String info = null;
 		boolean isSystem;
 
 		// private int versionCode = 0;
@@ -636,6 +732,9 @@ public class AppsActivity extends Activity implements IConstants {
 			info += appname + "\n";
 			info += pname + "\n";
 			info += "Version: " + versionName + "\n";
+			if (this.info != null) {
+				info += this.info + "\n";
+			}
 			// info += "Version code: " + versionCode + "\n";
 			// DEBUG
 			// Log.d(TAG, info);
@@ -650,6 +749,18 @@ public class AppsActivity extends Activity implements IConstants {
 		public int compareTo(PInfo another) {
 			// TODO Auto-generated method stub
 			return this.appname.compareTo(another.appname);
+		}
+
+		public String getInfo() {
+			return info;
+		}
+
+		public void setInfo(String info) {
+			this.info = info;
+		}
+
+		public void appendInfo(String info) {
+			this.info += info;
 		}
 
 	}
