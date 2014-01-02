@@ -483,8 +483,9 @@ public class AppsActivity extends Activity implements IConstants {
 		List<PackageInfo> packages = getPackageManager()
 				.getInstalledPackages(0);
 		PInfo newInfo = null;
+		PackageInfo pkg = null;
 		for (int i = 0; i < packages.size(); i++) {
-			PackageInfo pkg = packages.get(i);
+			pkg = packages.get(i);
 			if ((!getSysPackages) && (pkg.versionName == null)) {
 				continue;
 			}
@@ -516,9 +517,10 @@ public class AppsActivity extends Activity implements IConstants {
 		List<IntentFilter> filters = new ArrayList<IntentFilter>();
 		List<ComponentName> activities = new ArrayList<ComponentName>();
 		PInfo newInfo = null;
+		PackageInfo pkg = null;
 		int nPref = 0, nFilters = 0, nActivities = 0;
 		for (int i = 0; i < packages.size(); i++) {
-			PackageInfo pkg = packages.get(i);
+			pkg = packages.get(i);
 			if (pkg.versionName == null) {
 				continue;
 			}
