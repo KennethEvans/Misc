@@ -459,6 +459,61 @@ public class AppsActivity extends Activity implements IConstants {
 		}
 	}
 
+	// /**
+	// * Get info on the preferred (launch by default) applications.
+	// *
+	// * @return
+	// */
+	// public String getPreferredAppInfo() {
+	// List<PackageInfo> packages = getPackageManager()
+	// .getInstalledPackages(0);
+	// List<IntentFilter> filters = new ArrayList<IntentFilter>();
+	// List<ComponentName> activities = new ArrayList<ComponentName>();
+	// String info = "";
+	// int nPref = 0, nFilters = 0, nActivities = 0;
+	// PackageInfo pkg = null;
+	// for (int i = 0; i < packages.size(); i++) {
+	// pkg = packages.get(i);
+	// nPref = getPackageManager().getPreferredActivities(filters,
+	// activities, pkg.packageName);
+	// nFilters = filters.size();
+	// nActivities = activities.size();
+	// if (nPref > 0 || nFilters > 0 || nActivities > 0) {
+	// // This is a launch by default package
+	// info += "\n" + pkg.packageName + "\n";
+	// for (IntentFilter filter : filters) {
+	// info += "IntentFilter:\n";
+	// for (int j = 0; j < filter.countActions(); j++) {
+	// info += "    action: " + filter.getAction(j) + "\n";
+	// }
+	// for (int j = 0; j < filter.countCategories(); j++) {
+	// info += "    category: " + filter.getCategory(j) + "\n";
+	// }
+	// for (int j = 0; j < filter.countDataTypes(); j++) {
+	// info += "    type: " + filter.getDataType(j) + "\n";
+	// }
+	// for (int j = 0; j < filter.countDataAuthorities(); j++) {
+	// info += "    data authority: "
+	// + filter.getDataAuthority(j) + "\n";
+	// }
+	// for (int j = 0; j < filter.countDataPaths(); j++) {
+	// info += "    data path: " + filter.getDataPath(j)
+	// + "\n";
+	// }
+	// for (int j = 0; j < filter.countDataSchemes(); j++) {
+	// info += "    data path: " + filter.getDataScheme(j)
+	// + "\n";
+	// }
+	// // for (ComponentName activity : activities) {
+	// // info += "activity="
+	// // + activity.flattenToString() + "\n";
+	// // }
+	// }
+	// }
+	// }
+	// return info;
+	// }
+
 	/**
 	 * Return whether the given PackgeInfo represents a system package or not.
 	 * User-installed packages (Market or otherwise) should not be denoted as
@@ -581,35 +636,35 @@ public class AppsActivity extends Activity implements IConstants {
 		return res;
 	}
 
-	private void testReader() {
-		// Open a file with Adobe Reader
-		File file = new File("/storage/extSdCard/PDF/Images Book.pdf");
-		Intent intent = new Intent(Intent.ACTION_VIEW);
-		intent.setDataAndType(Uri.fromFile(file), "application/pdf");
-		intent.setFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
-		// startActivity(intent);
-
-		Log.d(TAG, this.getClass().getSimpleName() + ".testReader: "
-				+ "intent: " + intent);
-
-		// Log.d(TAG, "intent URI: " + intent.toURI());
-		final List<ResolveInfo> list = getPackageManager()
-				.queryIntentActivities(intent, 0);
-		Log.d(TAG, "Packages:");
-		for (ResolveInfo rInfo : list) {
-			String pkgName = rInfo.activityInfo.applicationInfo.packageName;
-			Log.d(TAG, "  " + pkgName);
-		}
-
-		ResolveInfo rDefault = getPackageManager().resolveActivity(intent,
-				PackageManager.MATCH_DEFAULT_ONLY);
-		if (rDefault == null) {
-			Log.d(TAG, " Default=null");
-		} else {
-			Log.d(TAG, " Default="
-					+ rDefault.activityInfo.applicationInfo.packageName);
-		}
-	}
+	// private void testReader() {
+	// // Open a file with Adobe Reader
+	// File file = new File("/storage/extSdCard/PDF/Images Book.pdf");
+	// Intent intent = new Intent(Intent.ACTION_VIEW);
+	// intent.setDataAndType(Uri.fromFile(file), "application/pdf");
+	// intent.setFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
+	// // startActivity(intent);
+	//
+	// Log.d(TAG, this.getClass().getSimpleName() + ".testReader: "
+	// + "intent: " + intent);
+	//
+	// // Log.d(TAG, "intent URI: " + intent.toURI());
+	// final List<ResolveInfo> list = getPackageManager()
+	// .queryIntentActivities(intent, 0);
+	// Log.d(TAG, "Packages:");
+	// for (ResolveInfo rInfo : list) {
+	// String pkgName = rInfo.activityInfo.applicationInfo.packageName;
+	// Log.d(TAG, "  " + pkgName);
+	// }
+	//
+	// ResolveInfo rDefault = getPackageManager().resolveActivity(intent,
+	// PackageManager.MATCH_DEFAULT_ONLY);
+	// if (rDefault == null) {
+	// Log.d(TAG, " Default=null");
+	// } else {
+	// Log.d(TAG, " Default="
+	// + rDefault.activityInfo.applicationInfo.packageName);
+	// }
+	// }
 
 	/**
 	 * Gets information about the applications.
@@ -618,6 +673,12 @@ public class AppsActivity extends Activity implements IConstants {
 	 */
 	private String getAppsInfo() {
 		String info = "Application Information\n";
+
+		// DEBUG
+		// info +=
+		// "\n\n------------------------------------------------------\n";
+		// info += getPreferredAppInfo();
+		// info += "------------------------------------------------------\n\n";
 
 		// Date
 		Date now = new Date();
