@@ -21,8 +21,6 @@
 
 package net.kenevans.android.misc;
 
-import java.text.SimpleDateFormat;
-
 import android.net.Uri;
 
 /**
