@@ -1,75 +1,124 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-	package="net.kenevans.android.misc" android:installLocation="preferExternal"
-	android:versionName="1.3.1" android:versionCode="8">
+    package="net.kenevans.android.misc"
+    android:installLocation="preferExternal"
+    android:versionCode="9"
+    android:versionName="1.4.0" >
 
     <!-- Messaging -->
-	<uses-sdk android:minSdkVersion="8" android:targetSdkVersion="10"  />
-	<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-	<uses-permission android:name="android.permission.READ_PHONE_STATE" />
-	<uses-permission android:name="android.permission.READ_SMS" />
-	<uses-permission android:name="android.permission.RECEIVE_SMS" />
-	<uses-permission android:name="android.permission.SEND_SMS" />
-	<uses-permission android:name="android.permission.WRITE_SMS" />
-	<!-- Call History, Contacts -->
-	<uses-permission android:name="android.permission.READ_CONTACTS" />
-	<uses-permission android:name="android.permission.WRITE_CONTACTS" />
-	<!-- Google Maps API -->
-	<uses-permission android:name="android.permission.INTERNET" />
-	<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-	<!-- Application Info, others -->
-	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-sdk
+        android:minSdkVersion="8"
+        android:targetSdkVersion="10" />
 
-	<application android:icon="@drawable/bluemouse"
-		android:label="@string/app_name">
-		<uses-library android:name="com.google.android.maps" />
-		<activity android:name=".MiscActivity" android:label="@string/app_name">
-			<intent-filter>
-				<action android:name="android.intent.action.MAIN" />
-				<category android:name="android.intent.category.LAUNCHER" />
-			</intent-filter>
-		</activity>
-		<activity android:name=".AppsActivity" android:label="@string/apps_title">
-		</activity>
-		<activity android:name=".ContactsActivity" android:label="@string/contacts_title">
-		</activity>
-		<activity android:name=".CallHistoryActivity" android:label="@string/phonehistory_title">
-		</activity>
-		<activity android:name=".DisplayCallActivity" android:label="@string/displayphonehistory_title">
-		</activity>
-		<activity android:name=".DisplayContactActivity" android:label="@string/display_contacts_title">
-		</activity>
-		<activity android:name=".DisplayMMSActivity" android:label="@string/display_mms_message_title">
-		</activity>
-		<activity android:name=".DisplaySMSActivity" android:label="@string/display_sms_message_title">
-		</activity>
-		<activity android:name=".MapLocationActivity" android:label="@string/map_location_title">
-		</activity>
-		<activity android:name=".NetworkActivity" android:label="@string/network_title">
-		</activity>
-		<activity android:name=".MessageActivity" android:label="@string/sms_mms_title">
-		</activity>
-		<activity android:name=".MMSActivity" android:label="@string/mms_title">
-		</activity>
-		<activity android:name=".SMSActivity" android:label="@string/sms_title">
-		</activity>
-		<!-- Debug -->
-		<activity android:name=".CurrentTimeActivity" android:label="@string/current_time_title">
-		</activity>
-		<activity android:name=".InfoActivity" android:label="@string/info_title">
-		</activity>
-		<activity android:name=".MessageListenerActivity" android:label="@string/messagelistener_title">
-		</activity>
-		<activity android:name=".SMSTestActivity" android:label="@string/sms_title">
-		</activity>
-		<activity android:name=".SMSTest2Activity" android:label="@string/sms_title">
-		</activity>
-<!--
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.READ_SMS" />
+    <uses-permission android:name="android.permission.RECEIVE_SMS" />
+    <uses-permission android:name="android.permission.SEND_SMS" />
+    <uses-permission android:name="android.permission.WRITE_SMS" />
+    <!-- Call History, Contacts -->
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
+    <uses-permission android:name="android.permission.WRITE_CONTACTS" />
+    <!-- Google Maps API -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <!-- Application Info, others -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+
+    <application
+        android:icon="@drawable/bluemouse"
+        android:label="@string/app_name" android:allowBackup="true">
+        <uses-library android:name="com.google.android.maps" />
+
+        <activity
+            android:name="net.kenevans.android.misc.MiscActivity"
+            android:label="@string/app_name" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name="net.kenevans.android.misc.AppsActivity"
+            android:label="@string/apps_title" >
+        </activity>
+        <activity
+            android:name="net.kenevans.android.misc.ContactsActivity"
+            android:label="@string/contacts_title" >
+        </activity>
+        <activity
+            android:name="net.kenevans.android.misc.CallHistoryActivity"
+            android:label="@string/phonehistory_title" >
+        </activity>
+        <activity
+            android:name="net.kenevans.android.misc.DisplayCallActivity"
+            android:label="@string/displayphonehistory_title" >
+        </activity>
+        <activity
+            android:name="net.kenevans.android.misc.DisplayContactActivity"
+            android:label="@string/display_contacts_title" >
+        </activity>
+        <activity
+            android:name="net.kenevans.android.misc.DisplayMMSActivity"
+            android:label="@string/display_mms_message_title" >
+        </activity>
+        <activity
+            android:name="net.kenevans.android.misc.DisplaySMSActivity"
+            android:label="@string/display_sms_message_title" >
+        </activity>
+        <activity
+            android:name="net.kenevans.android.misc.MapLocationActivity"
+            android:label="@string/map_location_title" >
+        </activity>
+        <activity
+            android:name="net.kenevans.android.misc.NetworkActivity"
+            android:label="@string/network_title" >
+        </activity>
+        <activity
+            android:name="net.kenevans.android.misc.MessageActivity"
+            android:label="@string/sms_mms_title" >
+        </activity>
+        <activity
+            android:name="net.kenevans.android.misc.MMSActivity"
+            android:label="@string/mms_title" >
+        </activity>
+        <activity
+            android:name="net.kenevans.android.misc.SMSActivity"
+            android:label="@string/sms_title" >
+        </activity>
+        <!-- Debug -->
+        <activity
+            android:name="net.kenevans.android.misc.CurrentTimeActivity"
+            android:label="@string/current_time_title" >
+        </activity>
+        <activity
+            android:name="net.kenevans.android.misc.InfoActivity"
+            android:label="@string/info_title" >
+        </activity>
+        <activity
+            android:name="net.kenevans.android.misc.MessageListenerActivity"
+            android:label="@string/messagelistener_title" >
+        </activity>
+        <activity
+            android:name="net.kenevans.android.misc.SMSTestActivity"
+            android:label="@string/sms_title" >
+        </activity>
+        <activity
+            android:name="net.kenevans.android.misc.SMSTest2Activity"
+            android:label="@string/sms_title" >
+        </activity>
+        <activity
+            android:name="net.kenevans.android.misc.FixMediaMonkeyActivity"
+            android:label="@string/fix_media_monkey_title" >
+         </activity>
+        <!--
 		<receiver android:name=".SMSMessageReceiver">
 			<intent-filter>
 				<action android:name="android.provider.Telephony.SMS_RECEIVED" />
 			</intent-filter> 
 		</receiver>
--->
-	</application>
+        -->
+    </application>
+
 </manifest>

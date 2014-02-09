@@ -68,6 +68,9 @@ public class MiscActivity extends ListActivity {
 			new Data("Call History", "Display call history",
 					CallHistoryActivity.class),
 			new Data("Contacts", "Display contacts", ContactsActivity.class),
+			new Data("Fix Media Monkey Auto-Convert Files",
+					"Rename auto-converted .m4a music files to .mp3",
+					FixMediaMonkeyActivity.class),
 	// new Data("Test", "Not implemented", null),
 	};
 
@@ -88,6 +91,9 @@ public class MiscActivity extends ListActivity {
 			new Data("Call History", "Display call history",
 					CallHistoryActivity.class),
 			new Data("Contacts", "Display contacts", ContactsActivity.class),
+			new Data("Fix Media Monkey Auto-Convert Files",
+					"Rename auto-converted .m4a music files to .mp3",
+					FixMediaMonkeyActivity.class),
 	// Spacer to keep bracket on next line
 	};
 

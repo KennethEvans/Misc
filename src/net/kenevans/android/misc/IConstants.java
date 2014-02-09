@@ -34,6 +34,14 @@ public interface IConstants {
 	// Information
 	/** Key for information URL sent to InfoActivity. */
 	public static final String INFO_URL = "InformationURL";
+	
+	// Preferences
+	public static final String PREF_MEDIA_MONKEY_DIRECTORY = "dataDirectory";
+	
+	// Media Monkey
+	/** Directory on the SD card where the music is stored */
+	public static final String SD_CARD_MUSIC_DIRECTORY = "Music";
+
 
 	// SMS database
 	/** The key for the URI used. */
