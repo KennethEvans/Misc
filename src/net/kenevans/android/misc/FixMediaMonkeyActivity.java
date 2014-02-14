@@ -1,6 +1,8 @@
 package net.kenevans.android.misc;
 
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 
 import android.app.Activity;
 import android.content.SharedPreferences;
@@ -16,10 +18,13 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 public class FixMediaMonkeyActivity extends Activity implements IConstants {
-	EditText mEditText;
-	TextView mResultView;
-	int nFiles = 0;
-	int nConverted = 0;
+	private EditText mEditText;
+	private TextView mResultView;
+	private int nFiles = 0;
+	private int nConverted = 0;
+	private int nM4a = 0;
+	private int nInvalid = 0;
+	private int nErrors = 0;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -101,6 +106,9 @@ public class FixMediaMonkeyActivity extends Activity implements IConstants {
 		}
 		nFiles = 0;
 		nConverted = 0;
+		nM4a = 0;
+		nInvalid = 0;
+		nErrors = 0;
 		mResultView.setText("");
 		String msg;
 		Editable musicDirName = mEditText.getText();
@@ -122,11 +130,16 @@ public class FixMediaMonkeyActivity extends Activity implements IConstants {
 
 		// Show results
 		if (countOnly) {
-			msg = "There are " + nConverted + " .m4a files of " + nFiles
-					+ " files total in " + musicDir.getPath() + ".";
-		} else {
-			msg = "Converted " + nConverted + " of " + nFiles + " files in "
+			msg = "There are " + nInvalid + " invalid of " + nM4a
+					+ " .m4a files of " + nFiles + " files total in "
 					+ musicDir.getPath() + ".";
+		} else {
+			msg = "Converted " + nConverted + " of " + nInvalid
+					+ " invalid of " + nM4a + " .m4a files of " + nFiles
+					+ " files total in " + musicDir.getPath() + ".";
+		}
+		if (nErrors > 0) {
+			msg += "\nEncountered " + nErrors + "Input/Output errors.";
 		}
 		Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_LONG).show();
 		mResultView.append(msg);
@@ -161,10 +174,16 @@ public class FixMediaMonkeyActivity extends Activity implements IConstants {
 			nFiles++;
 			String ext = Utils.getExtension(file);
 			if (ext.equals("m4a")) {
-				if (countOnly) {
-					nConverted++;
+				nM4a++;
+				if (!isMp3(file)) {
+					// Is a presumably valid .m4a file
 					return true;
 				}
+				nInvalid++;
+				if (countOnly) {
+					return true;
+				}
+				// Is a .m4a file with MP3 internals
 				newName = file.getPath();
 				len = newName.length();
 				newFile = new File(newName.substring(0, len - 3) + "mp3");
@@ -181,4 +200,36 @@ public class FixMediaMonkeyActivity extends Activity implements IConstants {
 			return true;
 		}
 	}
+
+	/**
+	 * Determine if a file is MP3 by checking if it starts with ID3. Should work
+	 * when comparing to M4A.
+	 * 
+	 * @param file
+	 * @return
+	 */
+	private boolean isMp3(File file) {
+		boolean res = false;
+		BufferedInputStream is = null;
+		byte[] buffer = new byte[] { 0, 0, 0 };
+		try {
+			is = new BufferedInputStream(new FileInputStream(file));
+			int nRead = is.read(buffer, 0, 3);
+			if (buffer[0] == 'I' && buffer[1] == 'D' && buffer[2] == '3') {
+				res = true;
+			}
+		} catch (Exception ex) {
+			nErrors++;
+		} finally {
+			if (is != null) {
+				try {
+					is.close();
+				} catch (Exception ex) {
+					// do nothing
+				}
+			}
+		}
+		return res;
+	}
+
 }

@@ -29,7 +29,7 @@
     <string name="filter_title">Select Filter</string>
     <string name="filter_unknown">Unknown</string>
     <string name="fix_media_monkey_title">Fix Media Monkey Auto-Convert Files</string>
-    <string name="fix_media_monkey_info">Media Monkey may not rename all .m4a files to .mp3 when doing auto conversion.  Fix this by manually renaming all the .m4a files in the given directory and below to .mp3.</string>
+    <string name="fix_media_monkey_info">Media Monkey may not rename all .m4a files to .mp3 when doing auto conversion.  Fix this by manually renaming all the .m4a files that appear to be MP3 files in the given directory and below to .mp3.  A file is assumed to be MP3 if it is a .m4a file that starts with the tag ID3.  This may not catch everything.</string>
     <string name="fix_media_monkey_rename_label">Rename .m4a Files</string>
     <string name="fix_media_monkey_count_label">Count .m4a Files</string>
     <string name="fix_media_monkey_directory_hint">Directory to process</string>
