@@ -214,7 +214,8 @@ public class FixMediaMonkeyActivity extends Activity implements IConstants {
 		byte[] buffer = new byte[] { 0, 0, 0 };
 		try {
 			is = new BufferedInputStream(new FileInputStream(file));
-			int nRead = is.read(buffer, 0, 3);
+			// int nRead = is.read(buffer, 0, 3);
+			is.read(buffer, 0, 3);
 			if (buffer[0] == 'I' && buffer[1] == 'D' && buffer[2] == '3') {
 				res = true;
 			}
