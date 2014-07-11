@@ -5,10 +5,7 @@
     android:versionCode="9"
     android:versionName="1.4.0" >
 
-    <!-- Messaging -->
-    <uses-sdk
-        android:minSdkVersion="8"
-        android:targetSdkVersion="10" />
+	<uses-sdk android:minSdkVersion="8" android:targetSdkVersion="19"  />
 
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
