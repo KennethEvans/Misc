@@ -2,10 +2,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="net.kenevans.android.misc"
     android:installLocation="preferExternal"
-    android:versionCode="9"
-    android:versionName="1.4.0" >
+    android:versionCode="10"
+    android:versionName="1.4.1" >
 
-	<uses-sdk android:minSdkVersion="8" android:targetSdkVersion="19"  />
+	<uses-sdk android:minSdkVersion="8" android:targetSdkVersion="21"  />
 
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
@@ -14,6 +14,10 @@
     <uses-permission android:name="android.permission.SEND_SMS" />
     <uses-permission android:name="android.permission.WRITE_SMS" />
     <!-- Call History, Contacts -->
+    <uses-permission android:name="android.permission.READ_CALL_LOG"
+        android:minSdkVersion="16" />
+    <uses-permission android:name="android.permission.WRITE_CALL_LOG"
+        android:minSdkVersion="16" />
     <uses-permission android:name="android.permission.READ_CONTACTS" />
     <uses-permission android:name="android.permission.WRITE_CONTACTS" />
     <!-- Google Maps API -->
