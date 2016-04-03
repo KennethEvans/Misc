@@ -20,11 +20,14 @@
         android:minSdkVersion="16" />
     <uses-permission android:name="android.permission.READ_CONTACTS" />
     <uses-permission android:name="android.permission.WRITE_CONTACTS" />
-    <!-- Google Maps API -->
+    <!-- Google Maps API, WiFiActivity -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <!-- Application Info, others -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <!-- WifiActivity -->
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
 
     <application
         android:icon="@drawable/bluemouse"
@@ -51,6 +54,14 @@
         <activity
             android:name="net.kenevans.android.misc.CallHistoryActivity"
             android:label="@string/phonehistory_title" >
+        </activity>
+        <activity
+            android:name="net.kenevans.android.misc.WifiActivity"
+            android:label="@string/wifi_title" >
+        </activity>
+        <activity
+            android:name="net.kenevans.android.misc.DisplayWifiActivity"
+            android:label="@string/display_wifi_title" >
         </activity>
         <activity
             android:name="net.kenevans.android.misc.DisplayCallActivity"

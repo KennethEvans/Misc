@@ -19,6 +19,7 @@
     <string name="display_sms_message_title">SMS Message</string>
     <string name="display_sms_mms_message_title">Message</string>
     <string name="displayphonehistory_title">Call</string>
+    <string name="display_wifi_title">WiFi Network</string>
     <string name="dryRunTitle">Set Dry Run</string>
     <string name="dryrun_item">Set Dry Run</string>
     <string name="filter_10min">Longer than 10 minutes</string>
@@ -64,6 +65,7 @@
     <string name="sort_time">By Time</string>
     <string name="sort_title">Select Sort Order</string>
     <string name="timeoffset_dialog_title">Set the Desired Time Change</string>
+    <string name="wifi_title">WiFi Networks</string>
     <string name="yes_label">Yes</string>
 
     <!-- Utils -->
