@@ -374,7 +374,7 @@ public class ContactsActivity extends ListActivity implements IConstants {
 
 		@Override
 		public View newView(Context context, Cursor cursor, ViewGroup parent) {
-			return inflater.inflate(R.layout.list_row_image, null);
+			return inflater.inflate(R.layout.list_row_image, parent, false);
 		}
 
 	}

@@ -256,7 +256,7 @@ public class WifiActivity extends ListActivity implements IConstants {
         private String capabilities;
 
         /**
-         * Class to manage a ScanResult.
+         * Constructor.
          *
          * @param i          The position in the original list.
          * @param scanResult The ScanResult at that position.
@@ -265,7 +265,7 @@ public class WifiActivity extends ListActivity implements IConstants {
             this.id = id;
             this.ssid = scanResult.SSID;
             if (ssid.length() == 0) {
-                this.ssid = "<SSID NA>";
+                this.ssid = "???";
             }
             this.bssid = scanResult.BSSID;
             this.level = scanResult.level;
@@ -346,13 +346,13 @@ public class WifiActivity extends ListActivity implements IConstants {
         }
 
         @Override
-        public View getView(int i, View view, ViewGroup viewGroup) {
+        public View getView(int i, View view, ViewGroup parent) {
             // // DEBUG
             // Log.d(TAG, "getView: " + i);
             ViewHolder viewHolder;
             // General ListView optimization code.
             if (view == null) {
-                view = mInflator.inflate(R.layout.list_row, null);
+                view = mInflator.inflate(R.layout.list_row, parent, false);
                 viewHolder = new ViewHolder();
                 viewHolder.title = (TextView) view
                         .findViewById(R.id.title);

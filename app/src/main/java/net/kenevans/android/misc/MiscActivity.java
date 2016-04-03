@@ -225,7 +225,7 @@ public class MiscActivity extends ListActivity {
             // supplied
             // by ListView is null.
             if (convertView == null) {
-                convertView = mInflater.inflate(R.layout.list_row, null);
+                convertView = mInflater.inflate(R.layout.list_row, parent, false);
 
                 // Creates a ViewHolder and store references to the two children
                 // views

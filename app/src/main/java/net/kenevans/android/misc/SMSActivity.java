@@ -459,7 +459,7 @@ public class SMSActivity extends ListActivity implements IConstants {
 
 		@Override
 		public View newView(Context context, Cursor cursor, ViewGroup parent) {
-			return inflater.inflate(R.layout.list_row, null);
+			return inflater.inflate(R.layout.list_row, parent, false);
 		}
 
 	}
