@@ -234,10 +234,14 @@ public class WifiActivity extends ListActivity implements IConstants {
      * @param freq
      * @return
      */
-    public static int ieee80211_frequency_to_channel(int freq) {
-        if (freq == 2484) return 14;
-        if (freq < 2484) return (freq - 2407) / 5;
-        return freq / 5 - 1000;
+    public static int convertFrequencyToChannel(int freq) {
+        if (freq >= 2412 && freq <= 2484) {
+            return (freq - 2412) / 5 + 1;
+        } else if (freq >= 5170 && freq <= 5825) {
+            return (freq - 5170) / 5 + 34;
+        } else {
+            return -1;
+        }
     }
 
     /**
@@ -368,7 +372,7 @@ public class WifiActivity extends ListActivity implements IConstants {
             String title = "";
             title += ssid + " " + bssid;
             String subTitle = "";
-            subTitle += level + " db " + "Channel " + ieee80211_frequency_to_channel(frequency)
+            subTitle += level + " db " + "Channel " + convertFrequencyToChannel(frequency)
                     + " (" + frequency + " MHz)";
             viewHolder.title.setText(title);
             viewHolder.subTitle.setText(subTitle);
