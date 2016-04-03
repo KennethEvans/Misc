@@ -19,7 +19,6 @@
     <string name="display_sms_message_title">SMS Message</string>
     <string name="display_sms_mms_message_title">Message</string>
     <string name="displayphonehistory_title">Call</string>
-    <string name="display_wifi_title">WiFi Network</string>
     <string name="dryRunTitle">Set Dry Run</string>
     <string name="dryrun_item">Set Dry Run</string>
     <string name="filter_10min">Longer than 10 minutes</string>
@@ -56,16 +55,21 @@
     <string name="send_item">Send SMS</string>
     <string name="settings_item">Settings</string>
     <string name="sms_mms_title">Messages</string>
+    <string name="sort_bssid">By BSSID</string>
     <string name="sms_title">SMS Messages</string>
     <string name="sort_duration">By Duration</string>
+    <string name="sort_frequency">By Frequency</string>
     <string name="sort_id">By ID</string>
     <string name="sort_item">Sort</string>
+    <string name="sort_level">By Level</string>
     <string name="sort_name">By Name</string>
+    <string name="sort_none">None</string>
     <string name="sort_number">By Number</string>
+    <string name="sort_ssid">By SSID</string>
     <string name="sort_time">By Time</string>
     <string name="sort_title">Select Sort Order</string>
     <string name="timeoffset_dialog_title">Set the Desired Time Change</string>
-    <string name="wifi_title">WiFi Networks</string>
+    <string name="wifi_title">Wi-Fi Networks</string>
     <string name="yes_label">Yes</string>
 
     <!-- Utils -->

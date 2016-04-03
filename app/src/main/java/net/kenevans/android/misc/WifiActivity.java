@@ -28,14 +28,9 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.database.Cursor;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.net.Uri;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
-import android.provider.ContactsContract;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -44,17 +39,17 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
-import android.widget.CursorAdapter;
-import android.widget.ImageView;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
- * Manages a ListView of all the contacts in the database specified by the URI field.
+ * Manages a ListView of Wifi networks and their properties.
  */
 
 /**
@@ -62,40 +57,20 @@ import java.util.List;
  */
 public class WifiActivity extends ListActivity implements IConstants {
     /**
-     * The current position when ACTIVITY_DISPLAY_MESSAGE is requested. Used
-     * with the resultCodes RESULT_PREV and RESULT_NEXT when they are returned.
-     */
-    private int currentPosition;
-
-    /**
-     * The current id when ACTIVITY_DISPLAY_MESSAGE is requested. Used with the
-     * resultCodes RESULT_PREV and RESULT_NEXT when they are returned.
-     */
-    private long currentId;
-
-    /**
-     * The increment for displaying the next message.
-     */
-    private long increment = 0;
-
-    /**
      * Enum to specify the sort order.
      */
-    enum Order {
-        NAME(ContactsContract.Contacts.DISPLAY_NAME + " ASC"), ID(COL_ID
-                + " ASC");
-        public String sqlCommand;
-
-        Order(String sqlCommand) {
-            this.sqlCommand = sqlCommand;
-        }
+    enum SortOrder {
+        NONE, SSID, BSSID, LEVEL, FREQUENCY
     }
 
     /**
      * The sort order to use.
      */
-    private Order sortOrder = Order.NAME;
+    private SortOrder sortOrder = SortOrder.NONE;
 
+    /**
+     * Adapter to manage the ListView.
+     */
     private NetworkListAdapter mNetworkListdapter;
 
     /**
@@ -106,7 +81,7 @@ public class WifiActivity extends ListActivity implements IConstants {
     /**
      * The scan results.
      */
-    private List<ScanResult> mScanResults;
+    private ArrayList<WifiNetwork> mNetworks;
 
 
     @Override
@@ -123,7 +98,15 @@ public class WifiActivity extends ListActivity implements IConstants {
                     Utils.errMsg(WifiActivity.this, "WiFi is not enabled");
                     return;
                 }
-                mScanResults = wifi.getScanResults();
+                List<ScanResult> scanResults = wifi.getScanResults();
+                // Make the ArrayList
+                mNetworks = new ArrayList<WifiNetwork>(scanResults.size());
+                int i = 0;
+                for (ScanResult scanResult : scanResults) {
+                    mNetworks.add(new WifiNetwork(i++, scanResult));
+                }
+                // Sort the arrays list
+                Collections.sort(mNetworks);
                 // Set the adapter
                 mNetworkListdapter = new NetworkListAdapter();
                 setListAdapter(mNetworkListdapter);
@@ -161,39 +144,19 @@ public class WifiActivity extends ListActivity implements IConstants {
     @Override
     protected void onListItemClick(ListView lv, View view, int position, long id) {
         super.onListItemClick(lv, view, position, id);
-        // Save the position when starting the activity
-        currentPosition = position;
-        currentId = id;
-        increment = 0;
-        displayNetwork();
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode,
-                                    Intent intent) {
-        super.onActivityResult(requestCode, resultCode, intent);
-        // DEBUG
-        Log.d(TAG, this.getClass().getSimpleName()
-                + ".onActivityResult: requestCode=" + requestCode
-                + " resultCode=" + resultCode + " currentPosition="
-                + currentPosition);
-        if (requestCode == DISPLAY_MESSAGE) {
-            increment = 0;
-            // Note that earlier items are at higher positions in the list
-            if (resultCode == RESULT_PREV) {
-                increment = 1;
-            } else if (resultCode == RESULT_NEXT) {
-                increment = -1;
+        WifiNetwork network = mNetworks.get(position);
+        String msg = "Supports\n";
+        String[] capabilities = network.getCapabilities().split("]");
+        for (String string : capabilities) {
+            if (string.startsWith("[") && string.length() > 1) {
+                msg += "    " + string.substring(1) + "\n";
             }
         }
+        Utils.infoMsg(this, msg);
     }
 
     @Override
     protected void onPause() {
-        Log.d(TAG, this.getClass().getSimpleName()
-                + ".onPause: currentPosition=" + currentPosition);
-        Log.d(TAG, this.getClass().getSimpleName() + ".onPause: currentId="
-                + currentId);
         if (mReceiver != null) {
             unregisterReceiver(mReceiver);
         }
@@ -202,30 +165,43 @@ public class WifiActivity extends ListActivity implements IConstants {
 
     @Override
     protected void onResume() {
-        Log.d(TAG, this.getClass().getSimpleName()
-                + ".onResume: currentPosition=" + currentPosition
-                + " currentId=" + currentId + " increment=" + increment);
         super.onResume();
         registerReceiver(mReceiver, new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
-        // If increment is set display a new message
-        if (increment != 0) {
-            displayNetwork();
-        }
     }
 
     /**
      * Bring up a dialog to change the sort order.
      */
     private void setOrder() {
-        final CharSequence[] items = {getText(R.string.sort_name),
-                getText(R.string.sort_id)};
+        final CharSequence[] items = {getText(R.string.sort_none),
+                getText(R.string.sort_ssid), getText(R.string.sort_bssid),
+                getText(R.string.sort_level), getText(R.string.sort_frequency),};
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle(getText(R.string.sort_title));
-        builder.setSingleChoiceItems(items, sortOrder == Order.NAME ? 0 : 1,
+        builder.setSingleChoiceItems(items, sortOrder.ordinal(),
                 new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int item) {
                         dialog.dismiss();
-                        sortOrder = item == 0 ? Order.NAME : Order.ID;
+                        switch (item) {
+                            case 0:
+                                sortOrder = SortOrder.NONE;
+                                break;
+                            case 1:
+                                sortOrder = SortOrder.SSID;
+                                break;
+                            case 2:
+                                sortOrder = SortOrder.BSSID;
+                                break;
+                            case 3:
+                                sortOrder = SortOrder.LEVEL;
+                                break;
+                            case 4:
+                                sortOrder = SortOrder.FREQUENCY;
+                                break;
+                        }
+                        // Sort the arrays list
+                        Collections.sort(mNetworks);
+                        // Refresh the networks
                         refresh();
                     }
                 });
@@ -234,102 +210,110 @@ public class WifiActivity extends ListActivity implements IConstants {
     }
 
     /**
-     * Displays the message at the current position plus the current increment,
-     * adjusting for being within range. Resets the increment to 0 after.
+     * Starts a scan for networks.
      */
-    private void displayNetwork() {
-        ListAdapter adapter = getListAdapter();
-        if (adapter == null) {
-            return;
-        }
+    private void refresh() {
         try {
-            int count = adapter.getCount();
-            Log.d(TAG, this.getClass().getSimpleName()
-                    + ".displayMessage: count=" + count);
-            if (count == 0) {
-                Utils.infoMsg(this, "There are no items in the list");
-                return;
+            setListAdapter(mNetworkListdapter);
+            if (mNetworkListdapter != null) {
+                // Clear the data to indicate we are waiting
+                mNetworkListdapter.clear();
+                // Refresh the View so it shows
+                mNetworkListdapter.notifyDataSetChanged();
             }
-            // Check if the item is still at the same position in the list
-            boolean changed = false;
-            long id = -1;
-            if (currentPosition > count - 1 || currentPosition < 0) {
-                changed = true;
-            } else {
-                id = adapter.getItemId(currentPosition);
-                if (id != currentId) {
-                    changed = true;
-                }
-            }
-            // Determine the new currentPosition
-            Log.d(TAG, this.getClass().getSimpleName()
-                    + ".displayMessage: position=" + currentPosition + " id="
-                    + id + " changed=" + changed);
-            if (changed) {
-                for (int i = 0; i < count; i++) {
-                    id = adapter.getItemId(i);
-                    if (id == currentId) {
-                        currentPosition = i;
-                        break;
-                    }
-                }
-            }
-            // currentPosition may still be invalid, check it is in range
-            if (currentPosition < 0) {
-                currentPosition = 0;
-            } else if (currentPosition > count - 1) {
-                currentPosition = count - 1;
-            }
-
-            // Display messages if a requested increment is not possible
-            if (increment > 0) {
-                currentPosition += increment;
-                if (currentPosition > count - 1) {
-                    Toast.makeText(getApplicationContext(),
-                            "At the last item in the list", Toast.LENGTH_LONG)
-                            .show();
-                    currentPosition = count - 1;
-                }
-            } else if (increment < 0) {
-                currentPosition += increment;
-                if (currentPosition < 0) {
-                    Toast.makeText(getApplicationContext(),
-                            "At the first item in the list", Toast.LENGTH_LONG)
-                            .show();
-                    currentPosition = 0;
-                }
-            }
-
-            // Request the new message
-            currentId = adapter.getItemId(currentPosition);
-//            Intent i = new Intent(this, DisplayWifiActivity.class);
-//            i.putExtra(COL_ID, currentId);
-//            i.putExtra(URI_KEY, getUri().toString());
-//            Log.d(TAG, this.getClass().getSimpleName()
-//                    + ".displayMessage: position=" + currentPosition
-//                    + " currentId=" + currentId);
-//            startActivityForResult(i, DISPLAY_MESSAGE);
+            WifiManager wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
+            wifiManager.startScan();
         } catch (Exception ex) {
-            Utils.excMsg(this, "Error displaying contact", ex);
-        } finally {
-            // Reset increment
-            increment = 0;
+            Utils.excMsg(this, "Error starting network scan", ex);
         }
     }
 
     /**
-     * Gets a new cursor and starts managing it.
+     * Determines channel from frequency.
+     *
+     * @param freq
+     * @return
      */
-    private void refresh() {
-        try {
-            WifiManager wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
-            wifiManager.startScan();
-        } catch (Exception ex) {
-            Utils.excMsg(this, "Error finding contacts", ex);
+    public static int ieee80211_frequency_to_channel(int freq) {
+        if (freq == 2484) return 14;
+        if (freq < 2484) return (freq - 2407) / 5;
+        return freq / 5 - 1000;
+    }
+
+    /**
+     * Class to manage one network from the ScanResult's.
+     */
+    private class WifiNetwork implements Comparable<WifiNetwork> {
+        private int id;
+        private String ssid;
+        private String bssid;
+        private int level;
+        private int frequency;
+        private String capabilities;
+
+        /**
+         * Class to manage a ScanResult.
+         *
+         * @param i          The position in the original list.
+         * @param scanResult The ScanResult at that position.
+         */
+        public WifiNetwork(int i, ScanResult scanResult) {
+            this.id = id;
+            this.ssid = scanResult.SSID;
+            if (ssid.length() == 0) {
+                this.ssid = "<SSID NA>";
+            }
+            this.bssid = scanResult.BSSID;
+            this.level = scanResult.level;
+            this.frequency = scanResult.frequency;
+            this.capabilities = scanResult.capabilities;
+        }
+
+        public int getId() {
+            return id;
+        }
+
+        public String getSsid() {
+            return ssid;
+        }
+
+        public String getBssid() {
+            return bssid;
+        }
+
+        public int getLevel() {
+            return level;
+        }
+
+        public int getFrequency() {
+            return frequency;
+        }
+
+        public String getCapabilities() {
+            return capabilities;
+        }
+
+        @Override
+        public int compareTo(WifiNetwork other) {
+            switch (sortOrder) {
+                case NONE:
+                    return this.id - other.id;
+                case FREQUENCY:
+                    // Lowest first
+                    return this.frequency - other.frequency;
+                case LEVEL:
+                    // Highest first
+                    return other.level - this.level;
+                case SSID:
+                    return this.ssid.compareTo(other.ssid);
+                case BSSID:
+                    return this.bssid.compareTo(other.bssid);
+            }
+            return 0;
         }
     }
 
-    // Adapter for holding sessions
+    // Adapter for managing the networks.
     private class NetworkListAdapter extends BaseAdapter {
         private LayoutInflater mInflator;
 
@@ -338,22 +322,18 @@ public class WifiActivity extends ListActivity implements IConstants {
             mInflator = WifiActivity.this.getLayoutInflater();
         }
 
-        public ScanResult getSession(int position) {
-            return mScanResults.get(position);
-        }
-
         public void clear() {
-            mScanResults.clear();
+            mNetworks.clear();
         }
 
         @Override
         public int getCount() {
-            return mScanResults.size();
+            return mNetworks.size();
         }
 
         @Override
         public Object getItem(int i) {
-            return mScanResults.get(i);
+            return mNetworks.get(i);
         }
 
         @Override
@@ -379,17 +359,17 @@ public class WifiActivity extends ListActivity implements IConstants {
                 viewHolder = (ViewHolder) view.getTag();
             }
 
-            ScanResult scanResult = mScanResults.get(i);
-            // Set the name
-            String[] resultStrings = scanResult.toString().split(",");
-            String ssid = resultStrings[0];
-            String bssid = resultStrings[1];
-            String level = resultStrings[4];
-            String frequency = resultStrings[5];
+            WifiNetwork network = mNetworks.get(i);
+            String ssid = network.getSsid();
+            String bssid = network.getBssid();
+            int level = network.getLevel();
+            int frequency = network.getFrequency();
+            String capabilities = network.getCapabilities();
             String title = "";
             title += ssid + " " + bssid;
             String subTitle = "";
-            subTitle += level + " db " + frequency + " MHz";
+            subTitle += level + " db " + "Channel " + ieee80211_frequency_to_channel(frequency)
+                    + " (" + frequency + " MHz)";
             viewHolder.title.setText(title);
             viewHolder.subTitle.setText(subTitle);
 
