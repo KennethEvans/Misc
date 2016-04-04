@@ -309,7 +309,7 @@ public class WifiActivity extends ListActivity implements IConstants {
                     // Highest first
                     return other.level - this.level;
                 case SSID:
-                    return this.ssid.compareTo(other.ssid);
+                    return (this.ssid.toLowerCase()).compareTo(other.ssid.toLowerCase());
                 case BSSID:
                     return this.bssid.compareTo(other.bssid);
             }
