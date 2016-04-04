@@ -28,9 +28,12 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -63,6 +66,10 @@ public class WifiActivity extends ListActivity implements IConstants {
         NONE, SSID, BSSID, LEVEL, FREQUENCY
     }
 
+    private static int[] WIFI_STRENGTH_COLORS = {
+            0xFFCD3700, 0xFFFFA500, Color.YELLOW, 0xFFBCEE68, Color.GREEN,
+    };
+
     /**
      * The sort order to use.
      */
@@ -87,6 +94,14 @@ public class WifiActivity extends ListActivity implements IConstants {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // Get the stored sort order
+        SharedPreferences prefs = PreferenceManager
+                .getDefaultSharedPreferences(this);
+        int sortOrderOrdinal = prefs.getInt(PREF_WIFI_SORT_ORDER, SortOrder.NONE.ordinal());
+        if (sortOrderOrdinal >= 0 && sortOrderOrdinal < SortOrder.values().length) {
+            sortOrder = SortOrder.values()[sortOrderOrdinal];
+        }
 
         // Make a BroadcastReceiver to get the scan results
         mReceiver = new BroadcastReceiver() {
@@ -199,6 +214,12 @@ public class WifiActivity extends ListActivity implements IConstants {
                                 sortOrder = SortOrder.FREQUENCY;
                                 break;
                         }
+                        // Save the sort order
+                        SharedPreferences.Editor editor = PreferenceManager
+                                .getDefaultSharedPreferences(WifiActivity.this).edit();
+                        editor.putInt(PREF_WIFI_SORT_ORDER, sortOrder.ordinal());
+                        editor.commit();
+
                         // Sort the arrays list
                         Collections.sort(mNetworks);
                         // Refresh the networks
@@ -297,6 +318,25 @@ public class WifiActivity extends ListActivity implements IConstants {
             return capabilities;
         }
 
+        /**
+         * Calculate the channel.
+         *
+         * @return
+         */
+        public int getChannel() {
+            return convertFrequencyToChannel(frequency);
+        }
+
+        /**
+         * Get the number of bars out of 5.
+         *
+         * @return
+         */
+        public int getBars() {
+            return WifiManager.calculateSignalLevel(level, 5);
+        }
+
+
         @Override
         public int compareTo(WifiNetwork other) {
             switch (sortOrder) {
@@ -364,18 +404,24 @@ public class WifiActivity extends ListActivity implements IConstants {
             }
 
             WifiNetwork network = mNetworks.get(i);
-            String ssid = network.getSsid();
-            String bssid = network.getBssid();
-            int level = network.getLevel();
-            int frequency = network.getFrequency();
-            String capabilities = network.getCapabilities();
+            int bars = network.getBars();
             String title = "";
-            title += ssid + " " + bssid;
+            title += network.getSsid() + " " + network.getBssid();
+
             String subTitle = "";
-            subTitle += level + " db " + "Channel " + convertFrequencyToChannel(frequency)
-                    + " (" + frequency + " MHz)";
+            subTitle += bars + ((bars != 1) ? " bars " : " bar ") + network.getLevel()
+                    + " db " + "Channel " + network.getChannel()
+                    + " (" + network.getFrequency() + " MHz)";
+
             viewHolder.title.setText(title);
             viewHolder.subTitle.setText(subTitle);
+
+            // Color the text according to the level
+            if (bars >= 0 && bars < WIFI_STRENGTH_COLORS.length) {
+                viewHolder.subTitle.setTextColor(WIFI_STRENGTH_COLORS[bars]);
+            } else {
+                viewHolder.subTitle.setTextColor(Color.WHITE);
+            }
 
             return view;
         }
