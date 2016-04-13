@@ -2,10 +2,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="net.kenevans.android.misc"
     android:installLocation="preferExternal"
-    android:versionCode="13"
-    android:versionName="1.7.0" >
+    android:versionCode="14"
+    android:versionName="1.8.0" >
 
-	<uses-sdk android:minSdkVersion="8" android:targetSdkVersion="21" />
+	<uses-sdk android:minSdkVersion="9" android:targetSdkVersion="21" />
 
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
@@ -117,14 +117,18 @@
             android:label="@string/sms_title" >
         </activity>
         <activity
+            android:name="net.kenevans.android.misc.AppDetailsActivity"
+            android:label="@string/app_details_title" >
+        </activity>
+        <activity
             android:name="net.kenevans.android.misc.FixMediaMonkeyActivity"
             android:label="@string/fix_media_monkey_title" >
-         </activity>
+        </activity>
         <!--
 		<receiver android:name=".SMSMessageReceiver">
 			<intent-filter>
 				<action android:name="android.provider.Telephony.SMS_RECEIVED" />
-			</intent-filter> 
+			</intent-filter>
 		</receiver>
         -->
     </application>

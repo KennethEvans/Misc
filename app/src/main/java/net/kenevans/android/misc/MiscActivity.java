@@ -70,6 +70,8 @@ public class MiscActivity extends ListActivity {
             new Data("Call History", "Display call history",
                     CallHistoryActivity.class),
             new Data("Contacts", "Display contacts", ContactsActivity.class),
+            new Data("App Details", "Display Settings page for selected Apps",
+                    AppDetailsActivity.class),
             new Data("Wi-Fi", "Display Wi-Fi Networks", WifiActivity.class),
             // new Data("Fix Media Monkey Auto-Convert Files",
             // "Rename auto-converted .m4a music files to .mp3",
@@ -96,6 +98,8 @@ public class MiscActivity extends ListActivity {
             new Data("Call History", "Display call history",
                     CallHistoryActivity.class),
             new Data("Contacts", "Display contacts", ContactsActivity.class),
+            new Data("App Details", "Display Settings page for selected App",
+                    AppDetailsActivity.class),
             new Data("Wi-Fi", "Display Wi-Fi Networks", WifiActivity.class),
             // new Data("Fix Media Monkey Auto-Convert Files",
             // "Rename auto-converted .m4a music files to .mp3",
@@ -225,7 +229,8 @@ public class MiscActivity extends ListActivity {
             // supplied
             // by ListView is null.
             if (convertView == null) {
-                convertView = mInflater.inflate(R.layout.list_row, parent, false);
+                convertView = mInflater.inflate(R.layout.list_row, parent,
+                        false);
 
                 // Creates a ViewHolder and store references to the two children
                 // views

@@ -30,6 +30,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.graphics.Color;
+import android.net.Uri;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
@@ -150,7 +151,13 @@ public class WifiActivity extends ListActivity implements IConstants {
                 refresh();
                 return true;
             case R.id.order:
-                setOrder();
+                Intent intent = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                intent.setData(Uri.parse("package:" + "com.android.providers.downloads"));
+
+                startActivity(intent);
+
+//                setOrder();
                 return true;
         }
         return false;
