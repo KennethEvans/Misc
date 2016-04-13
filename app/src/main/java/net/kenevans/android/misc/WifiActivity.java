@@ -138,7 +138,7 @@ public class WifiActivity extends ListActivity implements IConstants {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.smsmenu, menu);
+        inflater.inflate(R.menu.wifimenu, menu);
         return true;
     }
 
