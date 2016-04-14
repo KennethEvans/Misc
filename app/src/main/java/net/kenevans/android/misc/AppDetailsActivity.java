@@ -50,7 +50,7 @@ public class AppDetailsActivity extends ListActivity implements IConstants {
     /***
      * List of app names to show in the ListView.
      */
-    private static final String[] mAppNames = {
+    private static final String[] DEFAULT_APP_NAMES = {
             "net.kenevans.android.misc",
             "com.android.providers.downloads",
     };
@@ -58,7 +58,7 @@ public class AppDetailsActivity extends ListActivity implements IConstants {
     /***
      * List of values to be added to the ListView.
      */
-    private List<String> mListValues;
+    private List<AppDetails> mListValues;
 
     /**
      * Adapter to manage the ListView.
@@ -69,21 +69,15 @@ public class AppDetailsActivity extends ListActivity implements IConstants {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Create the list of values for the ListView
-        mListValues = new ArrayList<String>();
-        for (String string : mAppNames) {
-            mListValues.add(string);
-        }
-        // Set the adapter
-        mAppDetailsListdapter = new AppDetailsListAdapter();
-        setListAdapter(mAppDetailsListdapter);
     }
 
     @Override
     protected void onListItemClick(ListView lv, View view, int position, long
             id) {
         super.onListItemClick(lv, view, position, id);
-        String appName = (String) getListView().getItemAtPosition(position);
+        AppDetails appDetails = (AppDetails) getListView().getItemAtPosition
+                (position);
+        String appName = appDetails.getAppName();
         Intent intent = new Intent(android.provider.Settings
                 .ACTION_APPLICATION_DETAILS_SETTINGS);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -99,6 +93,64 @@ public class AppDetailsActivity extends ListActivity implements IConstants {
     @Override
     protected void onResume() {
         super.onResume();
+        // Call refresh to set the contents
+        refresh();
+    }
+
+    private void refresh() {
+        // Create the list values
+        if (mListValues == null) {
+            // Create the list of values for the ListView
+            mListValues = new ArrayList<AppDetails>();
+            for (String appName : DEFAULT_APP_NAMES) {
+                mListValues.add(new AppDetails(appName));
+            }
+        }
+        if (mAppDetailsListdapter == null) {
+            // Set the adapter
+            mAppDetailsListdapter = new AppDetailsListAdapter();
+            setListAdapter(mAppDetailsListdapter);
+        }
+    }
+
+    /**
+     * Class to manage one network from the ScanResult's.
+     */
+    private class AppDetails {
+        private String appName;
+        private String versionName;
+        private String packageName;
+
+        /***
+         * CTOR
+         *
+         * @param appName String like net.kenevans.android.misc.
+         */
+        public AppDetails(String appName) {
+            List<PackageInfo> packages = getPackageManager()
+                    .getInstalledPackages(0);
+            this.appName = appName;
+            for (PackageInfo info : packages) {
+                if (appName.equals(info.packageName)) {
+                    this.packageName = info.applicationInfo.loadLabel
+                            (getPackageManager()).toString();
+                    this.versionName = info.versionName;
+                    break;
+                }
+            }
+        }
+
+        public String getAppName() {
+            return appName;
+        }
+
+        public String getVersionName() {
+            return versionName;
+        }
+
+        public String getPackageName() {
+            return packageName;
+        }
     }
 
     // Adapter for managing the networks.
@@ -147,19 +199,17 @@ public class AppDetailsActivity extends ListActivity implements IConstants {
                 viewHolder = (ViewHolder) view.getTag();
             }
 
-            String appName = mListValues.get(i);
+            AppDetails appDetails = mListValues.get(i);
+            String appName = appDetails.getAppName();
+            String packageName = appDetails.getPackageName();
+            String versionName = appDetails.getVersionName();
             String title = "<Not Found>";
             String subTitle = appName;
-            List<PackageInfo> packages = getPackageManager()
-                    .getInstalledPackages(0);
-
-            for (PackageInfo info : packages) {
-                if (appName.equals(info.packageName)) {
-                    title = info.applicationInfo.loadLabel
-                            (getPackageManager()).toString();
-                    subTitle += "\nVersion: " + info.versionName;
-                    break;
-                }
+            if (packageName != null) {
+                title = packageName;
+            }
+            if (versionName != null) {
+                subTitle += "\nVersion: " + versionName;
             }
 
             viewHolder.title.setText(title);
