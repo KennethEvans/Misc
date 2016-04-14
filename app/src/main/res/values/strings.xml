@@ -2,6 +2,12 @@
 <resources>
 
     <string name="app_details_title">Selected Applications</string>
+    <string name="app_details_modify">Modify this Item</string>
+    <string name="app_details_edit">Edit</string>
+    <string name="app_details_delete">Delete</string>
+    <string name="app_details_add">Add Item Above</string>
+    <string name="app_details_move_up">Move Up</string>
+    <string name="app_details_move_down">Move Down</string>
     <string name="app_name">Misc</string>
     <string name="apps_title">Applications Information</string>
     <string name="cancel_label">Cancel</string>

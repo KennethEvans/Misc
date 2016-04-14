@@ -21,7 +21,9 @@
 
 package net.kenevans.android.misc;
 
+import android.app.AlertDialog;
 import android.app.ListActivity;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
@@ -34,9 +36,11 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.gson.Gson;
 
@@ -81,14 +85,118 @@ public class AppDetailsActivity extends ListActivity implements IConstants {
         String json = prefs.getString(PREF_APPDETAILS_APP_NAMES, "");
         String[] appNames = gson.fromJson(json, String[].class);
         createAppDetailsFromAppNames(appNames);
+
+        // Handle long click in the ListView
+        final ListView lv = getListView();
+        lv.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener
+                () {
+            @Override
+            public boolean onItemLongClick(AdapterView<?> av, View view,
+                                           final int pos, long id) {
+                final CharSequence[] items = {
+                        getText(R.string.app_details_edit),
+                        getText(R.string.app_details_delete),
+                        getText(R.string.app_details_add),
+                        getText(R.string.app_details_move_up),
+                        getText(R.string.app_details_move_down),
+                };
+                AlertDialog.Builder builder =
+                        new AlertDialog.Builder(AppDetailsActivity.this);
+                builder.setTitle(getText(R.string.app_details_modify));
+                builder.setSingleChoiceItems(items, 0,
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int
+                                    item) {
+                                dialog.dismiss();
+                                switch (item) {
+                                    case 0:
+                                        editItem(item, pos);
+                                        break;
+                                    case 1:
+                                        deleteItem(item, pos);
+                                        break;
+                                    case 2:
+                                        addItem(item, pos);
+                                        break;
+                                    case 3:
+                                        moveItemUp(item, pos);
+                                        break;
+                                    case 4:
+                                        moveItemDown(item, pos);
+                                        break;
+                                }
+                            }
+                        });
+                AlertDialog alert = builder.create();
+                alert.show();
+                // Need to return true or it will call the onClickListener
+                return true;
+            }
+        });
+    }
+
+    /***
+     * Edit the item.
+     *
+     * @param pos
+     */
+    private void editItem(int item, int pos) {
+        Toast.makeText(this, "edit: " + pos, Toast.LENGTH_LONG).show();
+    }
+
+    /***
+     * Edit the item.
+     *
+     * @param pos
+     */
+    private void deleteItem(int item, int pos) {
+        if (pos >= 0 && pos < mAppDetails.size()) {
+            mAppDetails.remove(pos);
+            if (mAppDetails.isEmpty()) {
+                Toast.makeText(this, "No items left.  Using defaults",
+                        Toast.LENGTH_LONG).show();
+            }
+            storeAppDetailsPreference();
+            refresh();
+        }
+    }
+
+    /***
+     * Edit the item.
+     *
+     * @param pos
+     */
+    private void addItem(int item, int pos) {
+        Toast.makeText(this, "addItem: " + pos, Toast.LENGTH_LONG).show();
+    }
+
+    /***
+     * Edit the item.
+     *
+     * @param pos
+     */
+    private void moveItemUp(int item, int pos) {
+        Toast.makeText(this, "moveItemUp: " + pos, Toast.LENGTH_LONG).show();
+    }
+
+    /***
+     * Edit the item.
+     *
+     * @param pos
+     */
+    private void moveItemDown(int item, int pos) {
+        Toast.makeText(this, "moveItemDown: " + pos, Toast.LENGTH_LONG).show();
     }
 
     @Override
-    protected void onListItemClick(ListView lv, View view, int position, long
+    protected void onListItemClick(ListView lv, View view, int pos, long
             id) {
-        super.onListItemClick(lv, view, position, id);
+        super.onListItemClick(lv, view, pos, id);
+        if (mAppDetails == null || pos < 0 || pos >= mAppDetails.size()) {
+            return;
+        }
         AppDetails appDetails = (AppDetails) getListView().getItemAtPosition
-                (position);
+                (pos);
         String appName = appDetails.getAppName();
         Intent intent = new Intent(android.provider.Settings
                 .ACTION_APPLICATION_DETAILS_SETTINGS);
@@ -118,22 +226,32 @@ public class AppDetailsActivity extends ListActivity implements IConstants {
                 mAppDetails.add(new AppDetails(appName));
             }
             // Store them in preferences
-            SharedPreferences prefs = PreferenceManager
-                    .getDefaultSharedPreferences(this);
-            SharedPreferences.Editor prefsEditor = PreferenceManager
-                    .getDefaultSharedPreferences(this).edit();
-            String[] appNames = createAppNamesFromAppDetails();
-            if (appNames != null) {
-                Gson gson = new Gson();
-                String json = gson.toJson(appNames);
-                prefsEditor.putString(PREF_APPDETAILS_APP_NAMES, json);
-                prefsEditor.commit();
-            }
+            storeAppDetailsPreference();
         }
         if (mAppDetailsListdapter == null) {
             // Set the adapter
             mAppDetailsListdapter = new AppDetailsListAdapter();
             setListAdapter(mAppDetailsListdapter);
+        } else {
+            // Refresh the View
+            mAppDetailsListdapter.notifyDataSetChanged();
+        }
+    }
+
+    /***
+     * Store the app names list in Preferences.
+     */
+    private void storeAppDetailsPreference() {
+        SharedPreferences prefs = PreferenceManager
+                .getDefaultSharedPreferences(this);
+        SharedPreferences.Editor prefsEditor = PreferenceManager
+                .getDefaultSharedPreferences(this).edit();
+        String[] appNames = createAppNamesFromAppDetails();
+        if (appNames != null) {
+            Gson gson = new Gson();
+            String json = gson.toJson(appNames);
+            prefsEditor.putString(PREF_APPDETAILS_APP_NAMES, json);
+            prefsEditor.commit();
         }
     }
 
