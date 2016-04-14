@@ -23,11 +23,13 @@ package net.kenevans.android.misc;
 
 import android.app.ListActivity;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -36,7 +38,10 @@ import android.widget.BaseAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import com.google.gson.Gson;
+
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -58,7 +63,7 @@ public class AppDetailsActivity extends ListActivity implements IConstants {
     /***
      * List of values to be added to the ListView.
      */
-    private List<AppDetails> mListValues;
+    private List<AppDetails> mAppDetails;
 
     /**
      * Adapter to manage the ListView.
@@ -69,6 +74,13 @@ public class AppDetailsActivity extends ListActivity implements IConstants {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        // Get the preferences
+        SharedPreferences prefs = PreferenceManager
+                .getDefaultSharedPreferences(this);
+        Gson gson = new Gson();
+        String json = prefs.getString(PREF_APPDETAILS_APP_NAMES, "");
+        String[] appNames = gson.fromJson(json, String[].class);
+        createAppDetailsFromAppNames(appNames);
     }
 
     @Override
@@ -99,11 +111,23 @@ public class AppDetailsActivity extends ListActivity implements IConstants {
 
     private void refresh() {
         // Create the list values
-        if (mListValues == null) {
-            // Create the list of values for the ListView
-            mListValues = new ArrayList<AppDetails>();
+        if (mAppDetails == null || mAppDetails.size() == 0) {
+            // Create the list from the default names
+            mAppDetails = new ArrayList<AppDetails>();
             for (String appName : DEFAULT_APP_NAMES) {
-                mListValues.add(new AppDetails(appName));
+                mAppDetails.add(new AppDetails(appName));
+            }
+            // Store them in preferences
+            SharedPreferences prefs = PreferenceManager
+                    .getDefaultSharedPreferences(this);
+            SharedPreferences.Editor prefsEditor = PreferenceManager
+                    .getDefaultSharedPreferences(this).edit();
+            String[] appNames = createAppNamesFromAppDetails();
+            if (appNames != null) {
+                Gson gson = new Gson();
+                String json = gson.toJson(appNames);
+                prefsEditor.putString(PREF_APPDETAILS_APP_NAMES, json);
+                prefsEditor.commit();
             }
         }
         if (mAppDetailsListdapter == null) {
@@ -112,6 +136,42 @@ public class AppDetailsActivity extends ListActivity implements IConstants {
             setListAdapter(mAppDetailsListdapter);
         }
     }
+
+    /***
+     * Creates mAppDetails from the given String array as fetched from
+     * Preferences.
+     *
+     * @param appNames Array of appNames.
+     */
+    private void createAppDetailsFromAppNames(String[] appNames) {
+        if (appNames == null) {
+            mAppDetails = null;
+            return;
+        }
+        mAppDetails = new ArrayList<AppDetails>(appNames.length);
+        for (String appName : appNames) {
+            mAppDetails.add(new AppDetails(appName));
+        }
+    }
+
+    /***
+     * Creates an array of String's from mAppDetails to use for saving
+     * preferences.
+     *
+     * @return
+     */
+    private String[] createAppNamesFromAppDetails() {
+        if (mAppDetails == null) {
+            return new String[0];
+        }
+        ArrayList<String> appNamesList = new ArrayList<String>(mAppDetails
+                .size());
+        for (AppDetails appDetails : mAppDetails) {
+            appNamesList.add(appDetails.appName);
+        }
+        return appNamesList.toArray(new String[appNamesList.size()]);
+    }
+
 
     /**
      * Class to manage one network from the ScanResult's.
@@ -163,17 +223,17 @@ public class AppDetailsActivity extends ListActivity implements IConstants {
         }
 
         public void clear() {
-            mListValues.clear();
+            mAppDetails.clear();
         }
 
         @Override
         public int getCount() {
-            return mListValues.size();
+            return mAppDetails.size();
         }
 
         @Override
         public Object getItem(int i) {
-            return mListValues.get(i);
+            return mAppDetails.get(i);
         }
 
         @Override
@@ -199,7 +259,7 @@ public class AppDetailsActivity extends ListActivity implements IConstants {
                 viewHolder = (ViewHolder) view.getTag();
             }
 
-            AppDetails appDetails = mListValues.get(i);
+            AppDetails appDetails = mAppDetails.get(i);
             String appName = appDetails.getAppName();
             String packageName = appDetails.getPackageName();
             String versionName = appDetails.getVersionName();

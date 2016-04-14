@@ -38,6 +38,7 @@ public interface IConstants {
 	// Preferences
 	public static final String PREF_MEDIA_MONKEY_DIRECTORY = "dataDirectory";
 	public static final String PREF_WIFI_SORT_ORDER = "wifiSortOrder";
+	public static final String PREF_APPDETAILS_APP_NAMES = "appdetailsAppNames";
 
 	
 	// Media Monkey
