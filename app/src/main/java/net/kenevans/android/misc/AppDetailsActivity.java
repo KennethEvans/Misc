@@ -26,18 +26,20 @@ import android.app.ListActivity;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.util.Log;
+import android.text.Editable;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -110,19 +112,19 @@ public class AppDetailsActivity extends ListActivity implements IConstants {
                                 dialog.dismiss();
                                 switch (item) {
                                     case 0:
-                                        editItem(item, pos);
+                                        editItem(pos);
                                         break;
                                     case 1:
-                                        deleteItem(item, pos);
+                                        deleteItem(pos);
                                         break;
                                     case 2:
-                                        addItem(item, pos);
+                                        addItem(item);
                                         break;
                                     case 3:
-                                        moveItemUp(item, pos);
+                                        moveItemUp(item);
                                         break;
                                     case 4:
-                                        moveItemDown(item, pos);
+                                        moveItemDown(pos);
                                         break;
                                 }
                             }
@@ -135,57 +137,23 @@ public class AppDetailsActivity extends ListActivity implements IConstants {
         });
     }
 
-    /***
-     * Edit the item.
-     *
-     * @param pos
-     */
-    private void editItem(int item, int pos) {
-        Toast.makeText(this, "edit: " + pos, Toast.LENGTH_LONG).show();
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.appdetailsmenu, menu);
+        return true;
     }
 
-    /***
-     * Edit the item.
-     *
-     * @param pos
-     */
-    private void deleteItem(int item, int pos) {
-        if (pos >= 0 && pos < mAppDetails.size()) {
-            mAppDetails.remove(pos);
-            if (mAppDetails.isEmpty()) {
-                Toast.makeText(this, "No items left.  Using defaults",
-                        Toast.LENGTH_LONG).show();
-            }
-            storeAppDetailsPreference();
-            refresh();
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        switch (id) {
+            case R.id.help:
+                Utils.infoMsg(this, "Click an item to see its settings," +
+                        " long click to modify the list or item.");
+                return true;
         }
-    }
-
-    /***
-     * Edit the item.
-     *
-     * @param pos
-     */
-    private void addItem(int item, int pos) {
-        Toast.makeText(this, "addItem: " + pos, Toast.LENGTH_LONG).show();
-    }
-
-    /***
-     * Edit the item.
-     *
-     * @param pos
-     */
-    private void moveItemUp(int item, int pos) {
-        Toast.makeText(this, "moveItemUp: " + pos, Toast.LENGTH_LONG).show();
-    }
-
-    /***
-     * Edit the item.
-     *
-     * @param pos
-     */
-    private void moveItemDown(int item, int pos) {
-        Toast.makeText(this, "moveItemDown: " + pos, Toast.LENGTH_LONG).show();
+        return false;
     }
 
     @Override
@@ -197,6 +165,10 @@ public class AppDetailsActivity extends ListActivity implements IConstants {
         }
         AppDetails appDetails = (AppDetails) getListView().getItemAtPosition
                 (pos);
+        // Don't do anything if it is not valid (has no packageName)
+        if (appDetails == null || appDetails.getPackageName() == null) {
+            return;
+        }
         String appName = appDetails.getAppName();
         Intent intent = new Intent(android.provider.Settings
                 .ACTION_APPLICATION_DETAILS_SETTINGS);
@@ -217,6 +189,146 @@ public class AppDetailsActivity extends ListActivity implements IConstants {
         refresh();
     }
 
+    /***
+     * Edit the item.
+     *
+     * @param pos
+     */
+    private void editItem(final int pos) {
+        if (mAppDetails == null) return;
+        AlertDialog.Builder builder =
+                new AlertDialog.Builder(AppDetailsActivity.this);
+        builder.setTitle(getText(R.string.app_details_edit));
+        final EditText input = new EditText(AppDetailsActivity.this);
+        AppDetails appDetails = (AppDetails) mAppDetails.get(pos);
+        String old = appDetails.getAppName();
+        input.setText(old);
+        builder.setView(input);
+        builder.setPositiveButton(R.string.ok,
+                new DialogInterface.OnClickListener() {
+                    //@Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        Editable value = input.getText();
+                        String appName = value.toString().trim();
+                        if (mAppDetails != null && pos >= 0
+                                && pos < mAppDetails.size()
+                                && appName != null && !appName.isEmpty()) {
+                            mAppDetails.set(pos, new AppDetails(appName));
+                            storeAppDetailsPreference();
+                            refresh();
+                        }
+                    }
+                });
+        builder.setNeutralButton(R.string.cancel,
+                new DialogInterface.OnClickListener() {
+                    //@Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        // Do nothing
+                    }
+                });
+        AlertDialog alert = builder.create();
+        alert.show();
+    }
+
+    /***
+     * Delete the item.
+     *
+     * @param pos
+     */
+    private void deleteItem(int pos) {
+        if (mAppDetails == null) return;
+        if (pos >= 0 && pos < mAppDetails.size()) {
+            mAppDetails.remove(pos);
+            if (mAppDetails.isEmpty()) {
+                Toast.makeText(this, "No items left.  Using defaults",
+                        Toast.LENGTH_LONG).show();
+            }
+            storeAppDetailsPreference();
+            refresh();
+        }
+    }
+
+    /***
+     * Add the item above the current position.
+     *
+     * @param pos
+     */
+    private void addItem(final int pos) {
+        if (mAppDetails == null) return;
+        AlertDialog.Builder builder =
+                new AlertDialog.Builder(AppDetailsActivity.this);
+        builder.setTitle(getText(R.string.app_details_add));
+        final EditText input = new EditText(AppDetailsActivity.this);
+        String old = getString(R.string.app_details_suggested_app_name);
+        input.setText(old);
+        builder.setView(input);
+        builder.setPositiveButton(R.string.ok,
+                new DialogInterface.OnClickListener() {
+                    //@Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        Editable value = input.getText();
+                        String appName = value.toString().trim();
+                        if (mAppDetails != null && pos >= 0
+                                && pos < mAppDetails.size()
+                                && appName != null && !appName.isEmpty()) {
+                            mAppDetails.add(pos, new AppDetails(appName));
+                            storeAppDetailsPreference();
+                            refresh();
+                        }
+                    }
+                });
+        builder.setNeutralButton(R.string.cancel,
+                new DialogInterface.OnClickListener() {
+                    //@Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        // Do nothing
+                    }
+                });
+        AlertDialog alert = builder.create();
+        alert.show();
+    }
+
+    /***
+     * Move the item up in the list.
+     *
+     * @param pos
+     */
+    private void moveItemUp(int pos) {
+        if (mAppDetails == null) return;
+        if (pos == 0) {
+            Toast.makeText(this, "Already at the top", Toast.LENGTH_LONG)
+                    .show();
+            return;
+        }
+        if (pos > 0 && pos < mAppDetails.size()) {
+            Collections.swap(mAppDetails, pos, pos - 1);
+            storeAppDetailsPreference();
+            refresh();
+        }
+    }
+
+    /***
+     * Move the item down in the list.
+     *
+     * @param pos
+     */
+    private void moveItemDown(int pos) {
+        if (mAppDetails == null) return;
+        if (pos == mAppDetails.size() - 1) {
+            Toast.makeText(this, "Already at the bottom", Toast.LENGTH_LONG)
+                    .show();
+            return;
+        }
+        if (pos > 0 && pos < mAppDetails.size()) {
+            Collections.swap(mAppDetails, pos, pos + 1);
+            storeAppDetailsPreference();
+            refresh();
+        }
+    }
+
+    /***
+     * Refresh the liat.
+     */
     private void refresh() {
         // Create the list values
         if (mAppDetails == null || mAppDetails.size() == 0) {
@@ -242,8 +354,6 @@ public class AppDetailsActivity extends ListActivity implements IConstants {
      * Store the app names list in Preferences.
      */
     private void storeAppDetailsPreference() {
-        SharedPreferences prefs = PreferenceManager
-                .getDefaultSharedPreferences(this);
         SharedPreferences.Editor prefsEditor = PreferenceManager
                 .getDefaultSharedPreferences(this).edit();
         String[] appNames = createAppNamesFromAppDetails();
@@ -289,7 +399,6 @@ public class AppDetailsActivity extends ListActivity implements IConstants {
         }
         return appNamesList.toArray(new String[appNamesList.size()]);
     }
-
 
     /**
      * Class to manage one network from the ScanResult's.
@@ -340,9 +449,9 @@ public class AppDetailsActivity extends ListActivity implements IConstants {
             mInflator = AppDetailsActivity.this.getLayoutInflater();
         }
 
-        public void clear() {
-            mAppDetails.clear();
-        }
+//        public void clear() {
+//            mAppDetails.clear();
+//        }
 
         @Override
         public int getCount() {

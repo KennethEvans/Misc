@@ -30,12 +30,10 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.graphics.Color;
-import android.net.Uri;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -43,10 +41,8 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
-import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -99,8 +95,10 @@ public class WifiActivity extends ListActivity implements IConstants {
         // Get the stored sort order
         SharedPreferences prefs = PreferenceManager
                 .getDefaultSharedPreferences(this);
-        int sortOrderOrdinal = prefs.getInt(PREF_WIFI_SORT_ORDER, SortOrder.NONE.ordinal());
-        if (sortOrderOrdinal >= 0 && sortOrderOrdinal < SortOrder.values().length) {
+        int sortOrderOrdinal = prefs.getInt(PREF_WIFI_SORT_ORDER, SortOrder
+                .NONE.ordinal());
+        if (sortOrderOrdinal >= 0 && sortOrderOrdinal < SortOrder.values()
+                .length) {
             sortOrder = SortOrder.values()[sortOrderOrdinal];
         }
 
@@ -108,7 +106,8 @@ public class WifiActivity extends ListActivity implements IConstants {
         mReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                final WifiManager wifi = (WifiManager) getSystemService(Context.WIFI_SERVICE);
+                final WifiManager wifi = (WifiManager) getSystemService
+                        (Context.WIFI_SERVICE);
                 int state = wifi.getWifiState();
                 if (state != WifiManager.WIFI_STATE_ENABLED) {
                     Utils.errMsg(WifiActivity.this, "WiFi is not enabled");
@@ -117,9 +116,8 @@ public class WifiActivity extends ListActivity implements IConstants {
                 List<ScanResult> scanResults = wifi.getScanResults();
                 // Make the ArrayList
                 mNetworks = new ArrayList<WifiNetwork>(scanResults.size());
-                int i = 0;
                 for (ScanResult scanResult : scanResults) {
-                    mNetworks.add(new WifiNetwork(i++, scanResult));
+                    mNetworks.add(new WifiNetwork(scanResult));
                 }
                 // Sort the arrays list
                 Collections.sort(mNetworks);
@@ -151,20 +149,15 @@ public class WifiActivity extends ListActivity implements IConstants {
                 refresh();
                 return true;
             case R.id.order:
-                Intent intent = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
-                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                intent.setData(Uri.parse("package:" + "com.android.providers.downloads"));
-
-                startActivity(intent);
-
-//                setOrder();
+                setOrder();
                 return true;
         }
         return false;
     }
 
     @Override
-    protected void onListItemClick(ListView lv, View view, int position, long id) {
+    protected void onListItemClick(ListView lv, View view, int position, long
+            id) {
         super.onListItemClick(lv, view, position, id);
         WifiNetwork network = mNetworks.get(position);
         String msg = "Supports\n";
@@ -188,7 +181,8 @@ public class WifiActivity extends ListActivity implements IConstants {
     @Override
     protected void onResume() {
         super.onResume();
-        registerReceiver(mReceiver, new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
+        registerReceiver(mReceiver, new IntentFilter(WifiManager
+                .SCAN_RESULTS_AVAILABLE_ACTION));
     }
 
     /**
@@ -197,7 +191,8 @@ public class WifiActivity extends ListActivity implements IConstants {
     private void setOrder() {
         final CharSequence[] items = {getText(R.string.sort_none),
                 getText(R.string.sort_ssid), getText(R.string.sort_bssid),
-                getText(R.string.sort_level), getText(R.string.sort_frequency),};
+                getText(R.string.sort_level), getText(R.string
+                .sort_frequency),};
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle(getText(R.string.sort_title));
         builder.setSingleChoiceItems(items, sortOrder.ordinal(),
@@ -223,8 +218,10 @@ public class WifiActivity extends ListActivity implements IConstants {
                         }
                         // Save the sort order
                         SharedPreferences.Editor editor = PreferenceManager
-                                .getDefaultSharedPreferences(WifiActivity.this).edit();
-                        editor.putInt(PREF_WIFI_SORT_ORDER, sortOrder.ordinal());
+                                .getDefaultSharedPreferences(WifiActivity
+                                        .this).edit();
+                        editor.putInt(PREF_WIFI_SORT_ORDER, sortOrder.ordinal
+                                ());
                         editor.commit();
 
                         // Sort the arrays list
@@ -249,7 +246,8 @@ public class WifiActivity extends ListActivity implements IConstants {
                 // Refresh the View so it shows
                 mNetworkListdapter.notifyDataSetChanged();
             }
-            WifiManager wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
+            WifiManager wifiManager = (WifiManager) getSystemService(Context
+                    .WIFI_SERVICE);
             wifiManager.startScan();
         } catch (Exception ex) {
             Utils.excMsg(this, "Error starting network scan", ex);
@@ -289,7 +287,7 @@ public class WifiActivity extends ListActivity implements IConstants {
          * @param i          The position in the original list.
          * @param scanResult The ScanResult at that position.
          */
-        public WifiNetwork(int i, ScanResult scanResult) {
+        public WifiNetwork(ScanResult scanResult) {
             this.id = id;
             this.ssid = scanResult.SSID;
             if (ssid.length() == 0) {
@@ -335,7 +333,7 @@ public class WifiActivity extends ListActivity implements IConstants {
         }
 
         /**
-         * Get the number of bars out of 5.
+         * Get the number of bars in the range 1 - 4.
          *
          * @return
          */
@@ -356,7 +354,8 @@ public class WifiActivity extends ListActivity implements IConstants {
                     // Highest first
                     return other.level - this.level;
                 case SSID:
-                    return (this.ssid.toLowerCase()).compareTo(other.ssid.toLowerCase());
+                    return (this.ssid.toLowerCase()).compareTo(other.ssid
+                            .toLowerCase());
                 case BSSID:
                     return this.bssid.compareTo(other.bssid);
             }
@@ -416,7 +415,8 @@ public class WifiActivity extends ListActivity implements IConstants {
             title += network.getSsid() + " " + network.getBssid();
 
             String subTitle = "";
-            subTitle += bars + ((bars != 1) ? " bars " : " bar ") + network.getLevel()
+            subTitle += bars + ((bars != 1) ? " bars " : " bar ") + network
+                    .getLevel()
                     + " db " + "Channel " + network.getChannel()
                     + " (" + network.getFrequency() + " MHz)";
 
