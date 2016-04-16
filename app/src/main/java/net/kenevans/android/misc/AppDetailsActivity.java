@@ -121,10 +121,10 @@ public class AppDetailsActivity extends ListActivity implements IConstants {
                                         deleteItem(pos);
                                         break;
                                     case 2:
-                                        addItem(item);
+                                        addItem(pos);
                                         break;
                                     case 3:
-                                        moveItemUp(item);
+                                        moveItemUp(pos);
                                         break;
                                     case 4:
                                         moveItemDown(pos);
@@ -466,9 +466,9 @@ public class AppDetailsActivity extends ListActivity implements IConstants {
             mInflator = AppDetailsActivity.this.getLayoutInflater();
         }
 
-//        public void clear() {
-//            mAppDetails.clear();
-//        }
+        public void clear() {
+            mAppDetails.clear();
+        }
 
         @Override
         public int getCount() {
