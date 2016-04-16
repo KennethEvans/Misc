@@ -27,6 +27,8 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -40,6 +42,7 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -407,6 +410,7 @@ public class AppDetailsActivity extends ListActivity implements IConstants {
         private String appName;
         private String versionName;
         private String packageName;
+        private Drawable icon;
 
         /***
          * CTOR
@@ -417,11 +421,20 @@ public class AppDetailsActivity extends ListActivity implements IConstants {
             List<PackageInfo> packages = getPackageManager()
                     .getInstalledPackages(0);
             this.appName = appName;
+//            // Doesn't show because is is black and looks better withoit it
+//            this.icon = AppDetailsActivity.this
+//                    .getResources().getDrawable(R.drawable.unknown);
             for (PackageInfo info : packages) {
                 if (appName.equals(info.packageName)) {
                     this.packageName = info.applicationInfo.loadLabel
                             (getPackageManager()).toString();
                     this.versionName = info.versionName;
+                    try {
+                        this.icon = getPackageManager()
+                                .getApplicationIcon(appName);
+                    } catch (PackageManager.NameNotFoundException ex) {
+                        // Do nothing
+                    }
                     break;
                 }
             }
@@ -437,6 +450,10 @@ public class AppDetailsActivity extends ListActivity implements IConstants {
 
         public String getPackageName() {
             return packageName;
+        }
+
+        public Drawable getIcon() {
+            return icon;
         }
     }
 
@@ -475,12 +492,15 @@ public class AppDetailsActivity extends ListActivity implements IConstants {
             ViewHolder viewHolder;
             // General ListView optimization code.
             if (view == null) {
-                view = mInflator.inflate(R.layout.list_row, parent, false);
+                view = mInflator.inflate(R.layout
+                        .list_row_image_title_subtitle, parent, false);
                 viewHolder = new ViewHolder();
                 viewHolder.title = (TextView) view
                         .findViewById(R.id.title);
                 viewHolder.subTitle = (TextView) view
                         .findViewById(R.id.subtitle);
+                viewHolder.imageView = (ImageView) view.
+                        findViewById(R.id.imageview);
                 view.setTag(viewHolder);
             } else {
                 viewHolder = (ViewHolder) view.getTag();
@@ -501,12 +521,14 @@ public class AppDetailsActivity extends ListActivity implements IConstants {
 
             viewHolder.title.setText(title);
             viewHolder.subTitle.setText(subTitle);
+            viewHolder.imageView.setImageDrawable(appDetails.getIcon());
 
             return view;
         }
     }
 
     static class ViewHolder {
+        ImageView imageView;
         TextView title;
         TextView subTitle;
     }
