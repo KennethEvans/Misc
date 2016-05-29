@@ -25,15 +25,20 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.view.KeyEvent;
 import android.webkit.WebView;
+import android.widget.Toast;
+
+import net.kenevans.android.misc.IConstants;
+import net.kenevans.android.misc.R;
 
 /**
  * Class to display a local web page.
  */
 public class InfoActivity extends Activity implements IConstants {
-	private static final String DEFAULT_URL = "file:///android_asset/test.html";
 	private WebView mWebView;
 
-	/** Called when the activity is first created. */
+	/**
+	 * Called when the activity is first created.
+	 */
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -48,7 +53,8 @@ public class InfoActivity extends Activity implements IConstants {
 		String url = extras != null ? extras.getString(INFO_URL) : null;
 		// TODO For now use the test page
 		if (url == null || url.length() == 0) {
-			url = DEFAULT_URL;
+			Toast.makeText(this, R.string.help_url_not_found,
+					Toast.LENGTH_LONG).show();
 		}
 		mWebView.loadUrl(url);
 	}

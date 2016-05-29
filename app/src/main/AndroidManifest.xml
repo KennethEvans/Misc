@@ -2,8 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="net.kenevans.android.misc"
     android:installLocation="preferExternal"
-    android:versionCode="14"
-    android:versionName="1.8.0" >
+    android:versionCode="18"
+    android:versionName="1.8.1" >
 
 	<uses-sdk android:minSdkVersion="9" android:targetSdkVersion="21" />
 
@@ -102,7 +102,7 @@
         </activity>
         <activity
             android:name="net.kenevans.android.misc.InfoActivity"
-            android:label="@string/info_title" >
+            android:label="@string/help_title" >
         </activity>
         <activity
             android:name="net.kenevans.android.misc.MessageListenerActivity"

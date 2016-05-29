@@ -42,8 +42,6 @@
     <string name="fix_media_monkey_count_label">Count .m4a Files</string>
     <string name="fix_media_monkey_directory_hint">Directory to process</string>
     <string name="fixtime_item">Fix Time</string>
-    <string name="help_item">Help</string>
-    <string name="info_title">Help</string>
     <string name="map_item">Map</string>
     <string name="map_location_title">Location</string>
     <string name="messagelistener_title">Message Listener</string>
@@ -80,6 +78,12 @@
     <string name="wifi_title">Wi-Fi Networks</string>
     <string name="yes_label">Yes</string>
     <string name="cancel">Cancel</string>
+
+    <!-- Info/Help -->
+    <string name="help_url_not_found">Cannot find Help URL</string>
+    <string name="help_item">Help</string>
+    <string name="help_title">Help</string>
+    <string name="help_show_error">Error showing help</string>
 
     <!-- Utils -->
     <string name="error">Error</string>
