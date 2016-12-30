@@ -664,7 +664,7 @@ public class MessageUtils implements IConstants {
             }
         }
         info += ContactsContract.Contacts.PHOTO_ID + ": " + photoId + "\n";
-        // These are not kept track of on the EVO 3D
+        // These are not kept track of on the EVO 3D or Galaxy S7
         // info += ContactsContract.Contacts.DISPLAY_NAME + ": " + displayName
         // + "\n";
         // String timesContacted = "Not found";
@@ -687,15 +687,12 @@ public class MessageUtils implements IConstants {
         // + lastTimeContacted + "\n";
 
         // Raw contacts
-        info += "Raw Contacts:\n";
         Cursor rawCursor = context.getContentResolver().query
                 (ContactsContract.RawContacts.CONTENT_URI,
                         null,
                         ContactsContract.RawContacts.CONTACT_ID + "=?",
                         new String[]{id}, null);
-        if (rawCursor == null) {
-            info += "  None\n";
-        } else {
+        if (rawCursor != null) {
             while (rawCursor.moveToNext()) {
                 String accountName = rawCursor
                         .getString(rawCursor
@@ -703,42 +700,57 @@ public class MessageUtils implements IConstants {
                                         .ACCOUNT_NAME));
                 String rawId = rawCursor
                         .getString(rawCursor
-                                .getColumnIndex(ContactsContract.RawContacts._ID));
-                info += "  " +  accountName + " _id=" + rawId + "\n";
+                                .getColumnIndex(ContactsContract.RawContacts
+                                        ._ID));
+                info += "\nFor account " + accountName + " (raw _id=" + rawId
+                        + ")\n";
+                info += getRawContactDetails(context, cursor, rawId);
             }
             rawCursor.close();
         }
 
+        cursor.close();
+        return info;
+    }
+
+    /**
+     * Gets the phones, emails, and postal addresses for a raw contact.
+     *
+     * @param context   The calling context.
+     * @param rawCursor The Cursor over raw cantacts.
+     * @param rawId     The raw ID.
+     * @return A string with the info.
+     */
+    public static String getRawContactDetails(Context context, Cursor rawCursor,
+                                              String rawId) {
+        String info = "";
+
         // Phones
         info += "Phones:\n";
-        if (Integer.parseInt(cursor.getString(cursor
-                .getColumnIndex(ContactsContract.Contacts.HAS_PHONE_NUMBER)))
-                > 0) {
-            Cursor pCursor = context.getContentResolver().query(
-                    ContactsContract.CommonDataKinds.Phone.CONTENT_URI, null,
-                    ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = ?",
-                    new String[]{id}, null);
-            while (pCursor.moveToNext()) {
-                String phoneNumber = pCursor
-                        .getString(pCursor
-                                .getColumnIndex(ContactsContract
-                                        .CommonDataKinds.Phone.NUMBER));
-                int phoneType = pCursor
-                        .getInt(pCursor
-                                .getColumnIndex(ContactsContract
-                                        .CommonDataKinds.Phone.TYPE));
-                info += "  " + MessageUtils.getPhoneType(phoneType) + ": "
-                        + phoneNumber + "\n";
-            }
-            pCursor.close();
+        Cursor pCursor = context.getContentResolver().query(
+                ContactsContract.CommonDataKinds.Phone.CONTENT_URI, null,
+                ContactsContract.CommonDataKinds.Phone.RAW_CONTACT_ID + " = ?",
+                new String[]{rawId}, null);
+        while (pCursor.moveToNext()) {
+            String phoneNumber = pCursor
+                    .getString(pCursor
+                            .getColumnIndex(ContactsContract
+                                    .CommonDataKinds.Phone.NUMBER));
+            int phoneType = pCursor
+                    .getInt(pCursor
+                            .getColumnIndex(ContactsContract
+                                    .CommonDataKinds.Phone.TYPE));
+            info += "  " + MessageUtils.getPhoneType(phoneType) + ": "
+                    + phoneNumber + "\n";
         }
+        pCursor.close();
 
         // Email
         info += "Email Addresses:\n";
         Cursor emailCur = context.getContentResolver().query(
                 ContactsContract.CommonDataKinds.Email.CONTENT_URI, null,
-                ContactsContract.CommonDataKinds.Email.CONTACT_ID + " = ?",
-                new String[]{id}, null);
+                ContactsContract.CommonDataKinds.Email.RAW_CONTACT_ID + " = ?",
+                new String[]{rawId}, null);
         while (emailCur.moveToNext()) {
             // This would allow you get several email addresses
             // if the email addresses were stored in an array
@@ -760,8 +772,8 @@ public class MessageUtils implements IConstants {
         Cursor postalCursor = context.getContentResolver().query(
                 ContactsContract.CommonDataKinds.StructuredPostal
                         .CONTENT_URI, null,
-                ContactsContract.Data.CONTACT_ID + " = ?",
-                new String[]{id}, null);
+                ContactsContract.Data.RAW_CONTACT_ID + " = ?",
+                new String[]{rawId}, null);
         while (postalCursor.moveToNext()) {
             String address = postalCursor
                     .getString(postalCursor
@@ -777,7 +789,6 @@ public class MessageUtils implements IConstants {
         }
         postalCursor.close();
 
-        cursor.close();
         return info;
     }
 
