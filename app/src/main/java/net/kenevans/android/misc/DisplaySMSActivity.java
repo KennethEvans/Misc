@@ -573,7 +573,7 @@ public class DisplaySMSActivity extends Activity implements IConstants {
             int indexType = cursor.getColumnIndex(COL_TYPE);
             int indexBody = cursor.getColumnIndex(COL_BODY);
             Log.d(TAG, this.getClass().getSimpleName() + ".refresh: "
-                    + " mRowId=" + mRowId + " uri=" + uri.toString()
+                    + " mRowId=" + mRowId + " mUri=" + uri.toString()
                     + " dateMultiplier=" + dateMultiplier);
 
             // There should only be one row returned, the last will be the most
@@ -636,8 +636,8 @@ public class DisplaySMSActivity extends Activity implements IConstants {
 
                 // Debug
                 // if (id.equals(new Integer(76).toString())) {
-                // SMSActivity.test(3, this.getClass(), this, cursor, id, uri);
-                // SMSActivity.test(4, this.getClass(), this, null, id, uri);
+                // SMSActivity.test(3, this.getClass(), this, cursor, id, mUri);
+                // SMSActivity.test(4, this.getClass(), this, null, id, mUri);
                 // }
             }
             // We are through with the cursor

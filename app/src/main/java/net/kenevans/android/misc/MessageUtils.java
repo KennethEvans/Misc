@@ -747,26 +747,36 @@ public class MessageUtils implements IConstants {
     public static String getRawContactDetails(Context context, Cursor rawCursor,
                                               String rawId) {
         String info = "";
+        // DEBUG
+//        info += getColumnNamesAndValues(rawCursor);
+//        String displayName = rawCursor
+//                .getString(rawCursor
+//                        .getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME
+//                        ));
+//        info += "Name: " + displayName + "\n";
+
+//        info += getInfoForColumnName(rawCursor, ContactsContract.RawContacts
+//                .AGGREGATION_MODE);
 
         // Phones
         info += "Phones:\n";
-        Cursor pCursor = context.getContentResolver().query(
+        Cursor cursor = context.getContentResolver().query(
                 ContactsContract.CommonDataKinds.Phone.CONTENT_URI, null,
                 ContactsContract.CommonDataKinds.Phone.RAW_CONTACT_ID + " = ?",
                 new String[]{rawId}, null);
-        while (pCursor.moveToNext()) {
-            String phoneNumber = pCursor
-                    .getString(pCursor
+        while (cursor.moveToNext()) {
+            String phoneNumber = cursor
+                    .getString(cursor
                             .getColumnIndex(ContactsContract
                                     .CommonDataKinds.Phone.NUMBER));
-            int phoneType = pCursor
-                    .getInt(pCursor
+            int phoneType = cursor
+                    .getInt(cursor
                             .getColumnIndex(ContactsContract
                                     .CommonDataKinds.Phone.TYPE));
             info += "  " + MessageUtils.getPhoneType(phoneType) + ": "
                     + phoneNumber + "\n";
         }
-        pCursor.close();
+        cursor.close();
 
         // Email
         info += "Email Addresses:\n";

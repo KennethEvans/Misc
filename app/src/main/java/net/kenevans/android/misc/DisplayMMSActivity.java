@@ -611,7 +611,7 @@ public class DisplayMMSActivity extends Activity implements IConstants {
             // The address and body are not in this database.
             // There is no SMS type.
             Log.d(TAG, this.getClass().getSimpleName() + ".refresh: "
-                    + " mRowId=" + mRowId + " uri=" + uri.toString()
+                    + " mRowId=" + mRowId + " mUri=" + uri.toString()
                     + " dateMultiplier=" + dateMultiplier);
 
             List<String> mimeList = new ArrayList<String>();
@@ -759,8 +759,8 @@ public class DisplayMMSActivity extends Activity implements IConstants {
 
                 // DEBUG
                 // if (id.equals(new Integer(76).toString())) {
-                // SMSActivity.test(3, this.getClass(), this, cursor, id, uri);
-                // SMSActivity.test(4, this.getClass(), this, null, id, uri);
+                // SMSActivity.test(3, this.getClass(), this, cursor, id, mUri);
+                // SMSActivity.test(4, this.getClass(), this, null, id, mUri);
                 // }
             }
             // We are through with the cursor

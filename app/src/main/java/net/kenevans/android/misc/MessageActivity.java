@@ -366,7 +366,7 @@ public class MessageActivity extends ListActivity implements IConstants {
 			indexAddress = cursor.getColumnIndex(COL_ADDRESS);
 			indexType = cursor.getColumnIndex(COL_TYPE);
 			indexCtt = cursor.getColumnIndex(COL_CT_T);
-			Log.d(TAG, this.getClass().getSimpleName() + " uri=" + getUri()
+			Log.d(TAG, this.getClass().getSimpleName() + " mUri=" + getUri()
 					+ " indexCtt=" + indexCtt);
 		}
 

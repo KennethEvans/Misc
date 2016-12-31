@@ -200,7 +200,7 @@ public class DisplayCallActivity extends Activity implements IConstants {
 										// ContentValues();
 										// values.put(COL_NAME, "Susan Semrod");
 										// Long idd = 790l;
-										// getContentResolver().update(uri,
+										// getContentResolver().update(mUri,
 										// values,
 										// "_id = " + idd, null);
 									} catch (Exception ex) {
@@ -246,7 +246,7 @@ public class DisplayCallActivity extends Activity implements IConstants {
 			int indexType = cursor.getColumnIndex(COL_TYPE);
 			int indexName = cursor.getColumnIndex(COL_NAME);
 			Log.d(TAG, this.getClass().getSimpleName() + ".refresh: "
-					+ " mRowId=" + mRowId + " uri=" + uri.toString());
+					+ " mRowId=" + mRowId + " mUri=" + uri.toString());
 
 			// There should only be one row returned, the last will be the most
 			// recent if more are returned owing to the sort above

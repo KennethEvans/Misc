@@ -47,9 +47,9 @@ import java.util.List;
  */
 public class DisplayContactActivity extends Activity implements IConstants {
     /**
-     * The Uri to use.
+     * The content provider URI to use.
      */
-    public Uri uri;
+    private Uri mUri;
 
     private TextView mTitleTextView;
     private TextView mSubtitleTextView;
@@ -103,11 +103,11 @@ public class DisplayContactActivity extends Activity implements IConstants {
         if (extras != null) {
             String uriPath = extras.getString(URI_KEY);
             if (uriPath != null) {
-                uri = Uri.parse(uriPath);
+                mUri = Uri.parse(uriPath);
             }
         }
-        if (uri == null) {
-            Utils.errMsg(this, "Null content provider database Uri");
+        if (mUri == null) {
+            Utils.errMsg(this, "Null content provider database URI");
             return;
         }
         mRowId = extras != null ? extras.getLong(COL_ID) : null;
@@ -135,7 +135,7 @@ public class DisplayContactActivity extends Activity implements IConstants {
                 navigate(RESULT_NEXT);
                 return true;
             case R.id.delete:
-                deleteContact();
+                deleteContacts();
                 return true;
         }
         return false;
@@ -195,7 +195,7 @@ public class DisplayContactActivity extends Activity implements IConstants {
                                     id) {
                                 try {
                                     // The following change the database
-                                    getContentResolver().delete(uri,
+                                    getContentResolver().delete(mUri,
                                             "_id = " + mRowId, null);
                                     navigate(RESULT_NEXT);
                                 } catch (Exception ex) {
@@ -218,11 +218,31 @@ public class DisplayContactActivity extends Activity implements IConstants {
     /**
      * Deletes the message and navigates to the next message.
      */
-    private void deleteContact() {
+    private void deleteContacts() {
+        final List<RawContactInfo> rciList = new ArrayList<RawContactInfo>();
         final List<CharSequence> items = new ArrayList<CharSequence>();
-        items.add("Test Item 1");
-        items.add("Test Item 2");
-        items.add("Test Item 3");
+        Cursor rawCursor = getContentResolver().query
+                (ContactsContract.RawContacts.CONTENT_URI,
+                        null,
+                        ContactsContract.RawContacts.CONTACT_ID + "=?",
+                        new String[]{String.valueOf(mRowId)}, null);
+        String rawId, accountName;
+        RawContactInfo rci;
+        while (rawCursor.moveToNext()) {
+            rawId = rawCursor
+                    .getString(rawCursor
+                            .getColumnIndex(ContactsContract.RawContacts
+                                    ._ID));
+            accountName = rawCursor
+                    .getString(rawCursor
+                            .getColumnIndex(ContactsContract.RawContacts
+                                    .ACCOUNT_NAME));
+            rci = new RawContactInfo(rawId, accountName);
+            rciList.add(new RawContactInfo(rawId, accountName));
+            items.add(rci.toString());
+        }
+        rawCursor.close();
+
         final ArrayList<Integer> selectedList = new ArrayList();
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
 //        builder.setTitle(getText(R.string.sort_title));
@@ -244,13 +264,21 @@ public class DisplayContactActivity extends Activity implements IConstants {
         builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
+                RawContactInfo rci;
+                String[] iDs = new String[selectedList.size()];
                 String msg = "";
                 for (int i = 0; i < selectedList.size(); i++) {
-                    msg += items.get(selectedList.get(i)) + "\n";
+                    rci = rciList.get(selectedList.get(i));
+                    iDs[i] = rci.getRawId();
+                    msg += rci + "\n";
                 }
+                int nDeleted = deleteRawContacts(iDs);
+                msg += "Deleted " + nDeleted + " of " + iDs.length + " raw "
+                        + "contacts";
                 Toast.makeText(getApplicationContext(),
                         selectedList.size() + " items selected:\n" + msg,
                         Toast.LENGTH_LONG).show();
+                refresh();
             }
         });
         builder.setNegativeButton("Cancel", new DialogInterface
@@ -265,6 +293,33 @@ public class DisplayContactActivity extends Activity implements IConstants {
         alert.show();
     }
 
+    /***
+     * Deletes raw contacts with the given raw IDs.
+     *
+     * @param rawIds
+     * @return Number of raw contacts deleted.
+     */
+    private int deleteRawContacts(String[] rawIds) {
+        ContactsContract.RawContacts.CONTENT_URI.buildUpon()
+                .appendQueryParameter(ContactsContract.CALLER_IS_SYNCADAPTER,
+                        "true").build();
+        int deletedRawContacts;
+        if (true) {
+            deletedRawContacts = getContentResolver().delete(ContactsContract
+                            .RawContacts.CONTENT_URI.buildUpon()
+                            .appendQueryParameter
+                                    (ContactsContract.CALLER_IS_SYNCADAPTER,
+                                            "true")
+
+                            .build(), ContactsContract.RawContacts._ID + " >=" +
+                            " ?",
+                    rawIds);
+        } else {
+            deletedRawContacts = rawIds.length;
+        }
+        return deletedRawContacts;
+    }
+
     /**
      * Gets a new cursor and redraws the view. Closes the cursor after it is
      * done with it.
@@ -275,20 +330,20 @@ public class DisplayContactActivity extends Activity implements IConstants {
             String selection = COL_ID + "=" + mRowId.longValue();
 
             // First get the names of all the columns in the database
-            Cursor cursor = getContentResolver().query(uri, null, selection,
+            Cursor cursor = getContentResolver().query(mUri, null, selection,
                     null, null);
             String[] columns = cursor.getColumnNames();
             cursor.close();
 
             // Then get the columns for this row
             String sort = ContactsContract.Contacts.DISPLAY_NAME + " ASC";
-            cursor = getContentResolver().query(uri, columns, selection, null,
+            cursor = getContentResolver().query(mUri, columns, selection, null,
                     sort);
             int indexId = cursor.getColumnIndex(COL_ID);
             int indexName = cursor
                     .getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME);
             Log.d(TAG, this.getClass().getSimpleName() + ".refresh: "
-                    + " mRowId=" + mRowId + " uri=" + uri.toString());
+                    + " mRowId=" + mRowId + " mUri=" + mUri.toString());
 
             // There should only be one row returned, the last will be the most
             // recent if more are returned owing to the sort above
@@ -370,6 +425,32 @@ public class DisplayContactActivity extends Activity implements IConstants {
             if (mSubtitleTextView != null) {
                 mSubtitleTextView.setText("");
             }
+        }
+    }
+
+    /***
+     * Class to manage a raw contact
+     */
+    private static class RawContactInfo {
+        private String rawId;
+        private String accountName;
+
+        public RawContactInfo(String rawId, String accountName) {
+            this.rawId = rawId;
+            this.accountName = accountName;
+        }
+
+        @Override
+        public String toString() {
+            return new String(accountName + " (rawId=" + rawId + ")");
+        }
+
+        public String getRawId() {
+            return rawId;
+        }
+
+        public String getAccountName() {
+            return accountName;
         }
     }
 }

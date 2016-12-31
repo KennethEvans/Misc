@@ -339,18 +339,18 @@ public class SMSActivity extends ListActivity implements IConstants {
 	// * The calling cursor or null to use a cursor with all columns.
 	// * @param id
 	// * The _id.
-	// * @param uri
+	// * @param mUri
 	// * The URI of the content database (will be part of the log
 	// * message).
 	// */
 	// public static void test(int testNum, Class<?> cls, Context context,
-	// Cursor cursor, String id, Uri uri) {
+	// Cursor cursor, String id, Uri mUri) {
 	// Cursor cursor1;
 	// if (cursor == null) {
 	// String selection = COL_ID + "=" + id;
 	// // String[] projection = { "*" };
 	// String[] projection = null;
-	// cursor1 = context.getContentResolver().query(uri, projection,
+	// cursor1 = context.getContentResolver().query(mUri, projection,
 	// selection, null, null);
 	// cursor1.moveToFirst();
 	// } else {
@@ -379,7 +379,7 @@ public class SMSActivity extends ListActivity implements IConstants {
 	// Log.d(TAG,
 	// testNum + " " + cls.getSimpleName() + ".test" + "id=(" + id
 	// + "," + id1 + ") address=" + address + " dateNum="
-	// + dateNum + " threadId=" + threadId + " uri=" + uri
+	// + dateNum + " threadId=" + threadId + " mUri=" + mUri
 	// + " cursor=(" + cursor1.getColumnCount() + ","
 	// + cursor1.getCount() + "," + cursor1.getPosition()
 	// + ")");
