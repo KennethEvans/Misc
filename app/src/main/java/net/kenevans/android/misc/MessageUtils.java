@@ -614,9 +614,12 @@ public class MessageUtils implements IConstants {
         // String selection = ContactsContract.Contacts.DISPLAY_NAME + "=\""
         // + name + "\"";
         String selection = null;
-        String[] columns = {COL_ID, ContactsContract.Contacts.DISPLAY_NAME,
-                ContactsContract.Contacts.PHOTO_ID,
-                ContactsContract.Contacts.HAS_PHONE_NUMBER};
+        // Use null to avoid checking if all columns are valid
+//        String[] columns = {COL_ID, ContactsContract.Contacts.DISPLAY_NAME,
+//                ContactsContract.Contacts.PHOTO_ID,
+//                ContactsContract.Contacts.HAS_PHONE_NUMBER,
+//        };
+        String[] columns = null;
         Cursor cursor = context.getContentResolver().query(
                 ContactsContract.Contacts.CONTENT_URI, columns, selection,
                 null, null);
@@ -626,13 +629,6 @@ public class MessageUtils implements IConstants {
             return info;
         }
         int indexId = cursor.getColumnIndex(COL_ID);
-        int indexPhotoId = cursor
-                .getColumnIndex(ContactsContract.Contacts.PHOTO_ID);
-        // int indexTmesContacted = cursor
-        // .getColumnIndex(ContactsContract.Contacts.TIMES_CONTACTED);
-        // int indexLastTimeContacted = cursor
-        // .getColumnIndex(ContactsContract.Contacts.LAST_TIME_CONTACTED);
-
         String displayName = "Not found";
         boolean found = false;
         if (cursor.moveToFirst()) {
@@ -653,38 +649,21 @@ public class MessageUtils implements IConstants {
             return null;
         }
 
-        // The cursor should be positioned at the right place
+        // Show additional info
         String id = cursor.getString(indexId);
         info += "_id: " + id + "\n";
-        String photoId = "Not found";
-        if (indexPhotoId > -1) {
-            photoId = cursor.getString(indexPhotoId);
-            if (photoId == null) {
-                photoId = "Not found";
-            }
-        }
-        info += ContactsContract.Contacts.PHOTO_ID + ": " + photoId + "\n";
-        // These are not kept track of on the EVO 3D or Galaxy S7
-        // info += ContactsContract.Contacts.DISPLAY_NAME + ": " + displayName
-        // + "\n";
-        // String timesContacted = "Not found";
-        // if (indexTmesContacted > -1) {
-        // timesContacted = cursor.getString(indexTmesContacted);
-        // if (timesContacted == null) {
-        // timesContacted = "Not found";
-        // }
-        // }
-        // info += ContactsContract.Contacts.TIMES_CONTACTED + ": "
-        // + timesContacted + "\n";
-        // String lastTimeContacted = "Not found";
-        // if (indexTmesContacted > -1) {
-        // lastTimeContacted = cursor.getString(indexTmesContacted);
-        // if (lastTimeContacted == null) {
-        // lastTimeContacted = "Not found";
-        // }
-        // }
-        // info += ContactsContract.Contacts.LAST_TIME_CONTACTED + ": "
-        // + lastTimeContacted + "\n";
+        info += getInfoForColumnName(cursor, ContactsContract.Contacts
+                .PHOTO_ID);
+        // Can't find definitions for these, but they appear as columns
+        info += getTimestampInfoForColumnName(cursor,
+                "contact_last_updated_timestamp");
+        info += getInfoForColumnName(cursor, "link_count");
+
+        // These are apparently not kept track of on the EVO 3D or Galaxy S7
+//        info += getInfoForColumnName(cursor,
+//                ContactsContract.Contacts.TIMES_CONTACTED);
+//        info += getInfoForColumnName(cursor,
+//                ContactsContract.Contacts.LAST_TIME_CONTACTED);
 
         // Raw contacts
         Cursor rawCursor = context.getContentResolver().query
@@ -711,6 +690,50 @@ public class MessageUtils implements IConstants {
 
         cursor.close();
         return info;
+    }
+
+    /**
+     * Gets an info line for the given column name of the form<br>
+     * colName + ": " + stringVal + "\n"<br>
+     * The value will be "Not found" is it fails.
+     *
+     * @param cursor
+     * @param colName
+     * @return
+     */
+    public static String getInfoForColumnName(Cursor cursor, String colName) {
+        int col = cursor.getColumnIndex(colName);
+        String stringVal = "Not found";
+        if (col > -1) {
+            stringVal = cursor.getString(col);
+            if (stringVal == null) {
+                stringVal = "Not found";
+            }
+        }
+        return colName + ": " + stringVal + "\n";
+    }
+
+    /**
+     * Gets an info line for the given column name of the form<br>
+     * colName + ": " + date + "\n"<br>
+     * The value will be "Not found" is it fails. Otherwise date is a
+     * Date corresponding to the integer value for the column name.
+     *
+     * @param cursor
+     * @param colName
+     * @return
+     */
+    public static String getTimestampInfoForColumnName(Cursor cursor, String
+            colName) {
+        int col = cursor.getColumnIndex(colName);
+        String stringVal = "Not found";
+        if (col > -1 && !cursor.isNull(col)) {
+            Long timeVal = cursor.getLong(col);
+            if (timeVal != 0) {
+                stringVal = formatDate(mediumFormatter, timeVal);
+            }
+        }
+        return colName + ": " + stringVal + "\n";
     }
 
     /**
