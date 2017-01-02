@@ -370,7 +370,8 @@ public class MessageUtils implements IConstants {
     }
 
     /**
-     * Get a String with the column names and values for the given cursor.
+     * Get a String with the column names and values for the current position
+     * of the given cursor.
      *
      * @param cursor
      * @return
@@ -652,12 +653,12 @@ public class MessageUtils implements IConstants {
         // Show additional info
         String id = cursor.getString(indexId);
         info += "_id: " + id + "\n";
-        info += getInfoForColumnName(cursor, ContactsContract.Contacts
-                .PHOTO_ID);
-        // Can't find definitions for these, but they appear as columns
+        // ContactsContract.ContactsColumns.CONTACT_LAST_UPDATED_TIMESTAMP
+        // Added in API 18
         info += getTimestampInfoForColumnName(cursor,
                 "contact_last_updated_timestamp");
-        info += getInfoForColumnName(cursor, "link_count");
+        info += getInfoForColumnName(cursor, ContactsContract.Contacts
+                .PHOTO_ID);
 
         // These are apparently not kept track of on the EVO 3D or Galaxy S7
 //        info += getInfoForColumnName(cursor,
@@ -672,18 +673,9 @@ public class MessageUtils implements IConstants {
                         ContactsContract.RawContacts.CONTACT_ID + "=?",
                         new String[]{id}, null);
         if (rawCursor != null) {
+            info += "Linked contacts: " + rawCursor.getCount() + "\n";
             while (rawCursor.moveToNext()) {
-                String accountName = rawCursor
-                        .getString(rawCursor
-                                .getColumnIndex(ContactsContract.RawContacts
-                                        .ACCOUNT_NAME));
-                String rawId = rawCursor
-                        .getString(rawCursor
-                                .getColumnIndex(ContactsContract.RawContacts
-                                        ._ID));
-                info += "\nFor account " + accountName + " (raw _id=" + rawId
-                        + ")\n";
-                info += getRawContactDetails(context, cursor, rawId);
+                info += getRawContactDetails(context, rawCursor);
             }
             rawCursor.close();
         }
@@ -737,46 +729,82 @@ public class MessageUtils implements IConstants {
     }
 
     /**
-     * Gets the phones, emails, and postal addresses for a raw contact.
+     * Gets information including phones, emails, and postal addresses for a
+     * raw contact.
      *
      * @param context   The calling context.
      * @param rawCursor The Cursor over raw cantacts.
-     * @param rawId     The raw ID.
      * @return A string with the info.
      */
-    public static String getRawContactDetails(Context context, Cursor rawCursor,
-                                              String rawId) {
+    public static String getRawContactDetails(Context context, Cursor
+            rawCursor) {
         String info = "";
-        // DEBUG
-//        info += getColumnNamesAndValues(rawCursor);
-//        String displayName = rawCursor
-//                .getString(rawCursor
-//                        .getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME
-//                        ));
-//        info += "Name: " + displayName + "\n";
+        String rawId = rawCursor
+                .getString(rawCursor
+                        .getColumnIndex(ContactsContract.RawContacts
+                                ._ID));
+        // Get the name of the raw contact (not so easy)
+        // Could implement this with where clause
+        String name = "Not found";
+        String[] projection = new String[]{
+                ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME,
+                ContactsContract.CommonDataKinds.StructuredName.MIMETYPE,
+        };
+        Cursor nameCursor = context.getContentResolver().query(
+                ContactsContract.Data.CONTENT_URI, projection,
+                ContactsContract.CommonDataKinds.StructuredName
+                        .RAW_CONTACT_ID + " = ?",
+                new String[]{rawId}, null);
+        while (nameCursor.moveToNext()) {
+            String displayName = nameCursor
+                    .getString(nameCursor
+                            .getColumnIndex(ContactsContract.CommonDataKinds
+                                    .StructuredName.DISPLAY_NAME));
+            String mimeType = nameCursor
+                    .getString(nameCursor
+                            .getColumnIndex(ContactsContract.CommonDataKinds
+                                    .StructuredName.MIMETYPE));
+            // The name of the contact should be the item with this mimetype
+            if (mimeType.equals(ContactsContract.CommonDataKinds.StructuredName
+                    .CONTENT_ITEM_TYPE)) {
+                name = displayName;
+                break;
+            }
+        }
+        nameCursor.close();
+        info += "\n" + name + " (raw _id=" + rawId + "):\n";
+        String accountName = rawCursor
+                .getString(rawCursor
+                        .getColumnIndex(ContactsContract.RawContacts
+                                .ACCOUNT_NAME));
 
-//        info += getInfoForColumnName(rawCursor, ContactsContract.RawContacts
-//                .AGGREGATION_MODE);
+        // Account information
+        info += "Account Name: " + accountName + "\n";
+        String accountType = rawCursor
+                .getString(rawCursor
+                        .getColumnIndex(ContactsContract.RawContacts
+                                .ACCOUNT_TYPE));
+        info += "Account Type: " + accountType + "\n";
 
         // Phones
         info += "Phones:\n";
-        Cursor cursor = context.getContentResolver().query(
+        Cursor phonesCursor = context.getContentResolver().query(
                 ContactsContract.CommonDataKinds.Phone.CONTENT_URI, null,
                 ContactsContract.CommonDataKinds.Phone.RAW_CONTACT_ID + " = ?",
                 new String[]{rawId}, null);
-        while (cursor.moveToNext()) {
-            String phoneNumber = cursor
-                    .getString(cursor
+        while (phonesCursor.moveToNext()) {
+            String phoneNumber = phonesCursor
+                    .getString(phonesCursor
                             .getColumnIndex(ContactsContract
                                     .CommonDataKinds.Phone.NUMBER));
-            int phoneType = cursor
-                    .getInt(cursor
+            int phoneType = phonesCursor
+                    .getInt(phonesCursor
                             .getColumnIndex(ContactsContract
                                     .CommonDataKinds.Phone.TYPE));
             info += "  " + MessageUtils.getPhoneType(phoneType) + ": "
                     + phoneNumber + "\n";
         }
-        cursor.close();
+        phonesCursor.close();
 
         // Email
         info += "Email Addresses:\n";
