@@ -233,10 +233,7 @@ public class DisplayContactActivity extends Activity implements IConstants {
                     .getString(rawCursor
                             .getColumnIndex(ContactsContract.RawContacts
                                     ._ID));
-            accountName = rawCursor
-                    .getString(rawCursor
-                            .getColumnIndex(ContactsContract.RawContacts
-                                    .ACCOUNT_NAME));
+            accountName = MessageUtils.getRawContactName(this, rawCursor);
             rci = new RawContactInfo(rawId, accountName);
             rciList.add(new RawContactInfo(rawId, accountName));
             items.add(rci.toString());
@@ -296,7 +293,7 @@ public class DisplayContactActivity extends Activity implements IConstants {
     /***
      * Deletes raw contacts with the given raw IDs.
      *
-     * @param rawIds
+     * @param rawIds A String array of the IDs.
      * @return Number of raw contacts deleted.
      */
     private int deleteRawContacts(String[] rawIds) {
@@ -304,7 +301,10 @@ public class DisplayContactActivity extends Activity implements IConstants {
                 .appendQueryParameter(ContactsContract.CALLER_IS_SYNCADAPTER,
                         "true").build();
         int deletedRawContacts;
-        if (true) {
+        if (false) {
+            // DEBUG
+            deletedRawContacts = rawIds.length;
+        } else {
             deletedRawContacts = getContentResolver().delete(ContactsContract
                             .RawContacts.CONTENT_URI.buildUpon()
                             .appendQueryParameter
@@ -314,9 +314,8 @@ public class DisplayContactActivity extends Activity implements IConstants {
                             .build(), ContactsContract.RawContacts._ID + " >=" +
                             " ?",
                     rawIds);
-        } else {
-            deletedRawContacts = rawIds.length;
         }
+        refresh();
         return deletedRawContacts;
     }
 
@@ -433,24 +432,24 @@ public class DisplayContactActivity extends Activity implements IConstants {
      */
     private static class RawContactInfo {
         private String rawId;
-        private String accountName;
+        private String name;
 
-        public RawContactInfo(String rawId, String accountName) {
+        public RawContactInfo(String rawId, String name) {
             this.rawId = rawId;
-            this.accountName = accountName;
+            this.name = name;
         }
 
         @Override
         public String toString() {
-            return new String(accountName + " (rawId=" + rawId + ")");
+            return new String(name + " (rawId=" + rawId + ")");
         }
 
         public String getRawId() {
             return rawId;
         }
 
-        public String getAccountName() {
-            return accountName;
+        public String getName() {
+            return name;
         }
     }
 }
