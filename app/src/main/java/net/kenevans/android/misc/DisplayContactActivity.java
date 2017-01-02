@@ -293,7 +293,7 @@ public class DisplayContactActivity extends Activity implements IConstants {
     /***
      * Deletes raw contacts with the given raw IDs.
      *
-     * @param rawIds A String array of the IDs.
+     * @param rawIds A String array of the raw IDs to delete.
      * @return Number of raw contacts deleted.
      */
     private int deleteRawContacts(String[] rawIds) {
@@ -413,8 +413,6 @@ public class DisplayContactActivity extends Activity implements IConstants {
                     }
                 }
             }
-
-            // We are through with the cursor
             cursor.close();
         } catch (Exception ex) {
             Utils.excMsg(this, "Error finding message", ex);

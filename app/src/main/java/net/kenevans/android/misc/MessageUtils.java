@@ -842,32 +842,30 @@ public class MessageUtils implements IConstants {
                         .getColumnIndex(ContactsContract.RawContacts
                                 ._ID));
         // Get the name of the raw contact (not so easy)
-        // Could implement this with where clause
+        // The name of the contact should be the item with mimetype
+        // = CONTENT_ITEM_TYPE
         String name = "Not found";
         String[] projection = new String[]{
                 ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME,
-                ContactsContract.CommonDataKinds.StructuredName.MIMETYPE,
         };
-        Cursor nameCursor = context.getContentResolver().query(
-                ContactsContract.Data.CONTENT_URI, projection,
+        String where = ContactsContract.CommonDataKinds.StructuredName
+                .RAW_CONTACT_ID + " = ?" + " AND " + ContactsContract
+                .CommonDataKinds.StructuredName.MIMETYPE + " = ?";
+        String[] args = new String[]{rawId,
                 ContactsContract.CommonDataKinds.StructuredName
-                        .RAW_CONTACT_ID + " = ?",
-                new String[]{rawId}, null);
+                        .CONTENT_ITEM_TYPE};
+        Cursor nameCursor = context.getContentResolver().query(
+                ContactsContract.Data.CONTENT_URI, projection, where, args,
+                null);
         while (nameCursor.moveToNext()) {
             String displayName = nameCursor
                     .getString(nameCursor
                             .getColumnIndex(ContactsContract.CommonDataKinds
                                     .StructuredName.DISPLAY_NAME));
-            String mimeType = nameCursor
-                    .getString(nameCursor
-                            .getColumnIndex(ContactsContract.CommonDataKinds
-                                    .StructuredName.MIMETYPE));
-            // The name of the contact should be the item with this mimetype
-            if (mimeType.equals(ContactsContract.CommonDataKinds.StructuredName
-                    .CONTENT_ITEM_TYPE)) {
-                name = displayName;
-                break;
-            }
+            name = displayName;
+            // Use the first item with mimetype = CONTENT_ITEM_TYPE though
+            // there should only be one
+            break;
         }
         return name;
     }
