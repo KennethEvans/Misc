@@ -176,7 +176,7 @@ public class DisplayContactActivity extends Activity implements IConstants {
     }
 
     /**
-     * Deletes the message and navigates to the next message.
+     * Original implementation of deleting a contact.
      */
     private void deleteContactOrig() {
         Utils.infoMsg(this, "Deleting contacts is not implemented yet!");
@@ -216,7 +216,8 @@ public class DisplayContactActivity extends Activity implements IConstants {
     }
 
     /**
-     * Deletes the message and navigates to the next message.
+     * Finds the raw contacts, presents a dialog to select which ones to
+     * delete, and deletes the selected ones.
      */
     private void deleteContacts() {
         final List<RawContactInfo> rciList = new ArrayList<RawContactInfo>();
@@ -262,19 +263,24 @@ public class DisplayContactActivity extends Activity implements IConstants {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 RawContactInfo rci;
-                String[] iDs = new String[selectedList.size()];
                 String msg = "";
+                int nDeleted;
+                int nDeletedTotal = 0;
                 for (int i = 0; i < selectedList.size(); i++) {
                     rci = rciList.get(selectedList.get(i));
-                    iDs[i] = rci.getRawId();
-                    msg += rci + "\n";
+                    nDeleted = deleteRawContact(rci.getRawId());
+                    if (nDeleted == 0) {
+                        msg += rci + "\n    Failed\n";
+                    } else if (nDeleted == 1) {
+                        msg += rci + "\n    Deleted\n";
+                        nDeletedTotal++;
+                    } else {
+                        msg += rci + "\n    Unexpected result\n";
+                    }
                 }
-                int nDeleted = deleteRawContacts(iDs);
-                msg += "Deleted " + nDeleted + " of " + iDs.length + " raw "
-                        + "contacts";
-                Toast.makeText(getApplicationContext(),
-                        selectedList.size() + " items selected:\n" + msg,
-                        Toast.LENGTH_LONG).show();
+                msg += "Deleted " + nDeletedTotal + " of " + rciList.size() +
+                        " raw contacts";
+                Utils.infoMsg(DisplayContactActivity.this, msg);
                 refresh();
             }
         });
@@ -291,31 +297,23 @@ public class DisplayContactActivity extends Activity implements IConstants {
     }
 
     /***
-     * Deletes raw contacts with the given raw IDs.
+     * Deletes a raw contact with the given raw ID.
      *
-     * @param rawIds A String array of the raw IDs to delete.
+     * @param rawId The raw id to delete.
      * @return Number of raw contacts deleted.
      */
-    private int deleteRawContacts(String[] rawIds) {
-        ContactsContract.RawContacts.CONTENT_URI.buildUpon()
-                .appendQueryParameter(ContactsContract.CALLER_IS_SYNCADAPTER,
-                        "true").build();
+    private int deleteRawContact(String rawId) {
         int deletedRawContacts;
         if (false) {
             // DEBUG
-            deletedRawContacts = rawIds.length;
+            deletedRawContacts = 1;
         } else {
             deletedRawContacts = getContentResolver().delete(ContactsContract
-                            .RawContacts.CONTENT_URI.buildUpon()
-                            .appendQueryParameter
-                                    (ContactsContract.CALLER_IS_SYNCADAPTER,
-                                            "true")
-
-                            .build(), ContactsContract.RawContacts._ID + " >=" +
-                            " ?",
-                    rawIds);
+                            .RawContacts.CONTENT_URI, ContactsContract
+                            .RawContacts
+                            ._ID + " = ?",
+                    new String[]{rawId});
         }
-        refresh();
         return deletedRawContacts;
     }
 
@@ -350,6 +348,8 @@ public class DisplayContactActivity extends Activity implements IConstants {
             if (!found) {
                 mTitleTextView.setText("<Error>");
                 mSubtitleTextView.setText("");
+                mInfoTextView.setText("");
+                mContactTextView.setText("");
             } else {
                 String id = cursor.getString(indexId);
                 String name = "Unknown";
@@ -415,12 +415,18 @@ public class DisplayContactActivity extends Activity implements IConstants {
             }
             cursor.close();
         } catch (Exception ex) {
-            Utils.excMsg(this, "Error finding message", ex);
+            Utils.excMsg(this, "Error finding contact", ex);
             if (mTitleTextView != null) {
                 mTitleTextView.setText("<Error>");
             }
             if (mSubtitleTextView != null) {
                 mSubtitleTextView.setText("");
+            }
+            if (mInfoTextView != null) {
+                mInfoTextView.setText("");
+            }
+            if (mContactTextView != null) {
+                mContactTextView.setText("");
             }
         }
     }

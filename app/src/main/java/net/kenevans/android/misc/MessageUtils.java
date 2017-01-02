@@ -670,7 +670,7 @@ public class MessageUtils implements IConstants {
         Cursor rawCursor = context.getContentResolver().query
                 (ContactsContract.RawContacts.CONTENT_URI,
                         null,
-                        ContactsContract.RawContacts.CONTACT_ID + "=?",
+                        ContactsContract.RawContacts.CONTACT_ID + " = ?",
                         new String[]{id}, null);
         if (rawCursor != null) {
             info += "Linked contacts: " + rawCursor.getCount() + "\n";
