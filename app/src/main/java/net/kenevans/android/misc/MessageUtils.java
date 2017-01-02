@@ -867,6 +867,7 @@ public class MessageUtils implements IConstants {
             // there should only be one
             break;
         }
+        nameCursor.close();
         return name;
     }
 
