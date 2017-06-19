@@ -5,7 +5,9 @@ android {
     defaultConfig {
         applicationId "net.kenevans.android.misc"
         minSdkVersion 9
-        targetSdkVersion 23
+        targetSdkVersion 24
+        versionCode 19
+        versionName "1.8.2"
     }
     buildTypes {
         release {
@@ -14,7 +16,7 @@ android {
         }
     }
     dependencies {
-        compile 'com.google.code.gson:gson:2.3.1'
+        compile 'com.google.code.gson:gson:2.7'
     }
     productFlavors {
     }
