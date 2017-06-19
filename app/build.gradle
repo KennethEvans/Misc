@@ -1,7 +1,7 @@
 apply plugin: 'com.android.application'
 android {
     compileSdkVersion 'Google Inc.:Google APIs:23'
-    buildToolsVersion '25.0.2'
+    buildToolsVersion '26.0.0'
     defaultConfig {
         applicationId "net.kenevans.android.misc"
         minSdkVersion 9
