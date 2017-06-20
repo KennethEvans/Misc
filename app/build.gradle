@@ -5,7 +5,7 @@ android {
     defaultConfig {
         applicationId "net.kenevans.android.misc"
         minSdkVersion 11
-        targetSdkVersion 24
+        targetSdkVersion 23
         versionCode 19
         versionName "1.8.2"
     }
