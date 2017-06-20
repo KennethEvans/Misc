@@ -4,7 +4,7 @@ android {
     buildToolsVersion '26.0.0'
     defaultConfig {
         applicationId "net.kenevans.android.misc"
-        minSdkVersion 9
+        minSdkVersion 11
         targetSdkVersion 24
         versionCode 19
         versionName "1.8.2"
