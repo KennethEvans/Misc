@@ -26,6 +26,7 @@ import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import android.content.ContentResolver;
 import android.content.ContentUris;
@@ -38,6 +39,8 @@ import android.provider.ContactsContract;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 
+import static android.R.id.list;
+
 /**
  * Class that contains general purpose message utilities.
  */
@@ -45,44 +48,45 @@ public class MessageUtils implements IConstants {
     /**
      * The static format string to use for formatting dates.
      */
-    public static final String longFormat = "MMM dd, yyyy HH:mm:ss Z";
-    public static final SimpleDateFormat longFormatter = new SimpleDateFormat(
-            longFormat);
+    private static final String longFormat = "MMM dd, yyyy HH:mm:ss Z";
+    private static final SimpleDateFormat longFormatter = new SimpleDateFormat(
+            longFormat, Locale.US);
 
     /**
      * The static format string to use for formatting dates.
      */
-    public static final String mediumFormat = "MMM dd, yyyy HH:mm:ss";
-    public static final SimpleDateFormat mediumFormatter = new SimpleDateFormat(
-            mediumFormat);
+    private static final String mediumFormat = "MMM dd, yyyy HH:mm:ss";
+    static final SimpleDateFormat mediumFormatter = new
+            SimpleDateFormat(
+            mediumFormat, Locale.US);
 
     /**
      * The static short format string to use for formatting dates.
      */
-    public static final String shortFormat = "M/d/yy h:mm a";
-    public static final SimpleDateFormat shortFormatter = new SimpleDateFormat(
-            shortFormat);
+    private static final String shortFormat = "M/d/yy h:mm a";
+    static final SimpleDateFormat shortFormatter = new SimpleDateFormat(
+            shortFormat, Locale.US);
 
     /**
      * Format the date using the static format.
      *
-     * @param dateNum
-     * @return
+     * @param dateNum The date number.
+     * @return The formatted string.
      * @see #longFormat
      */
-    public static String formatDate(Long dateNum) {
+    static String formatDate(Long dateNum) {
         return formatDate(longFormatter, dateNum);
     }
 
     /**
      * Format the date using the given format.
      *
-     * @param formatter
-     * @param dateNum
-     * @return
+     * @param formatter The formatter.
+     * @param dateNum   The date number.
+     * @return The formatted string.
      * @see #longFormat
      */
-    public static String formatDate(SimpleDateFormat formatter, Long dateNum) {
+    static String formatDate(SimpleDateFormat formatter, Long dateNum) {
         // Consider using Date.toString() as it might be more locale
         // independent.
         if (dateNum == null) {
@@ -105,10 +109,10 @@ public class MessageUtils implements IConstants {
     /**
      * Format the number returned for the address to make it more presentable.
      *
-     * @param address
-     * @return
+     * @param address The address.
+     * @return The formatted address.
      */
-    public static String formatAddress(String address) {
+    static String formatAddress(String address) {
         String retVal = address;
         if (address == null || address.length() == 0) {
             return "<Unknown>";
@@ -142,10 +146,10 @@ public class MessageUtils implements IConstants {
     /**
      * Format the type as a string.
      *
-     * @param type
-     * @return
+     * @param type The type.
+     * @return The formatted type.
      */
-    public static String formatSmsType(int type) {
+    static String formatSmsType(int type) {
         // TODO Find where these constants are defined
         // Internally in Telephony.BaseSmsColumns
         // Internally in TextBasedSmsColumns
@@ -172,17 +176,18 @@ public class MessageUtils implements IConstants {
     /**
      * Format the MMS address type type as a string.
      *
-     * @param type
-     * @return
+     * @param type The MMS type.
+     * @return The formatted type.
      */
-    public static String formatMmsAddressType(String type) {
+    private static String formatMmsAddressType(String type) {
         // TODO Find where these constants are defined
-        if (type.equals("151")) {
-            return "To ";
-        } else if (type.equals("137")) {
-            return "From ";
-        } else {
-            return "Type " + type + " ";
+        switch (type) {
+            case "151":
+                return "To ";
+            case "137":
+                return "From ";
+            default:
+                return "Type " + type + " ";
         }
     }
 
@@ -197,8 +202,8 @@ public class MessageUtils implements IConstants {
      * @param columns An array of columns.
      * @return An array of the values for each column or null on failure.
      */
-    public static String[] getStringValues(Context context, long id, Uri uri,
-                                           String[] columns) {
+    static String[] getStringValues(Context context, long id, Uri uri,
+                                    String[] columns) {
         if (columns == null) {
             return null;
         }
@@ -216,6 +221,7 @@ public class MessageUtils implements IConstants {
             String selection = COL_ID + "=" + id;
             cursor = context.getContentResolver().query(uri, columns,
                     selection, null, null);
+            if (cursor != null) return null;
             cursor.moveToFirst();
             int index;
             for (int i = 0; i < nCols; i++) {
@@ -239,16 +245,17 @@ public class MessageUtils implements IConstants {
      * Gets the MMS address for the given id.
      *
      * @param context The calling context.
-     * @param id
-     * @return
+     * @param id      The ID.
+     * @return The MMS address.
      */
-    public static String getMmsAddress(Context context, String id) {
+    static String getMmsAddress(Context context, String id) {
         String addrSelection = "type=137 AND msg_id=" + id;
         String uriStr = MessageFormat.format("content://mms/{0}/addr", id);
         Uri uriAddress = Uri.parse(uriStr);
         String[] columns = {"address"};
         Cursor cursor = context.getContentResolver().query(uriAddress, columns,
                 addrSelection, null, null);
+        if (cursor == null) return null;
         // DEBUG
         // String[] columnNames = addrCursor.getColumnNames();
         Log.d(TAG, MessageUtils.class.getSimpleName() + ".getMmsAddress: "
@@ -292,9 +299,7 @@ public class MessageUtils implements IConstants {
                 }
             } while (cursor.moveToNext());
         }
-        if (cursor != null) {
-            cursor.close();
-        }
+        cursor.close();
         Log.d(TAG, MessageUtils.class.getSimpleName() + ".getMmsAddress: "
                 + " address=" + address);
         return address;
@@ -305,16 +310,17 @@ public class MessageUtils implements IConstants {
      * "type address contact_name"
      *
      * @param context The calling context.
-     * @param id
-     * @return
+     * @param id      The id.
+     * @return The MMS addresses.
      */
-    public static String[] getAllMmsAddresses(Context context, String id) {
+    static String[] getAllMmsAddresses(Context context, String id) {
         String selection = "msg_id=" + id;
         String uriStr = MessageFormat.format("content://mms/{0}/addr", id);
         Uri uri = Uri.parse(uriStr);
         String[] columns = {"address", "type", "contact_id"};
         Cursor cursor = context.getContentResolver().query(uri, columns,
                 selection, null, null);
+        if (cursor == null) return null;
         Log.d(TAG, MessageUtils.class.getSimpleName() + ".getAllMmsAddresses: "
                 + uri.toString() + " count=" + cursor.getCount()
                 + " columnCount=" + cursor.getColumnCount());
@@ -322,11 +328,11 @@ public class MessageUtils implements IConstants {
         int indexType = cursor.getColumnIndex("type");
         int indexId = cursor.getColumnIndex("contact_id");
 
-        List<String> list = new ArrayList<String>();
+        List<String> list = new ArrayList<>();
         String addr;
         String type;
         String contactId;
-        String contactName = "";
+        String contactName;
         String thisPhoneNumber = compressPhoneNumber(getThisPhoneNumber
                 (context));
         if (cursor.moveToFirst()) {
@@ -347,23 +353,23 @@ public class MessageUtils implements IConstants {
                 } else {
                     contactName = getContactName(context, contactId);
                 }
-                if (contactName.equals("Unknown")) {
-                    // Check if it is this phone as a last ditch resort
-                    if (compressPhoneNumber(addr).equals(thisPhoneNumber)) {
-                        contactName = " This Phone";
+                if (contactName != null) {
+                    if (contactName.equals("Unknown")) {
+                        // Check if it is this phone as a last ditch resort
+                        if (compressPhoneNumber(addr).equals(thisPhoneNumber)) {
+                            contactName = " This Phone";
+                        } else {
+                            contactName = "";
+                        }
                     } else {
-                        contactName = "";
+                        contactName = " " + contactName;
                     }
-                } else {
-                    contactName = " " + contactName;
                 }
                 list.add(formatMmsAddressType(type) + formatAddress(addr) + " "
                         + type + contactName);
             } while (cursor.moveToNext());
         }
-        if (cursor != null) {
-            cursor.close();
-        }
+        cursor.close();
         String[] addresses = new String[list.size()];
         list.toArray(addresses);
         return addresses;
@@ -373,10 +379,10 @@ public class MessageUtils implements IConstants {
      * Get a String with the column names and values for the current position
      * of the given cursor.
      *
-     * @param cursor
-     * @return
+     * @param cursor The cursor.
+     * @return Column names and values.
      */
-    public static String getColumnNamesAndValues(Cursor cursor) {
+    static String getColumnNamesAndValues(Cursor cursor) {
         String info = "";
         String[] columnNames = cursor.getColumnNames();
         for (String name : columnNames) {
@@ -396,7 +402,6 @@ public class MessageUtils implements IConstants {
             } catch (Exception ex) {
                 // Shouldn't happen
                 info += name + ": Not found";
-                continue;
             }
         }
         return info;
@@ -405,11 +410,11 @@ public class MessageUtils implements IConstants {
     /**
      * Gets a bitmap of a contact photo
      *
-     * @param cr
-     * @param id
-     * @return
+     * @param cr The ContentResolver.
+     * @param id The ID.
+     * @return The Bitmap.
      */
-    public static Bitmap loadContactPhoto(ContentResolver cr, long id) {
+    static Bitmap loadContactPhoto(ContentResolver cr, long id) {
         if (id < 0 || cr == null) {
             return null;
         }
@@ -428,10 +433,10 @@ public class MessageUtils implements IConstants {
      *
      * @param type One of the ContactsContract.CommonDataKinds.Phone.TYPE_xxx
      *             types.
-     * @return
+     * @return The String representation.
      */
-    public static String getPhoneType(int type) {
-        String stringType = null;
+    private static String getPhoneType(int type) {
+        String stringType;
         switch (type) {
             case ContactsContract.CommonDataKinds.Phone.TYPE_ASSISTANT:
                 stringType = "Assistant";
@@ -507,10 +512,10 @@ public class MessageUtils implements IConstants {
      *
      * @param type One of the ContactsContract.CommonDataKinds.Email.TYPE_xxx
      *             types.
-     * @return
+     * @return The String representation of the email type.
      */
-    public static String getEmailType(int type) {
-        String stringType = null;
+    private static String getEmailType(int type) {
+        String stringType;
         switch (type) {
             case ContactsContract.CommonDataKinds.Email.TYPE_HOME:
                 stringType = "Home";
@@ -537,10 +542,10 @@ public class MessageUtils implements IConstants {
      * Finds the contact name given the contact ID.
      *
      * @param context   The calling context.
-     * @param contactId
-     * @return
+     * @param contactId The contact ID.
+     * @return The contact name.
      */
-    public static String getContactName(Context context, String contactId) {
+    private static String getContactName(Context context, String contactId) {
         String displayName = "Unknown";
         if (contactId == null) {
             Log.d(TAG, MessageUtils.class.getSimpleName() + ".getContactName: "
@@ -552,8 +557,9 @@ public class MessageUtils implements IConstants {
         Cursor cursor = context.getContentResolver().query(
                 ContactsContract.Contacts.CONTENT_URI, columns, selection,
                 null, null);
-        Log.d(TAG, MessageUtils.class.getSimpleName() + ".getContactName: "
-                + "contactId=" + contactId + " count=" + cursor.getCount());
+        if (cursor == null) return null;
+//        Log.d(TAG, MessageUtils.class.getSimpleName() + ".getContactName: "
+//                + "contactId=" + contactId + " count=" + cursor.getCount());
         if (cursor.getCount() == 0) {
             cursor.close();
             return displayName;
@@ -568,8 +574,8 @@ public class MessageUtils implements IConstants {
                 break;
             }
         }
-        Log.d(TAG, MessageUtils.class.getSimpleName() + ".getContactName: "
-                + "displayName=" + displayName);
+//        Log.d(TAG, MessageUtils.class.getSimpleName() + ".getContactName: "
+//                + "displayName=" + displayName);
         return displayName;
     }
 
@@ -577,60 +583,25 @@ public class MessageUtils implements IConstants {
      * Get contact information about the given name.
      *
      * @param context The calling context.
-     * @param name
+     * @param name    The name.
      * @return The information or null on failure.
      */
-    public static String getContactInfo(Context context, String name) {
+    static String getContactInfo(Context context, String name) {
         if (name == null || name.length() == 0) {
             return null;
         }
         String info = "Contact Information for " + name + "\n";
-
-        // DEBUG
-        // Cursor cursor1 = getContentResolver().query(
-        // ContactsContract.Contacts.CONTENT_URI, null, null, null, null);
-        // info += "count=" + cursor1.getCount() + "\n";
-        // String[] columnNames = cursor1.getColumnNames();
-        // for (String string : columnNames) {
-        // info += string + "\n";
-        // }
-        // info += "\n";
-        // if (cursor1.moveToFirst()) {
-        // do {
-        // String displayName = cursor1
-        // .getString(cursor1
-        // .getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
-        // info += displayName + "\n";
-        // if (name.equals(displayName)) {
-        // info += "!!! Matches " + name + "\n";
-        // }
-        // } while (cursor1.moveToNext());
-        // }
-        // if (cursor1 != null) {
-        // cursor1.close();
-        // }
-        // info += "\n";
-
-        // Using a selection stopped working
-        // String selection = ContactsContract.Contacts.DISPLAY_NAME + "=\""
-        // + name + "\"";
-        String selection = null;
-        // Use null to avoid checking if all columns are valid
-//        String[] columns = {COL_ID, ContactsContract.Contacts.DISPLAY_NAME,
-//                ContactsContract.Contacts.PHOTO_ID,
-//                ContactsContract.Contacts.HAS_PHONE_NUMBER,
-//        };
-        String[] columns = null;
         Cursor cursor = context.getContentResolver().query(
-                ContactsContract.Contacts.CONTENT_URI, columns, selection,
+                ContactsContract.Contacts.CONTENT_URI, null, null,
                 null, null);
+        if (cursor == null) return null;
         if (cursor.getCount() == 0) {
             info += name + " not found\n";
             cursor.close();
             return info;
         }
         int indexId = cursor.getColumnIndex(COL_ID);
-        String displayName = "Not found";
+        String displayName;
         boolean found = false;
         if (cursor.moveToFirst()) {
             do {
@@ -689,11 +660,11 @@ public class MessageUtils implements IConstants {
      * colName + ": " + stringVal + "\n"<br>
      * The value will be "Not found" is it fails.
      *
-     * @param cursor
-     * @param colName
-     * @return
+     * @param cursor  The cursor.
+     * @param colName The column name.
+     * @return The info line.
      */
-    public static String getInfoForColumnName(Cursor cursor, String colName) {
+    private static String getInfoForColumnName(Cursor cursor, String colName) {
         int col = cursor.getColumnIndex(colName);
         String stringVal = "Not found";
         if (col > -1) {
@@ -711,14 +682,14 @@ public class MessageUtils implements IConstants {
      * The value will be "Not found" is it fails. Otherwise date is a
      * Date corresponding to the integer value for the column name.
      *
-     * @param cursor
-     * @param colName
-     * @return
+     * @param cursor  The cursor.
+     * @param colName The column name.
+     * @return The info line.
      */
-    public static String getTimestampInfoForColumnName(Cursor cursor, String
+    private static String getTimestampInfoForColumnName(Cursor cursor, String
             colName) {
         int col = cursor.getColumnIndex(colName);
-        String stringVal = "Not found";
+        String stringVal = "";
         if (col > -1 && !cursor.isNull(col)) {
             Long timeVal = cursor.getLong(col);
             if (timeVal != 0) {
@@ -736,7 +707,7 @@ public class MessageUtils implements IConstants {
      * @param rawCursor The Cursor over raw cantacts.
      * @return A string with the info.
      */
-    public static String getRawContactDetails(Context context, Cursor
+    private static String getRawContactDetails(Context context, Cursor
             rawCursor) {
         String info = "";
         String rawId = rawCursor
@@ -766,6 +737,7 @@ public class MessageUtils implements IConstants {
                 ContactsContract.CommonDataKinds.Phone.CONTENT_URI, null,
                 ContactsContract.CommonDataKinds.Phone.RAW_CONTACT_ID + " = ?",
                 new String[]{rawId}, null);
+        if (phonesCursor == null) return null;
         while (phonesCursor.moveToNext()) {
             String phoneNumber = phonesCursor
                     .getString(phonesCursor
@@ -786,6 +758,7 @@ public class MessageUtils implements IConstants {
                 ContactsContract.CommonDataKinds.Email.CONTENT_URI, null,
                 ContactsContract.CommonDataKinds.Email.RAW_CONTACT_ID + " = ?",
                 new String[]{rawId}, null);
+        if (emailCur == null) return null;
         while (emailCur.moveToNext()) {
             // This would allow you get several email addresses
             // if the email addresses were stored in an array
@@ -809,6 +782,7 @@ public class MessageUtils implements IConstants {
                         .CONTENT_URI, null,
                 ContactsContract.Data.RAW_CONTACT_ID + " = ?",
                 new String[]{rawId}, null);
+        if (postalCursor == null) return null;
         while (postalCursor.moveToNext()) {
             String address = postalCursor
                     .getString(postalCursor
@@ -834,7 +808,7 @@ public class MessageUtils implements IConstants {
      * @param rawCursor The Cursor over raw cantacts.
      * @return The name.
      */
-    public static String getRawContactName(Context context, Cursor
+    static String getRawContactName(Context context, Cursor
             rawCursor) {
         // Get the id.
         String rawId = rawCursor
@@ -844,7 +818,7 @@ public class MessageUtils implements IConstants {
         // Get the name of the raw contact (not so easy)
         // The name of the contact should be the item with mimetype
         // = CONTENT_ITEM_TYPE
-        String name = "Not found";
+        String name;
         String[] projection = new String[]{
                 ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME,
         };
@@ -857,16 +831,15 @@ public class MessageUtils implements IConstants {
         Cursor nameCursor = context.getContentResolver().query(
                 ContactsContract.Data.CONTENT_URI, projection, where, args,
                 null);
-        while (nameCursor.moveToNext()) {
-            String displayName = nameCursor
-                    .getString(nameCursor
-                            .getColumnIndex(ContactsContract.CommonDataKinds
-                                    .StructuredName.DISPLAY_NAME));
-            name = displayName;
-            // Use the first item with mimetype = CONTENT_ITEM_TYPE though
-            // there should only be one
-            break;
-        }
+        if (nameCursor == null) return null;
+        // Use the first item with mimetype = CONTENT_ITEM_TYPE though
+        // there should only be one
+        name = nameCursor
+                .getString(nameCursor
+                        .getColumnIndex(ContactsContract.CommonDataKinds
+                                .StructuredName.DISPLAY_NAME));
+        // Use the first item with mimetype = CONTENT_ITEM_TYPE though
+        // there should only be one
         nameCursor.close();
         return name;
     }
@@ -875,10 +848,10 @@ public class MessageUtils implements IConstants {
      * Gets the id for the given name.
      *
      * @param context The calling context.
-     * @param name
+     * @param name    The name.
      * @return The id or -1 on failure.
      */
-    public static long getContactIdFromName(Context context, String name) {
+    static long getContactIdFromName(Context context, String name) {
         if (name == null || name.length() == 0) {
             return -1L;
         }
@@ -895,16 +868,16 @@ public class MessageUtils implements IConstants {
         // cursor.moveToNext();
         // long id = cursor.getLong(cursor.getColumnIndex(COL_ID));
 
-        String selection = null;
         String[] columns = {COL_ID, ContactsContract.Contacts.DISPLAY_NAME};
         Cursor cursor = context.getContentResolver().query(
-                ContactsContract.Contacts.CONTENT_URI, columns, selection,
+                ContactsContract.Contacts.CONTENT_URI, columns, null,
                 null, null);
+        if (cursor == null) return -1L;
         if (cursor.getCount() == 0) {
             return -1L;
         }
         long id = -1L;
-        String displayName = null;
+        String displayName;
         if (cursor.moveToFirst()) {
             do {
                 displayName = cursor
@@ -925,10 +898,10 @@ public class MessageUtils implements IConstants {
      * Gets the id for the given name.
      *
      * @param context The calling context.
-     * @param number
+     * @param number  The number.
      * @return The id or -1 on failure.
      */
-    public static long getContactIdFromNumber(Context context, String number) {
+    private static long getContactIdFromNumber(Context context, String number) {
         if (number == null || number.length() == 0) {
             return -1L;
         }
@@ -937,13 +910,13 @@ public class MessageUtils implements IConstants {
         if (number1 == null || number1.length() == 0) {
             return -1L;
         }
-        String selection = null;
         String[] columns = {ContactsContract.CommonDataKinds.Phone.CONTACT_ID,
                 ContactsContract.CommonDataKinds.Phone.NUMBER};
         // Look in the phone database
         Cursor cursor = context.getContentResolver().query(
                 ContactsContract.CommonDataKinds.Phone.CONTENT_URI, columns,
-                selection, null, null);
+                null, null, null);
+        if (cursor == null) return -1L;
         int indexId = cursor
                 .getColumnIndex(ContactsContract.CommonDataKinds.Phone
                         .CONTACT_ID);
@@ -965,9 +938,9 @@ public class MessageUtils implements IConstants {
             }
             number2 = compressPhoneNumber(number2);
             lVal = cursor.getLong(indexId);
-            Log.d(TAG, MessageUtils.class.getSimpleName()
-                    + ".getContactIdFromNumber: " + "number1,number2="
-                    + number1 + "," + number2);
+//            Log.d(TAG, MessageUtils.class.getSimpleName()
+//                    + ".getContactIdFromNumber: " + "number1,number2="
+//                    + number1 + "," + number2);
             if (number1.equals(number2)) {
                 // Get the first one
                 id = lVal;
@@ -982,10 +955,10 @@ public class MessageUtils implements IConstants {
      * Gets the contact name give a phone number.
      *
      * @param context The calling context.
-     * @param number
-     * @return
+     * @param number  The number.
+     * @return The contact name.
      */
-    public static String getContactNameFromNumber(Context context, String
+    static String getContactNameFromNumber(Context context, String
             number) {
         String name = "Unknown";
         if (number == null || number.length() == 0) {
@@ -1000,6 +973,7 @@ public class MessageUtils implements IConstants {
         if (id > -1) {
             name = getContactName(context, Long.toString(id));
         }
+        if (name == null) return null;
         if (name.equals("Unknown")) {
             // Check if it is this phone as a last ditch resort
             String thisPhoneNumber = compressPhoneNumber(getThisPhoneNumber
@@ -1015,9 +989,9 @@ public class MessageUtils implements IConstants {
      * Gets the number of this phone.
      *
      * @param context The calling context.
-     * @return
+     * @return The number.
      */
-    public static String getThisPhoneNumber(Context context) {
+    private static String getThisPhoneNumber(Context context) {
         TelephonyManager tMgr = (TelephonyManager) context
                 .getSystemService(Context.TELEPHONY_SERVICE);
         return tMgr.getLine1Number();
@@ -1028,10 +1002,10 @@ public class MessageUtils implements IConstants {
      * leading
      * 1 if there are 11 numerals.
      *
-     * @param number
-     * @return
+     * @param number The number.
+     * @return The compressed number.
      */
-    public static String compressPhoneNumber(String number) {
+    private static String compressPhoneNumber(String number) {
         if (number == null) {
             return null;
         }
