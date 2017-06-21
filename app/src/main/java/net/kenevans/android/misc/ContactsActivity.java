@@ -60,19 +60,20 @@ public class ContactsActivity extends ListActivity implements IConstants {
 	 * The current position when ACTIVITY_DISPLAY_MESSAGE is requested. Used
 	 * with the resultCodes RESULT_PREV and RESULT_NEXT when they are returned.
 	 */
-	private int currentPosition;
+	private int mCurrentPosition;
 
 	/**
 	 * The current id when ACTIVITY_DISPLAY_MESSAGE is requested. Used with the
 	 * resultCodes RESULT_PREV and RESULT_NEXT when they are returned.
 	 */
-	private long currentId;
+	private long mCurrentId;
 
-	/** The increment for displaying the next message. */
-	private long increment = 0;
+	/** The mIncrement for displaying the next message. */
+	private long mIncrement = 0;
 
 	/** The Uri to use. */
-	public static final Uri uri = ContactsContract.Contacts.CONTENT_URI;
+	public static final Uri URI
+			= ContactsContract.Contacts.CONTENT_URI;
 
 	/** Enum to specify the sort order. */
 	enum Order {
@@ -86,9 +87,9 @@ public class ContactsActivity extends ListActivity implements IConstants {
 	}
 
 	/** The sort order to use. */
-	private Order sortOrder = Order.NAME;
+	private Order mSortOrder = Order.NAME;
 
-	private CustomCursorAdapter adapter;
+	private CustomCursorAdapter mListAdapter;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -123,9 +124,9 @@ public class ContactsActivity extends ListActivity implements IConstants {
 	protected void onListItemClick(ListView lv, View view, int position, long id) {
 		super.onListItemClick(lv, view, position, id);
 		// Save the position when starting the activity
-		currentPosition = position;
-		currentId = id;
-		increment = 0;
+		mCurrentPosition = position;
+		mCurrentId = id;
+		mIncrement = 0;
 		displayContact();
 	}
 
@@ -136,15 +137,15 @@ public class ContactsActivity extends ListActivity implements IConstants {
 		// DEBUG
 		Log.d(TAG, this.getClass().getSimpleName()
 				+ ".onActivityResult: requestCode=" + requestCode
-				+ " resultCode=" + resultCode + " currentPosition="
-				+ currentPosition);
+				+ " resultCode=" + resultCode + " mCurrentPosition="
+				+ mCurrentPosition);
 		if (requestCode == DISPLAY_MESSAGE) {
-			increment = 0;
+			mIncrement = 0;
 			// Note that earlier items are at higher positions in the list
 			if (resultCode == RESULT_PREV) {
-				increment = 1;
+				mIncrement = 1;
 			} else if (resultCode == RESULT_NEXT) {
-				increment = -1;
+				mIncrement = -1;
 			}
 		}
 	}
@@ -152,20 +153,20 @@ public class ContactsActivity extends ListActivity implements IConstants {
 	@Override
 	protected void onPause() {
 		Log.d(TAG, this.getClass().getSimpleName()
-				+ ".onPause: currentPosition=" + currentPosition);
-		Log.d(TAG, this.getClass().getSimpleName() + ".onPause: currentId="
-				+ currentId);
+				+ ".onPause: mCurrentPosition=" + mCurrentPosition);
+		Log.d(TAG, this.getClass().getSimpleName() + ".onPause: mCurrentId="
+				+ mCurrentId);
 		super.onPause();
 	}
 
 	@Override
 	protected void onResume() {
 		Log.d(TAG, this.getClass().getSimpleName()
-				+ ".onResume: currentPosition=" + currentPosition
-				+ " currentId=" + currentId + " increment=" + increment);
+				+ ".onResume: mCurrentPosition=" + mCurrentPosition
+				+ " mCurrentId=" + mCurrentId + " mIncrement=" + mIncrement);
 		super.onResume();
-		// If increment is set display a new message
-		if (increment != 0) {
+		// If mIncrement is set display a new message
+		if (mIncrement != 0) {
 			displayContact();
 		}
 	}
@@ -178,11 +179,11 @@ public class ContactsActivity extends ListActivity implements IConstants {
 				getText(R.string.sort_id) };
 		AlertDialog.Builder builder = new AlertDialog.Builder(this);
 		builder.setTitle(getText(R.string.sort_title));
-		builder.setSingleChoiceItems(items, sortOrder == Order.NAME ? 0 : 1,
+		builder.setSingleChoiceItems(items, mSortOrder == Order.NAME ? 0 : 1,
 				new DialogInterface.OnClickListener() {
 					public void onClick(DialogInterface dialog, int item) {
 						dialog.dismiss();
-						sortOrder = item == 0 ? Order.NAME : Order.ID;
+						mSortOrder = item == 0 ? Order.NAME : Order.ID;
 						refresh();
 					}
 				});
@@ -191,8 +192,8 @@ public class ContactsActivity extends ListActivity implements IConstants {
 	}
 
 	/**
-	 * Displays the message at the current position plus the current increment,
-	 * adjusting for being within range. Resets the increment to 0 after.
+	 * Displays the message at the current position plus the current mIncrement,
+	 * adjusting for being within range. Resets the mIncrement to 0 after.
 	 */
 	private void displayContact() {
 		ListAdapter adapter = getListAdapter();
@@ -210,67 +211,67 @@ public class ContactsActivity extends ListActivity implements IConstants {
 			// Check if the item is still at the same position in the list
 			boolean changed = false;
 			long id = -1;
-			if (currentPosition > count - 1 || currentPosition < 0) {
+			if (mCurrentPosition > count - 1 || mCurrentPosition < 0) {
 				changed = true;
 			} else {
-				id = adapter.getItemId(currentPosition);
-				if (id != currentId) {
+				id = adapter.getItemId(mCurrentPosition);
+				if (id != mCurrentId) {
 					changed = true;
 				}
 			}
-			// Determine the new currentPosition
+			// Determine the new mCurrentPosition
 			Log.d(TAG, this.getClass().getSimpleName()
-					+ ".displayMessage: position=" + currentPosition + " id="
+					+ ".displayMessage: position=" + mCurrentPosition + " id="
 					+ id + " changed=" + changed);
 			if (changed) {
 				for (int i = 0; i < count; i++) {
 					id = adapter.getItemId(i);
-					if (id == currentId) {
-						currentPosition = i;
+					if (id == mCurrentId) {
+						mCurrentPosition = i;
 						break;
 					}
 				}
 			}
-			// currentPosition may still be invalid, check it is in range
-			if (currentPosition < 0) {
-				currentPosition = 0;
-			} else if (currentPosition > count - 1) {
-				currentPosition = count - 1;
+			// mCurrentPosition may still be invalid, check it is in range
+			if (mCurrentPosition < 0) {
+				mCurrentPosition = 0;
+			} else if (mCurrentPosition > count - 1) {
+				mCurrentPosition = count - 1;
 			}
 
-			// Display messages if a requested increment is not possible
-			if (increment > 0) {
-				currentPosition += increment;
-				if (currentPosition > count - 1) {
+			// Display messages if a requested mIncrement is not possible
+			if (mIncrement > 0) {
+				mCurrentPosition += mIncrement;
+				if (mCurrentPosition > count - 1) {
 					Toast.makeText(getApplicationContext(),
 							"At the last item in the list", Toast.LENGTH_LONG)
 							.show();
-					currentPosition = count - 1;
+					mCurrentPosition = count - 1;
 				}
-			} else if (increment < 0) {
-				currentPosition += increment;
-				if (currentPosition < 0) {
+			} else if (mIncrement < 0) {
+				mCurrentPosition += mIncrement;
+				if (mCurrentPosition < 0) {
 					Toast.makeText(getApplicationContext(),
 							"At the first item in the list", Toast.LENGTH_LONG)
 							.show();
-					currentPosition = 0;
+					mCurrentPosition = 0;
 				}
 			}
 
 			// Request the new message
-			currentId = adapter.getItemId(currentPosition);
+			mCurrentId = adapter.getItemId(mCurrentPosition);
 			Intent i = new Intent(this, DisplayContactActivity.class);
-			i.putExtra(COL_ID, currentId);
+			i.putExtra(COL_ID, mCurrentId);
 			i.putExtra(URI_KEY, getUri().toString());
 			Log.d(TAG, this.getClass().getSimpleName()
-					+ ".displayMessage: position=" + currentPosition
-					+ " currentId=" + currentId);
+					+ ".displayMessage: position=" + mCurrentPosition
+					+ " mCurrentId=" + mCurrentId);
 			startActivityForResult(i, DISPLAY_MESSAGE);
 		} catch (Exception ex) {
 			Utils.excMsg(this, "Error displaying contact", ex);
 		} finally {
-			// Reset increment
-			increment = 0;
+			// Reset mIncrement
+			mIncrement = 0;
 		}
 	}
 
@@ -304,19 +305,19 @@ public class ContactsActivity extends ListActivity implements IConstants {
 			// String selection = COL_ID + "<=76" + " OR " + COL_ID + "=13";
 			String selection = null;
 			cursor = getContentResolver().query(getUri(), columns, selection,
-					null, sortOrder.sqlCommand);
+					null, mSortOrder.sqlCommand);
 			startManagingCursor(cursor);
 
-			// Manage the adapter
-			if (adapter == null) {
-				// Set a custom cursor adapter
-				adapter = new CustomCursorAdapter(getApplicationContext(),
+			// Manage the mListAdapter
+			if (mListAdapter == null) {
+				// Set a custom cursor mListAdapter
+				mListAdapter = new CustomCursorAdapter(getApplicationContext(),
 						cursor);
-				setListAdapter(adapter);
+				setListAdapter(mListAdapter);
 			} else {
 				// This should close the current cursor and start using the new
 				// one, hopefully avoiding memory leaks.
-				adapter.changeCursor(cursor);
+				mListAdapter.changeCursor(cursor);
 			}
 		} catch (Exception ex) {
 			Utils.excMsg(this, "Error finding contacts", ex);
@@ -327,7 +328,7 @@ public class ContactsActivity extends ListActivity implements IConstants {
 	 * @return The content provider URI used.
 	 */
 	public Uri getUri() {
-		return uri;
+		return URI;
 	}
 
 	private class CustomCursorAdapter extends CursorAdapter {

@@ -415,7 +415,7 @@ public class MessageActivity extends ListActivity implements IConstants {
 			subtitle.setText(MessageUtils.formatDate(dateNum * multiplier));
 			// Log.d(TAG, getClass().getSimpleName() + ".bindView" + " id=" + id
 			// + " address=" + address + " dateNum=" + dateNum
-			// + " dateMultiplier=" + getDateMultiplier());
+			// + " DATE_MULTIPLIER=" + getDateMultiplier());
 		}
 
 		@Override

@@ -65,13 +65,13 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
      * The current position when DISPLAY_CALL is requested. Used with the
      * resultCodes RESULT_PREV and RESULT_NEXT when they are returned.
      */
-    private int currentPosition;
+    private int mCurrentPosition;
 
     /**
      * The current id when DISPLAY_CALL is requested. Used with the resultCodes
      * RESULT_PREV and RESULT_NEXT when they are returned.
      */
-    private long currentId;
+    private long mCurrentId;
 
     /**
      * The increment for displaying the next call.
@@ -81,7 +81,7 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
     /**
      * The Uri to use for the database.
      */
-    public static final Uri uri = CALLLOG_CALLS_URI;
+    public static final Uri URI = CALLLOG_CALLS_URI;
 
     /**
      * Enum to specify the sort order.
@@ -96,9 +96,9 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
     }
 
     /**
-     * Array of hard-coded filters
+     * Array of hard-coded mFilters
      */
-    private Filter[] filters;
+    private Filter[] mFilters;
     /**
      * The current filter.
      */
@@ -107,25 +107,25 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
     /**
      * Array of hard-coded sort orders
      */
-    private SortOrder[] sortOrders;
+    private SortOrder[] SORT_ORDERSs;
     /**
      * The current sort order.
      */
-    private int sortOrder = 0;
+    private int mSortOrder = 0;
 
     /**
      * Template for the name of the file written to the root of the SD card
      */
     private static final String SAVE_FILE_NAME = "CallHistory.%s.csv";
 
-    private CustomCursorAdapter adapter;
+    private CustomCursorAdapter mListAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Create filters here so getText is available
-        filters = new Filter[]{
+        // Create mFilters here so getText is available
+        mFilters = new Filter[]{
                 new Filter(getText(R.string.filter_none), null),
                 new Filter(getText(R.string.filter_known), COL_NAME
                         + " IS NOT NULL"),
@@ -141,7 +141,7 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
         };
 
         // Create sort orders here so getText is available
-        sortOrders = new SortOrder[]{
+        SORT_ORDERSs = new SortOrder[]{
                 new SortOrder(getText(R.string.sort_time), COL_DATE + " DESC"),
                 new SortOrder(getText(R.string.sort_id), COL_ID + " DESC"),
                 new SortOrder(getText(R.string.sort_name), COL_NAME),
@@ -155,12 +155,12 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
         // Get the preferences here before refresh()
         SharedPreferences prefs = getPreferences(MODE_PRIVATE);
         filter = prefs.getInt("filter", 0);
-        if (filter < 0 || filter >= filters.length) {
+        if (filter < 0 || filter >= mFilters.length) {
             filter = 0;
         }
-        sortOrder = prefs.getInt("sortOrder", 0);
-        if (sortOrder < 0 || sortOrder >= sortOrders.length) {
-            sortOrder = 0;
+        mSortOrder = prefs.getInt("mSortOrder", 0);
+        if (mSortOrder < 0 || mSortOrder >= SORT_ORDERSs.length) {
+            mSortOrder = 0;
         }
 
         // Call refresh to set the contents
@@ -203,8 +203,8 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
             id) {
         super.onListItemClick(lv, view, position, id);
         // Save the position when starting the activity
-        currentPosition = position;
-        currentId = id;
+        mCurrentPosition = position;
+        mCurrentId = id;
         increment = 0;
         displayCall();
     }
@@ -216,8 +216,8 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
         // DEBUG
         Log.d(TAG, this.getClass().getSimpleName()
                 + ".onActivityResult: requestCode=" + requestCode
-                + " resultCode=" + resultCode + " currentPosition="
-                + currentPosition);
+                + " resultCode=" + resultCode + " mCurrentPosition="
+                + mCurrentPosition);
         if (requestCode == DISPLAY_CALL) {
             increment = 0;
             // Note that earlier items are at higher positions in the list
@@ -232,9 +232,9 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
     @Override
     protected void onPause() {
         Log.d(TAG, this.getClass().getSimpleName()
-                + ".onPause: currentPosition=" + currentPosition);
-        Log.d(TAG, this.getClass().getSimpleName() + ".onPause: currentId="
-                + currentId);
+                + ".onPause: mCurrentPosition=" + mCurrentPosition);
+        Log.d(TAG, this.getClass().getSimpleName() + ".onPause: mCurrentId="
+                + mCurrentId);
         super.onPause();
         // We save the preferences in refresh
     }
@@ -242,8 +242,8 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
     @Override
     protected void onResume() {
         Log.d(TAG, this.getClass().getSimpleName()
-                + ".onResume: currentPosition=" + currentPosition
-                + " currentId=" + currentId + " increment=" + increment);
+                + ".onResume: mCurrentPosition=" + mCurrentPosition
+                + " mCurrentId=" + mCurrentId + " increment=" + increment);
         super.onResume();
         // If increment is set display a new call
         if (increment != 0) {
@@ -257,9 +257,9 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
      * Bring up a dialog to change the filter order.
      */
     private void setFilter() {
-        final CharSequence[] items = new CharSequence[filters.length];
-        for (int i = 0; i < filters.length; i++) {
-            items[i] = filters[i].name;
+        final CharSequence[] items = new CharSequence[mFilters.length];
+        for (int i = 0; i < mFilters.length; i++) {
+            items[i] = mFilters[i].name;
         }
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle(getText(R.string.filter_title));
@@ -267,7 +267,7 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
                 new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int item) {
                         dialog.dismiss();
-                        if (item < 0 || item >= filters.length) {
+                        if (item < 0 || item >= mFilters.length) {
                             Utils.errMsg(CallHistoryActivity.this,
                                     "Invalid filter");
                             filter = 0;
@@ -285,22 +285,22 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
      * Bring up a dialog to change the sort order.
      */
     private void setSortOrder() {
-        final CharSequence[] items = new CharSequence[sortOrders.length];
-        for (int i = 0; i < sortOrders.length; i++) {
-            items[i] = sortOrders[i].name;
+        final CharSequence[] items = new CharSequence[SORT_ORDERSs.length];
+        for (int i = 0; i < SORT_ORDERSs.length; i++) {
+            items[i] = SORT_ORDERSs[i].name;
         }
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle(getText(R.string.sort_title));
-        builder.setSingleChoiceItems(items, sortOrder,
+        builder.setSingleChoiceItems(items, mSortOrder,
                 new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int item) {
                         dialog.dismiss();
-                        if (item < 0 || item >= sortOrders.length) {
+                        if (item < 0 || item >= SORT_ORDERSs.length) {
                             Utils.errMsg(CallHistoryActivity.this,
-                                    "Invalid sortOrder");
-                            sortOrder = 0;
+                                    "Invalid mSortOrder");
+                            mSortOrder = 0;
                         } else {
-                            sortOrder = item;
+                            mSortOrder = item;
                         }
                         refresh();
                     }
@@ -413,8 +413,8 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
                     String[] desiredColumns = {COL_ID, COL_NUMBER, COL_DATE,
                             COL_DURATION, COL_TYPE, COL_NAME};
                     cursor = getContentResolver().query(getUri(),
-                            desiredColumns, filters[filter].selection, null,
-                            sortOrders[sortOrder].sortOrder);
+                            desiredColumns, mFilters[filter].selection, null,
+                            SORT_ORDERSs[mSortOrder].sortOrder);
                     int indexId = cursor.getColumnIndex(COL_ID);
                     int indexDate = cursor.getColumnIndex(COL_DATE);
                     int indexNumber = cursor.getColumnIndex(COL_NUMBER);
@@ -502,61 +502,61 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
             // Check if the item is still at the same position in the list
             boolean changed = false;
             long id = -1;
-            if (currentPosition > count - 1 || currentPosition < 0) {
+            if (mCurrentPosition > count - 1 || mCurrentPosition < 0) {
                 changed = true;
             } else {
-                id = adapter.getItemId(currentPosition);
-                if (id != currentId) {
+                id = adapter.getItemId(mCurrentPosition);
+                if (id != mCurrentId) {
                     changed = true;
                 }
             }
-            // Determine the new currentPosition
+            // Determine the new mCurrentPosition
             Log.d(TAG, this.getClass().getSimpleName()
-                    + ".displayCall: position=" + currentPosition + " id=" + id
+                    + ".displayCall: position=" + mCurrentPosition + " id=" + id
                     + " changed=" + changed);
             if (changed) {
                 for (int i = 0; i < count; i++) {
                     id = adapter.getItemId(i);
-                    if (id == currentId) {
-                        currentPosition = i;
+                    if (id == mCurrentId) {
+                        mCurrentPosition = i;
                         break;
                     }
                 }
             }
-            // currentPosition may still be invalid, check it is in range
-            if (currentPosition < 0) {
-                currentPosition = 0;
-            } else if (currentPosition > count - 1) {
-                currentPosition = count - 1;
+            // mCurrentPosition may still be invalid, check it is in range
+            if (mCurrentPosition < 0) {
+                mCurrentPosition = 0;
+            } else if (mCurrentPosition > count - 1) {
+                mCurrentPosition = count - 1;
             }
 
             // Display calls if a requested increment is not possible
             if (increment > 0) {
-                currentPosition += increment;
-                if (currentPosition > count - 1) {
+                mCurrentPosition += increment;
+                if (mCurrentPosition > count - 1) {
                     Toast.makeText(getApplicationContext(),
                             "At the last item in the list", Toast.LENGTH_LONG)
                             .show();
-                    currentPosition = count - 1;
+                    mCurrentPosition = count - 1;
                 }
             } else if (increment < 0) {
-                currentPosition += increment;
-                if (currentPosition < 0) {
+                mCurrentPosition += increment;
+                if (mCurrentPosition < 0) {
                     Toast.makeText(getApplicationContext(),
                             "At the first item in the list", Toast.LENGTH_LONG)
                             .show();
-                    currentPosition = 0;
+                    mCurrentPosition = 0;
                 }
             }
 
             // Request the new call
-            currentId = adapter.getItemId(currentPosition);
+            mCurrentId = adapter.getItemId(mCurrentPosition);
             Intent i = new Intent(this, DisplayCallActivity.class);
-            i.putExtra(COL_ID, currentId);
+            i.putExtra(COL_ID, mCurrentId);
             i.putExtra(URI_KEY, getUri().toString());
             Log.d(TAG, this.getClass().getSimpleName()
-                    + ".displayCall: position=" + currentPosition
-                    + " currentId=" + currentId);
+                    + ".displayCall: position=" + mCurrentPosition
+                    + " mCurrentId=" + mCurrentId);
             startActivityForResult(i, DISPLAY_CALL);
         } catch (Exception ex) {
             Utils.excMsg(this, "Error displaying call", ex);
@@ -599,20 +599,20 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
             // Get the available columns from all rows using the current
             // selection
             cursor = getContentResolver().query(getUri(), columns,
-                    filters[filter].selection, null,
-                    sortOrders[sortOrder].sortOrder);
+                    mFilters[filter].selection, null,
+                    SORT_ORDERSs[mSortOrder].sortOrder);
             startManagingCursor(cursor);
 
-            // Manage the adapter
-            if (adapter == null) {
-                // Set a custom cursor adapter
-                adapter = new CustomCursorAdapter(getApplicationContext(),
+            // Manage the mListAdapter
+            if (mListAdapter == null) {
+                // Set a custom cursor mListAdapter
+                mListAdapter = new CustomCursorAdapter(getApplicationContext(),
                         cursor);
-                setListAdapter(adapter);
+                setListAdapter(mListAdapter);
             } else {
                 // This should close the current cursor and start using the new
                 // one, hopefully avoiding memory leaks.
-                adapter.changeCursor(cursor);
+                mListAdapter.changeCursor(cursor);
             }
         } catch (Exception ex) {
             Utils.excMsg(this, "Error finding calls", ex);
@@ -620,7 +620,7 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
         // Save the preferences
         SharedPreferences.Editor editor = getPreferences(MODE_PRIVATE).edit();
         editor.putInt("filter", filter);
-        editor.putInt("sortOrder", sortOrder);
+        editor.putInt("mSortOrder", mSortOrder);
         editor.commit();
     }
 
@@ -628,7 +628,7 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
      * @return The content provider URI used.
      */
     public Uri getUri() {
-        return uri;
+        return URI;
     }
 
     /**

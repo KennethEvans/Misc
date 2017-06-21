@@ -574,7 +574,7 @@ public class DisplaySMSActivity extends Activity implements IConstants {
             int indexBody = cursor.getColumnIndex(COL_BODY);
             Log.d(TAG, this.getClass().getSimpleName() + ".refresh: "
                     + " mRowId=" + mRowId + " mUri=" + uri.toString()
-                    + " dateMultiplier=" + dateMultiplier);
+                    + " DATE_MULTIPLIER=" + dateMultiplier);
 
             // There should only be one row returned, the last will be the most
             // recent if more are returned owing to the sort above
@@ -611,7 +611,7 @@ public class DisplaySMSActivity extends Activity implements IConstants {
                 String subTitle = "";
                 Log.d(TAG, getClass().getSimpleName() + ".refresh" + " id="
                         + id + " address=" + address + " dateNum=" + dateNum
-                        + " dateMultiplier=" + dateMultiplier);
+                        + " DATE_MULTIPLIER=" + dateMultiplier);
 
                 // Add all the fields in the database
                 subTitle += MessageUtils.getColumnNamesAndValues(cursor);

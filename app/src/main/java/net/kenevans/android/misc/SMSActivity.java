@@ -29,7 +29,6 @@ import android.app.ListActivity;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
@@ -42,12 +41,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.CursorAdapter;
-import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import static android.R.attr.id;
 import static android.R.attr.type;
 import static net.kenevans.android.misc.MessageUtils.formatDate;
 
@@ -64,29 +61,30 @@ public class SMSActivity extends ListActivity implements IConstants {
      * The current position when ACTIVITY_DISPLAY_MESSAGE is requested. Used
      * with the resultCodes RESULT_PREV and RESULT_NEXT when they are returned.
      */
-    private int currentPosition;
+    private int mCurrentPosition;
 
     /**
      * The current id when ACTIVITY_DISPLAY_MESSAGE is requested. Used with the
      * resultCodes RESULT_PREV and RESULT_NEXT when they are returned.
      */
-    private long currentId;
+    private long mCurrentId;
 
     /**
-     * The increment for displaying the next message.
+     * The mIncrement for displaying the next message.
      */
-    private long increment = 0;
+    private long mIncrement = 0;
 
     /**
      * The Uri to use.
      */
-    public static final Uri uri = SMS_URI;
+    public static final Uri URI
+            = SMS_URI;
 
     /**
      * The date multiplier to use to get ms. MMS message timestamps are in sec
      * not ms.
      */
-    public static final Long dateMultiplier = 1L;
+    public static final Long DATE_MULTIPLIER = 1L;
 
     /**
      * Enum to specify the sort order.
@@ -103,7 +101,7 @@ public class SMSActivity extends ListActivity implements IConstants {
     /**
      * The sort order to use.
      */
-    private Order sortOrder = Order.TIME;
+    private Order mSortOrder = Order.TIME;
 
     private CustomListAdapter mListAdapter;
 
@@ -146,9 +144,9 @@ public class SMSActivity extends ListActivity implements IConstants {
         if (data == null) return;
         Log.d(TAG, "data: id=" + data.getId() + " " + data.getAddress());
         // Save the position when starting the activity
-        currentPosition = position;
-        currentId = data.getId();
-        increment = 0;
+        mCurrentPosition = position;
+        mCurrentId = data.getId();
+        mIncrement = 0;
         displayMessage();
     }
 
@@ -159,15 +157,15 @@ public class SMSActivity extends ListActivity implements IConstants {
         // DEBUG
         Log.d(TAG, this.getClass().getSimpleName()
                 + ".onActivityResult: requestCode=" + requestCode
-                + " resultCode=" + resultCode + " currentPosition="
-                + currentPosition);
+                + " resultCode=" + resultCode + " mCurrentPosition="
+                + mCurrentPosition);
         if (requestCode == DISPLAY_MESSAGE) {
-            increment = 0;
+            mIncrement = 0;
             // Note that earlier items are at higher positions in the list
             if (resultCode == RESULT_PREV) {
-                increment = 1;
+                mIncrement = 1;
             } else if (resultCode == RESULT_NEXT) {
-                increment = -1;
+                mIncrement = -1;
             }
         }
     }
@@ -175,12 +173,12 @@ public class SMSActivity extends ListActivity implements IConstants {
     @Override
     protected void onResume() {
         Log.d(TAG, this.getClass().getSimpleName()
-                + ".onResume: currentPosition=" + currentPosition
-                + " currentId=" + currentId + " increment=" + increment);
+                + ".onResume: mCurrentPosition=" + mCurrentPosition
+                + " mCurrentId=" + mCurrentId + " mIncrement=" + mIncrement);
         super.onResume();
         refresh();
-        // If increment is set display a new message
-        if (increment != 0) {
+        // If mIncrement is set display a new message
+        if (mIncrement != 0) {
             displayMessage();
         }
     }
@@ -188,9 +186,9 @@ public class SMSActivity extends ListActivity implements IConstants {
     @Override
     protected void onPause() {
         Log.d(TAG, this.getClass().getSimpleName()
-                + ".onPause: currentPosition=" + currentPosition);
-        Log.d(TAG, this.getClass().getSimpleName() + ".onPause: currentId="
-                + currentId);
+                + ".onPause: mCurrentPosition=" + mCurrentPosition);
+        Log.d(TAG, this.getClass().getSimpleName() + ".onPause: mCurrentId="
+                + mCurrentId);
         super.onPause();
         if (mListAdapter != null) {
             mListAdapter.clear();
@@ -205,11 +203,11 @@ public class SMSActivity extends ListActivity implements IConstants {
                 getText(R.string.sort_id)};
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle(getText(R.string.sort_title));
-        builder.setSingleChoiceItems(items, sortOrder == Order.TIME ? 0 : 1,
+        builder.setSingleChoiceItems(items, mSortOrder == Order.TIME ? 0 : 1,
                 new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int item) {
                         dialog.dismiss();
-                        sortOrder = item == 0 ? Order.TIME : Order.ID;
+                        mSortOrder = item == 0 ? Order.TIME : Order.ID;
                         refresh();
                     }
                 });
@@ -218,8 +216,8 @@ public class SMSActivity extends ListActivity implements IConstants {
     }
 
     /**
-     * Displays the message at the current position plus the current increment,
-     * adjusting for being within range. Resets the increment to 0 after.
+     * Displays the message at the current position plus the current mIncrement,
+     * adjusting for being within range. Resets the mIncrement to 0 after.
      */
     private void displayMessage() {
         if (mListAdapter == null) {
@@ -228,8 +226,8 @@ public class SMSActivity extends ListActivity implements IConstants {
         try {
             int count = mListAdapter.getCount();
             Log.d(TAG, this.getClass().getSimpleName()
-                    + ".displayMessage: count=" + count + " currentId=" +
-                    currentId + " currentPosition=" + currentPosition);
+                    + ".displayMessage: count=" + count + " mCurrentId=" +
+                    mCurrentId + " mCurrentPosition=" + mCurrentPosition);
             if (count == 0) {
                 Utils.infoMsg(this, "There are no items in the list");
                 return;
@@ -237,68 +235,68 @@ public class SMSActivity extends ListActivity implements IConstants {
             // Check if the item is still at the same position in the list
             boolean changed = false;
             long id = -1;
-            if (currentPosition > count - 1 || currentPosition < 0) {
+            if (mCurrentPosition > count - 1 || mCurrentPosition < 0) {
                 changed = true;
             } else {
-                id = mListAdapter.getData(currentPosition).getId();
-                if (id != currentId) {
+                id = mListAdapter.getData(mCurrentPosition).getId();
+                if (id != mCurrentId) {
                     changed = true;
                 }
             }
-            // Determine the new currentPosition
+            // Determine the new mCurrentPosition
             Log.d(TAG, this.getClass().getSimpleName()
-                    + ".displayMessage: position=" + currentPosition + " id="
+                    + ".displayMessage: position=" + mCurrentPosition + " id="
                     + id + " changed=" + changed);
             if (changed) {
                 for (int i = 0; i < count; i++) {
-                    id = mListAdapter.getData(currentPosition).getId();
-                    if (id == currentId) {
-                        currentPosition = i;
+                    id = mListAdapter.getData(mCurrentPosition).getId();
+                    if (id == mCurrentId) {
+                        mCurrentPosition = i;
                         break;
                     }
                 }
             }
-            // currentPosition may still be invalid, check it is in range
-            if (currentPosition < 0) {
-                currentPosition = 0;
-            } else if (currentPosition > count - 1) {
-                currentPosition = count - 1;
+            // mCurrentPosition may still be invalid, check it is in range
+            if (mCurrentPosition < 0) {
+                mCurrentPosition = 0;
+            } else if (mCurrentPosition > count - 1) {
+                mCurrentPosition = count - 1;
             }
 
-            // Display messages if a requested increment is not possible
-            if (increment > 0) {
-                currentPosition += increment;
-                if (currentPosition > count - 1) {
+            // Display messages if a requested mIncrement is not possible
+            if (mIncrement > 0) {
+                mCurrentPosition += mIncrement;
+                if (mCurrentPosition > count - 1) {
                     Toast.makeText(getApplicationContext(),
                             "At the last item in the list", Toast.LENGTH_LONG)
                             .show();
-                    currentPosition = count - 1;
+                    mCurrentPosition = count - 1;
                 }
-            } else if (increment < 0) {
-                currentPosition += increment;
-                if (currentPosition < 0) {
+            } else if (mIncrement < 0) {
+                mCurrentPosition += mIncrement;
+                if (mCurrentPosition < 0) {
                     Toast.makeText(getApplicationContext(),
                             "At the first item in the list", Toast.LENGTH_LONG)
                             .show();
-                    currentPosition = 0;
+                    mCurrentPosition = 0;
                 }
             }
 
             // Request the new message
-            currentId = mListAdapter.getData(currentPosition).getId();
+            mCurrentId = mListAdapter.getData(mCurrentPosition).getId();
             Intent i = new Intent(this, DisplaySMSActivity.class);
-            i.putExtra(COL_ID, currentId);
+            i.putExtra(COL_ID, mCurrentId);
             i.putExtra(URI_KEY, getUri().toString());
             i.putExtra(DATE_MULTIPLIER_KEY, getDateMultiplier());
             Log.d(TAG, this.getClass().getSimpleName()
-                    + ".displayMessage: position=" + currentPosition
-                    + " currentId=" + currentId);
+                    + ".displayMessage: position=" + mCurrentPosition
+                    + " mCurrentId=" + mCurrentId);
             startActivityForResult(i, DISPLAY_MESSAGE);
         } catch (Exception ex) {
             Utils.excMsg(this, "Error displaying message", ex);
         } finally {
-            // Reset increment
-            increment = 0;
+            // Reset mIncrement
+            mIncrement = 0;
         }
     }
 
@@ -381,14 +379,14 @@ public class SMSActivity extends ListActivity implements IConstants {
      * @return The content provider URI used.
      */
     public Uri getUri() {
-        return uri;
+        return URI;
     }
 
     /**
      * @return The date multiplier to use.
      */
     public Long getDateMultiplier() {
-        return dateMultiplier;
+        return DATE_MULTIPLIER;
     }
 
     private class CustomCursorAdapter extends CursorAdapter {
@@ -435,7 +433,7 @@ public class SMSActivity extends ListActivity implements IConstants {
             subtitle.setText(formatDate(dateNum));
             // Log.d(TAG, getClass().getSimpleName() + ".bindView" + " id=" + id
             // + " address=" + address + " dateNum=" + dateNum
-            // + " dateMultiplier=" + getDateMultiplier());
+            // + " DATE_MULTIPLIER=" + getDateMultiplier());
             // DEBUG
             // if (id.equals(new Integer(76).toString())) {
             // test(1, this.getClass(), SMSActivity.this, cursor, id, getUri());
@@ -527,7 +525,7 @@ public class SMSActivity extends ListActivity implements IConstants {
                 String selection = null;
                 cursor = getContentResolver().query(getUri(), columns,
                         selection,
-                        null, sortOrder.sqlCommand);
+                        null, mSortOrder.sqlCommand);
 
                 indexId = cursor.getColumnIndex(COL_ID);
                 indexDate = cursor.getColumnIndex(COL_DATE);

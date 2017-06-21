@@ -612,7 +612,7 @@ public class DisplayMMSActivity extends Activity implements IConstants {
             // There is no SMS type.
             Log.d(TAG, this.getClass().getSimpleName() + ".refresh: "
                     + " mRowId=" + mRowId + " mUri=" + uri.toString()
-                    + " dateMultiplier=" + dateMultiplier);
+                    + " DATE_MULTIPLIER=" + dateMultiplier);
 
             List<String> mimeList = new ArrayList<String>();
             Bitmap bitmap = null;
@@ -708,7 +708,7 @@ public class DisplayMMSActivity extends Activity implements IConstants {
                 String subTitle = "";
                 Log.d(TAG, getClass().getSimpleName() + ".refresh" + " id="
                         + id + " address=" + address + " dateNum=" + dateNum
-                        + " dateMultiplier=" + dateMultiplier);
+                        + " DATE_MULTIPLIER=" + dateMultiplier);
 
                 // Add the mime types
                 subTitle += "Content Types" + "\n";
