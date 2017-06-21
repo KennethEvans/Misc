@@ -102,18 +102,6 @@
             android:label="@string/help_title" >
         </activity>
         <activity
-            android:name="net.kenevans.android.misc.MessageListenerActivity"
-            android:label="@string/messagelistener_title" >
-        </activity>
-        <activity
-            android:name="net.kenevans.android.misc.SMSTestActivity"
-            android:label="@string/sms_title" >
-        </activity>
-        <activity
-            android:name="net.kenevans.android.misc.SMSTest2Activity"
-            android:label="@string/sms_title" >
-        </activity>
-        <activity
             android:name="net.kenevans.android.misc.AppDetailsActivity"
             android:label="@string/app_details_title" >
         </activity>

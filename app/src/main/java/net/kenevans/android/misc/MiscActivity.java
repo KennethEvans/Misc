@@ -53,12 +53,6 @@ public class MiscActivity extends ListActivity {
             // new Data("WebView", "Test WebView", InfoActivity.class),
             new Data("Application Info", "Display Application Information",
                     AppsActivity.class),
-            // new Data("Message Listener", "Listen to received messages",
-            // MessageListenerActivity.class),
-            // new Data("Messages Test1", "Display all messages in "
-            // + SMSTestActivity.mUri, SMSTestActivity.class),
-            // new Data("Messages Test2", "Display all messages in "
-            // + SMSTest2Activity.mUri, SMSTest2Activity.class),
             new Data("SMS Messages",
                     "Display all messages in the SMS database",
                     SMSActivity.class),
@@ -159,7 +153,7 @@ public class MiscActivity extends ListActivity {
         private String subtitle;
         private Class<?> activityClass;
 
-        public Data(String title, String subtitle, Class<?> activityClass) {
+        private Data(String title, String subtitle, Class<?> activityClass) {
             this.title = title;
             this.subtitle = subtitle;
             this.activityClass = activityClass;
@@ -175,7 +169,7 @@ public class MiscActivity extends ListActivity {
         private LayoutInflater mInflater;
         private Data[] data;
 
-        public MiscAdapter(Context context, Data[] data) {
+        private MiscAdapter(Context context, Data[] data) {
             this.data = data;
             // Cache the LayoutInflate to avoid asking for a new one each time.
             mInflater = LayoutInflater.from(context);
