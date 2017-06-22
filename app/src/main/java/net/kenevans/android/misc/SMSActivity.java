@@ -21,12 +21,8 @@
 
 package net.kenevans.android.misc;
 
-import java.util.ArrayList;
-import java.util.Locale;
-
 import android.app.AlertDialog;
 import android.app.ListActivity;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
@@ -40,10 +36,12 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
-import android.widget.CursorAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import java.util.ArrayList;
+import java.util.Locale;
 
 import static android.R.attr.type;
 import static net.kenevans.android.misc.MessageUtils.formatDate;
@@ -51,10 +49,6 @@ import static net.kenevans.android.misc.MessageUtils.formatDate;
 /**
  * Manages a ListView of all the messages in the database specified by the
  * URI field.
- */
-
-/**
- * @author evans
  */
 public class SMSActivity extends ListActivity implements IConstants {
     /**
@@ -108,9 +102,6 @@ public class SMSActivity extends ListActivity implements IConstants {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        // Call refresh to set the contents
-        refresh();
     }
 
     @Override
@@ -389,65 +380,6 @@ public class SMSActivity extends ListActivity implements IConstants {
         return DATE_MULTIPLIER;
     }
 
-    private class CustomCursorAdapter extends CursorAdapter {
-        private LayoutInflater inflater;
-        private int indexDate;
-        private int indexAddress;
-        private int indexId;
-        private int indexType;
-
-        public CustomCursorAdapter(Context context, Cursor cursor) {
-            super(context, cursor);
-            inflater = LayoutInflater.from(context);
-            indexId = cursor.getColumnIndex(COL_ID);
-            indexDate = cursor.getColumnIndex(COL_DATE);
-            indexAddress = cursor.getColumnIndex(COL_ADDRESS);
-            indexType = cursor.getColumnIndex(COL_TYPE);
-        }
-
-        @Override
-        public void bindView(View view, Context context, Cursor cursor) {
-            TextView title = (TextView) view.findViewById(R.id.title);
-            TextView subtitle = (TextView) view.findViewById(R.id.subtitle);
-            String id = cursor.getString(indexId);
-            String address = "<Address NA>";
-            if (indexAddress > -1) {
-                address = cursor.getString(indexAddress);
-            }
-            Long dateNum = -1L;
-            if (indexDate > -1) {
-                dateNum = cursor.getLong(indexDate) * getDateMultiplier();
-            }
-            int type = -1;
-            if (indexType > -1) {
-                type = cursor.getInt(indexType);
-            }
-            String titleText = id + ": " + MessageUtils.formatSmsType(type)
-                    + MessageUtils.formatAddress(address);
-            String contactName = MessageUtils.getContactNameFromNumber(
-                    SMSActivity.this, address);
-            if (!contactName.equals("Unknown")) {
-                titleText += " " + contactName;
-            }
-            title.setText(titleText);
-            subtitle.setText(formatDate(dateNum));
-            // Log.d(TAG, getClass().getSimpleName() + ".bindView" + " id=" + id
-            // + " address=" + address + " dateNum=" + dateNum
-            // + " DATE_MULTIPLIER=" + getDateMultiplier());
-            // DEBUG
-            // if (id.equals(new Integer(76).toString())) {
-            // test(1, this.getClass(), SMSActivity.this, cursor, id, getUri());
-            // test(2, this.getClass(), SMSActivity.this, null, id, getUri());
-            // }
-        }
-
-        @Override
-        public View newView(Context context, Cursor cursor, ViewGroup parent) {
-            return inflater.inflate(R.layout.list_row, parent, false);
-        }
-
-    }
-
     /**
      * Class to manage the data needed for an item in the ListView.
      */
@@ -464,19 +396,19 @@ public class SMSActivity extends ListActivity implements IConstants {
             this.type = type;
         }
 
-        public long getId() {
+        private long getId() {
             return id;
         }
 
-        public String getAddress() {
+        private String getAddress() {
             return address;
         }
 
-        public long getDateNum() {
+        private long getDateNum() {
             return dateNum;
         }
 
-        public int getType() {
+        private int getType() {
             return type;
         }
     }
@@ -547,7 +479,7 @@ public class SMSActivity extends ListActivity implements IConstants {
                                 getDateMultiplier();
                     }
                     int type = -1;
-                    if (indexAddress > -1) {
+                    if (indexType > -1) {
                         type = cursor.getInt(indexType);
                     }
                     addData(new Data(id, address, dateNum, type));

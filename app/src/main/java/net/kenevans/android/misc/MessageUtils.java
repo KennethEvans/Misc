@@ -258,8 +258,8 @@ public class MessageUtils implements IConstants {
         if (cursor == null) return null;
         // DEBUG
         // String[] columnNames = addrCursor.getColumnNames();
-        Log.d(TAG, MessageUtils.class.getSimpleName() + ".getMmsAddress: "
-                + uriAddress.toString() + " count=" + cursor.getCount());
+//        Log.d(TAG, MessageUtils.class.getSimpleName() + ".getMmsAddress: "
+//                + uriAddress.toString() + " count=" + cursor.getCount());
         // for (String string : columnNames) {
         // Log.d(TAG, string);
         // }
@@ -300,8 +300,8 @@ public class MessageUtils implements IConstants {
             } while (cursor.moveToNext());
         }
         cursor.close();
-        Log.d(TAG, MessageUtils.class.getSimpleName() + ".getMmsAddress: "
-                + " address=" + address);
+//        Log.d(TAG, MessageUtils.class.getSimpleName() + ".getMmsAddress: "
+//                + " address=" + address);
         return address;
     }
 

@@ -21,11 +21,8 @@
 
 package net.kenevans.android.misc;
 
-import java.util.ArrayList;
-
 import android.app.AlertDialog;
 import android.app.ListActivity;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
@@ -38,19 +35,20 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.CursorAdapter;
-import android.widget.ListAdapter;
+import android.widget.BaseAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.util.ArrayList;
+import java.util.Locale;
+
+import static android.R.attr.type;
+import static net.kenevans.android.misc.MessageUtils.formatDate;
+
 /**
  * Manages a ListView of all the messages in the database specified by the
  * URI field.
- */
-
-/**
- * @author evans
  */
 public class MMSActivity extends ListActivity implements IConstants {
     /**
@@ -73,8 +71,7 @@ public class MMSActivity extends ListActivity implements IConstants {
     /**
      * The Uri to use.
      */
-    public static final Uri URI
-            = MMS_URI;
+    public static final Uri URI = MMS_URI;
 
     /**
      * The date multiplier to use to get ms. MMS message timestamps are in sec
@@ -86,7 +83,7 @@ public class MMSActivity extends ListActivity implements IConstants {
     /**
      * Enum to specify the sort order.
      */
-    enum Order {
+    private enum Order {
         TIME(COL_DATE + " DESC"), ID(COL_ID + " DESC");
         public String sqlCommand;
 
@@ -100,14 +97,11 @@ public class MMSActivity extends ListActivity implements IConstants {
      */
     private Order mSortOrder = Order.TIME;
 
-    private CustomCursorAdapter mListAdapter;
+    private CustomListAdapter mListAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        // Call refresh to set the contents
-        refresh();
     }
 
     @Override
@@ -134,10 +128,15 @@ public class MMSActivity extends ListActivity implements IConstants {
     @Override
     protected void onListItemClick(ListView lv, View view, int position, long
             id) {
-        super.onListItemClick(lv, view, position, id);
+        Log.d(TAG, this.getClass().getSimpleName() + ": onListItemClick: " +
+                "position="
+                + position + " id=" + id);
+        Data data = mListAdapter.getData(position);
+        if (data == null) return;
+        Log.d(TAG, "data: id=" + data.getId() + " " + data.getAddress());
         // Save the position when starting the activity
         mCurrentPosition = position;
-        mCurrentId = id;
+        mCurrentId = data.getId();
         mIncrement = 0;
         displayMessage();
     }
@@ -162,14 +161,6 @@ public class MMSActivity extends ListActivity implements IConstants {
         }
     }
 
-    @Override
-    protected void onPause() {
-        Log.d(TAG, this.getClass().getSimpleName()
-                + ".onPause: mCurrentPosition=" + mCurrentPosition);
-        Log.d(TAG, this.getClass().getSimpleName() + ".onPause: mCurrentId="
-                + mCurrentId);
-        super.onPause();
-    }
 
     @Override
     protected void onResume() {
@@ -177,9 +168,22 @@ public class MMSActivity extends ListActivity implements IConstants {
                 + ".onResume: mCurrentPosition=" + mCurrentPosition
                 + " mCurrentId=" + mCurrentId + " mIncrement=" + mIncrement);
         super.onResume();
+        refresh();
         // If mIncrement is set display a new message
         if (mIncrement != 0) {
             displayMessage();
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        Log.d(TAG, this.getClass().getSimpleName()
+                + ".onPause: mCurrentPosition=" + mCurrentPosition);
+        Log.d(TAG, this.getClass().getSimpleName() + ".onPause: mCurrentId="
+                + mCurrentId);
+        super.onPause();
+        if (mListAdapter != null) {
+            mListAdapter.clear();
         }
     }
 
@@ -208,14 +212,14 @@ public class MMSActivity extends ListActivity implements IConstants {
      * adjusting for being within range. Resets the mIncrement to 0 after.
      */
     private void displayMessage() {
-        ListAdapter adapter = getListAdapter();
-        if (adapter == null) {
+        if (mListAdapter == null) {
             return;
         }
         try {
-            int count = adapter.getCount();
+            int count = mListAdapter.getCount();
             Log.d(TAG, this.getClass().getSimpleName()
-                    + ".displayMessage: count=" + count);
+                    + ".displayMessage: count=" + count + " mCurrentId=" +
+                    mCurrentId + " mCurrentPosition=" + mCurrentPosition);
             if (count == 0) {
                 Utils.infoMsg(this, "There are no items in the list");
                 return;
@@ -226,7 +230,7 @@ public class MMSActivity extends ListActivity implements IConstants {
             if (mCurrentPosition > count - 1 || mCurrentPosition < 0) {
                 changed = true;
             } else {
-                id = adapter.getItemId(mCurrentPosition);
+                id = mListAdapter.getData(mCurrentPosition).getId();
                 if (id != mCurrentId) {
                     changed = true;
                 }
@@ -237,7 +241,7 @@ public class MMSActivity extends ListActivity implements IConstants {
                     + id + " changed=" + changed);
             if (changed) {
                 for (int i = 0; i < count; i++) {
-                    id = adapter.getItemId(i);
+                    id = mListAdapter.getData(mCurrentPosition).getId();
                     if (id == mCurrentId) {
                         mCurrentPosition = i;
                         break;
@@ -271,8 +275,8 @@ public class MMSActivity extends ListActivity implements IConstants {
             }
 
             // Request the new message
-            mCurrentId = adapter.getItemId(mCurrentPosition);
-            Intent i = new Intent(this, DisplayMMSActivity.class);
+            mCurrentId = mListAdapter.getData(mCurrentPosition).getId();
+            Intent i = new Intent(this, DisplaySMSActivity.class);
             i.putExtra(COL_ID, mCurrentId);
             i.putExtra(URI_KEY, getUri().toString());
             i.putExtra(DATE_MULTIPLIER_KEY, getDateMultiplier());
@@ -292,53 +296,9 @@ public class MMSActivity extends ListActivity implements IConstants {
      * Gets a new cursor and starts managing it.
      */
     private void refresh() {
-        // TODO is refresh necessary? See the Notepad example where it is used.
-        // TODO does calling this more than once cause memory leaks or extra
-        // work?
-        // TODO Probably causes extra work but does insure a refresh.
-        try {
-            // First get the names of all the columns in the database
-            Cursor cursor = getContentResolver().query(getUri(), null, null,
-                    null, null);
-            String[] avaliableColumns = cursor.getColumnNames();
-            cursor.close();
-
-            // Make an array of the desired ones that are available
-            String[] desiredColumns = {COL_ID, COL_ADDRESS, COL_DATE,
-                    COL_BODY, COL_TYPE};
-            ArrayList<String> list = new ArrayList<String>();
-            for (String col : desiredColumns) {
-                for (String col1 : avaliableColumns) {
-                    if (col.equals(col1)) {
-                        list.add(col);
-                        break;
-                    }
-                }
-            }
-            String[] columns = new String[list.size()];
-            list.toArray(columns);
-
-            // Get the available columns from all rows
-            // String selection = COL_ID + "<=76" + " OR " + COL_ID + "=13";
-            String selection = null;
-            cursor = getContentResolver().query(getUri(), columns, selection,
-                    null, mSortOrder.sqlCommand);
-            startManagingCursor(cursor);
-
-            // Manage the mListAdapter
-            if (mListAdapter == null) {
-                // Set a custom cursor mListAdapter
-                mListAdapter = new CustomCursorAdapter(getApplicationContext(),
-                        cursor);
-                setListAdapter(mListAdapter);
-            } else {
-                // This should close the current cursor and start using the new
-                // one, hopefully avoiding memory leaks.
-                mListAdapter.changeCursor(cursor);
-            }
-        } catch (Exception ex) {
-            Utils.excMsg(this, "Error finding MMS messages", ex);
-        }
+        // Initialize the list view mAapter
+        mListAdapter = new CustomListAdapter();
+        setListAdapter(mListAdapter);
     }
 
     /**
@@ -355,63 +315,192 @@ public class MMSActivity extends ListActivity implements IConstants {
         return DATE_MULTIPLIER;
     }
 
-    private class CustomCursorAdapter extends CursorAdapter {
-        private LayoutInflater inflater;
-        private int indexDate;
+    /**
+     * Class to manage the data needed for an item in the ListView.
+     */
+    private static class Data {
+        private long id;
+        private String address;
+        private long dateNum = -1;
+        private int type;
+
+        private Data(long id, String address, long dateNum, int type) {
+            this.id = id;
+            this.address = address;
+            this.dateNum = dateNum;
+            this.type = type;
+        }
+
+        private long getId() {
+            return id;
+        }
+
+        private String getAddress() {
+            return address;
+        }
+
+        private long getDateNum() {
+            return dateNum;
+        }
+
+        private int getType() {
+            return type;
+        }
+    }
+
+    /**
+     * ListView adapter class for this activity.
+     */
+    private class CustomListAdapter extends BaseAdapter {
+        private ArrayList<Data> mData;
+        private LayoutInflater mInflator;
         private int indexId;
+        private int indexDate;
         private int indexType;
 
-        public CustomCursorAdapter(Context context, Cursor cursor) {
-            super(context, cursor);
-            inflater = LayoutInflater.from(context);
-            indexId = cursor.getColumnIndex(COL_ID);
-            indexDate = cursor.getColumnIndex(COL_DATE);
-            indexType = cursor.getColumnIndex(COL_TYPE);
+        private CustomListAdapter() {
+            super();
+            mData = new ArrayList<>();
+            mInflator = getLayoutInflater();
+            Cursor cursor = null;
+            int nItems = 0;
+            try {
+                // First get the names of all the columns in the database
+                cursor = getContentResolver().query(getUri(), null, null,
+                        null, null);
+                String[] avaliableColumns = cursor.getColumnNames();
+                cursor.close();
+
+                // Make an array of the desired ones that are available
+                String[] desiredColumns = {COL_ID, COL_ADDRESS, COL_DATE,
+                        COL_BODY, COL_TYPE};
+                ArrayList<String> list = new ArrayList<>();
+                for (String col : desiredColumns) {
+                    for (String col1 : avaliableColumns) {
+                        if (col.equals(col1)) {
+                            list.add(col);
+                            break;
+                        }
+                    }
+                }
+                String[] columns = new String[list.size()];
+                list.toArray(columns);
+
+                // Get the available columns from all rows
+                // String selection = COL_ID + "<=76" + " OR " + COL_ID + "=13";
+                cursor = getContentResolver().query(getUri(), columns,
+                        null, null, mSortOrder.sqlCommand);
+
+                indexId = cursor.getColumnIndex(COL_ID);
+                indexDate = cursor.getColumnIndex(COL_DATE);
+                indexType = cursor.getColumnIndex(COL_TYPE);
+
+                // Loop over items
+                cursor.moveToFirst();
+                while (!cursor.isAfterLast()) {
+                    nItems++;
+                    long id = cursor.getLong(indexId);
+                    // We need to get the address from another provider
+                    String address = "<Address NA>";
+                    String text = MessageUtils.getMmsAddress(MMSActivity
+                            .this, String.format(Locale.US, "%d", id));
+                    if (text != null) {
+                        address = text;
+                    }
+                    Long dateNum = -1L;
+                    if (indexDate > -1) {
+                        dateNum = cursor.getLong(indexDate) *
+                                getDateMultiplier();
+                    }
+                    int type = -1;
+                    if (indexType > -1) {
+                        type = cursor.getInt(indexType);
+                    }
+                    addData(new Data(id, address, dateNum, type));
+                    cursor.moveToNext();
+                }
+                if (cursor != null) cursor.close();
+            } catch (Exception ex) {
+                Utils.excMsg(MMSActivity.this,
+                        "Error getting data", ex);
+            } finally {
+                try {
+                    if (cursor != null) cursor.close();
+                } catch (Exception ex) {
+                    // Do nothing
+                }
+            }
+            Log.d(TAG, "Data list created with " + nItems + " items");
+        }
+
+        private void addData(Data data) {
+            if (!mData.contains(data)) {
+                mData.add(data);
+            }
+        }
+
+        private Data getData(int position) {
+            return mData.get(position);
+        }
+
+        private void clear() {
+            mData.clear();
         }
 
         @Override
-        public void bindView(View view, Context context, Cursor cursor) {
-            TextView title = (TextView) view.findViewById(R.id.title);
-            TextView subtitle = (TextView) view.findViewById(R.id.subtitle);
-            String id = cursor.getString(indexId);
-            // We need to get the address from another provider
-            String address = "<Address NA>";
-            String text = MessageUtils.getMmsAddress(MMSActivity.this, id);
-            if (text != null) {
-                address = text;
+        public int getCount() {
+            return mData.size();
+        }
+
+        @Override
+        public Object getItem(int i) {
+            return mData.get(i);
+        }
+
+        @Override
+        public long getItemId(int i) {
+            return i;
+        }
+
+        @Override
+        public View getView(int i, View view, ViewGroup viewGroup) {
+            // // DEBUG
+            // Log.d(TAG, "getView: " + i);
+            ViewHolder viewHolder;
+            // General ListView optimization code.
+            if (view == null) {
+                view = mInflator.inflate(R.layout.list_row, viewGroup,
+                        false);
+                viewHolder = new ViewHolder();
+                viewHolder.title = (TextView) view.findViewById(R.id.title);
+                viewHolder.subTitle = (TextView) view.findViewById(R.id
+                        .subtitle);
+                view.setTag(viewHolder);
+            } else {
+                viewHolder = (ViewHolder) view.getTag();
             }
-            Long dateNum = -1L;
-            if (indexDate > -1) {
-                dateNum = cursor.getLong(indexDate) * getDateMultiplier();
-            }
-            int type = -1;
-            if (indexType > -1) {
-                type = cursor.getInt(indexType);
-            }
-            String titleText = id + ": " + MessageUtils.formatSmsType(type)
-                    + MessageUtils.formatAddress(address);
+
+            Data data = mData.get(i);
+            String titleText = String.format(Locale.US, "%d", data.getId()) +
+                    ": " + MessageUtils.formatSmsType(type)
+                    + MessageUtils.formatAddress(data.getAddress());
             String contactName = MessageUtils.getContactNameFromNumber(
-                    MMSActivity.this, address);
+                    MMSActivity.this, data.getAddress());
             if (!contactName.equals("Unknown")) {
                 titleText += " " + contactName;
             }
-            title.setText(titleText);
-            subtitle.setText(MessageUtils.formatDate(dateNum));
-            // Log.d(TAG, getClass().getSimpleName() + ".bindView" + " id=" + id
-            // + " address=" + address + " dateNum=" + dateNum
-            // + " DATE_MULTIPLIER=" + getDateMultiplier());
-            // DEBUG
-            // if (id.equals(new Integer(76).toString())) {
-            // test(1, this.getClass(), SMSActivity.this, cursor, id, getUri());
-            // test(2, this.getClass(), SMSActivity.this, null, id, getUri());
-            // }
+            viewHolder.title.setText(titleText);
+            viewHolder.subTitle.setText(formatDate(data.getDateNum()));
+            return view;
         }
+    }
 
-        @Override
-        public View newView(Context context, Cursor cursor, ViewGroup parent) {
-            return inflater.inflate(R.layout.list_row, parent, false);
-        }
-
+    /**
+     * Convience class for managing views for a ListView row.
+     */
+    private static class ViewHolder {
+        TextView title;
+        TextView subTitle;
     }
 
 }
