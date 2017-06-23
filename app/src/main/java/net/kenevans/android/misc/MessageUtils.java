@@ -323,7 +323,7 @@ public class MessageUtils implements IConstants {
         if (cursor == null) return null;
 //        Log.d(TAG, MessageUtils.class.getSimpleName() + "
 // .getAllMmsAddresses: "
-//                + uri.toString() + " count=" + cursor.getCount()
+//                + mUri.toString() + " count=" + cursor.getCount()
 //                + " columnCount=" + cursor.getColumnCount());
         int indexAddr = cursor.getColumnIndex("address");
         int indexType = cursor.getColumnIndex("type");
@@ -819,7 +819,7 @@ public class MessageUtils implements IConstants {
         // Get the name of the raw contact (not so easy)
         // The name of the contact should be the item with mimetype
         // = CONTENT_ITEM_TYPE
-        String name;
+        String name = "<Not found>";
         String[] projection = new String[]{
                 ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME,
         };
@@ -832,15 +832,15 @@ public class MessageUtils implements IConstants {
         Cursor nameCursor = context.getContentResolver().query(
                 ContactsContract.Data.CONTENT_URI, projection, where, args,
                 null);
-        if (nameCursor == null) return null;
-        // Use the first item with mimetype = CONTENT_ITEM_TYPE though
-        // there should only be one
-        name = nameCursor
-                .getString(nameCursor
-                        .getColumnIndex(ContactsContract.CommonDataKinds
-                                .StructuredName.DISPLAY_NAME));
-        // Use the first item with mimetype = CONTENT_ITEM_TYPE though
-        // there should only be one
+        if (nameCursor == null || nameCursor.getCount() == 0) return name;
+        int colIndex = nameCursor.getColumnIndex(ContactsContract
+                .CommonDataKinds.StructuredName.DISPLAY_NAME);
+        if (colIndex > -1) {
+            // Use the first item with mimetype = CONTENT_ITEM_TYPE though
+            // there should only be one
+            nameCursor.moveToFirst();
+            name = nameCursor.getString(colIndex);
+        }
         nameCursor.close();
         return name;
     }

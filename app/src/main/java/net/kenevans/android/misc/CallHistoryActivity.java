@@ -29,7 +29,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ListActivity;
 import android.content.Context;
@@ -55,6 +54,9 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import static android.R.attr.id;
+import static android.R.attr.name;
+import static android.R.attr.type;
 import static net.kenevans.android.misc.MessageUtils.formatDate;
 
 /**
@@ -81,7 +83,7 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
     /**
      * The increment for displaying the next call.
      */
-    private long increment = 0;
+    private long mIncrement = 0;
 
     /**
      * The Uri to use for the database.
@@ -91,9 +93,9 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
     /**
      * Enum to specify the sort order.
      */
-    enum Order {
+    private enum Order {
         TIME(COL_DATE + " DESC"), ID(COL_ID + " DESC");
-        public String sqlCommand;
+        public final String sqlCommand;
 
         Order(String sqlCommand) {
             this.sqlCommand = sqlCommand;
@@ -112,7 +114,7 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
     /**
      * Array of hard-coded sort orders
      */
-    private SortOrder[] SORT_ORDERSs;
+    private SortOrder[] sortOrders;
     /**
      * The current sort order.
      */
@@ -123,7 +125,7 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
      */
     private static final String SAVE_FILE_NAME = "CallHistory.%s.csv";
 
-    private CustomCursorAdapter mListAdapter;
+    private CustomListAdapter mListAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -146,7 +148,7 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
         };
 
         // Create sort orders here so getText is available
-        SORT_ORDERSs = new SortOrder[]{
+        sortOrders = new SortOrder[]{
                 new SortOrder(getText(R.string.sort_time), COL_DATE + " DESC"),
                 new SortOrder(getText(R.string.sort_id), COL_ID + " DESC"),
                 new SortOrder(getText(R.string.sort_name), COL_NAME),
@@ -163,8 +165,8 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
         if (filter < 0 || filter >= mFilters.length) {
             filter = 0;
         }
-        mSortOrder = prefs.getInt("mSortOrder", 0);
-        if (mSortOrder < 0 || mSortOrder >= SORT_ORDERSs.length) {
+        mSortOrder = prefs.getInt("sortOrder", 0);
+        if (mSortOrder < 0 || mSortOrder >= sortOrders.length) {
             mSortOrder = 0;
         }
 
@@ -210,7 +212,7 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
         // Save the position when starting the activity
         mCurrentPosition = position;
         mCurrentId = id;
-        increment = 0;
+        mIncrement = 0;
         displayCall();
     }
 
@@ -224,13 +226,26 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
                 + " resultCode=" + resultCode + " mCurrentPosition="
                 + mCurrentPosition);
         if (requestCode == DISPLAY_CALL) {
-            increment = 0;
+            mIncrement = 0;
             // Note that earlier items are at higher positions in the list
             if (resultCode == RESULT_PREV) {
-                increment = 1;
+                mIncrement = 1;
             } else if (resultCode == RESULT_NEXT) {
-                increment = -1;
+                mIncrement = -1;
             }
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        Log.d(TAG, this.getClass().getSimpleName()
+                + ".onResume: mCurrentPosition=" + mCurrentPosition
+                + " mCurrentId=" + mCurrentId + " mIncrement=" + mIncrement);
+        super.onResume();
+        refresh();
+        // If mIncrement is set display a new message
+        if (mIncrement != 0) {
+            displayCall();
         }
     }
 
@@ -242,20 +257,6 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
                 + mCurrentId);
         super.onPause();
         // We save the preferences in refresh
-    }
-
-    @Override
-    protected void onResume() {
-        Log.d(TAG, this.getClass().getSimpleName()
-                + ".onResume: mCurrentPosition=" + mCurrentPosition
-                + " mCurrentId=" + mCurrentId + " increment=" + increment);
-        super.onResume();
-        // If increment is set display a new call
-        if (increment != 0) {
-            displayCall();
-        }
-        // We get the preferences in onCreate since it is not necessary to do
-        // refresh() here
     }
 
     /**
@@ -290,9 +291,9 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
      * Bring up a dialog to change the sort order.
      */
     private void setSortOrder() {
-        final CharSequence[] items = new CharSequence[SORT_ORDERSs.length];
-        for (int i = 0; i < SORT_ORDERSs.length; i++) {
-            items[i] = SORT_ORDERSs[i].name;
+        final CharSequence[] items = new CharSequence[sortOrders.length];
+        for (int i = 0; i < sortOrders.length; i++) {
+            items[i] = sortOrders[i].name;
         }
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle(getText(R.string.sort_title));
@@ -300,7 +301,7 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
                 new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int item) {
                         dialog.dismiss();
-                        if (item < 0 || item >= SORT_ORDERSs.length) {
+                        if (item < 0 || item >= sortOrders.length) {
                             Utils.errMsg(CallHistoryActivity.this,
                                     "Invalid mSortOrder");
                             mSortOrder = 0;
@@ -419,7 +420,7 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
                             COL_DURATION, COL_TYPE, COL_NAME};
                     cursor = getContentResolver().query(getUri(),
                             desiredColumns, mFilters[filter].selection, null,
-                            SORT_ORDERSs[mSortOrder].sortOrder);
+                            sortOrders[mSortOrder].sortOrder);
                     int indexId = cursor.getColumnIndex(COL_ID);
                     int indexDate = cursor.getColumnIndex(COL_DATE);
                     int indexNumber = cursor.getColumnIndex(COL_NUMBER);
@@ -493,11 +494,11 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
      */
     private void displayCall() {
         ListAdapter adapter = getListAdapter();
-        if (adapter == null) {
+        if (mListAdapter == null) {
             return;
         }
         try {
-            int count = adapter.getCount();
+            int count = mListAdapter.getCount();
             Log.d(TAG, this.getClass().getSimpleName() + ".displayCall: count="
                     + count);
             if (count == 0) {
@@ -510,7 +511,13 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
             if (mCurrentPosition > count - 1 || mCurrentPosition < 0) {
                 changed = true;
             } else {
-                id = adapter.getItemId(mCurrentPosition);
+                Data data = mListAdapter.getData(mCurrentPosition);
+                if (data == null) {
+                    Utils.errMsg(this, "Error displaying message: Missing " +
+                            "data for position " + mCurrentPosition);
+                    return;
+                }
+                id = data.getId();
                 if (id != mCurrentId) {
                     changed = true;
                 }
@@ -521,7 +528,13 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
                     + " changed=" + changed);
             if (changed) {
                 for (int i = 0; i < count; i++) {
-                    id = adapter.getItemId(i);
+                    Data data = mListAdapter.getData(mCurrentPosition);
+                    if (data == null) {
+                        Utils.errMsg(this, "Error displaying message: Missing" +
+                                " " + "data for position " + mCurrentPosition);
+                        return;
+                    }
+                    id = data.getId();
                     if (id == mCurrentId) {
                         mCurrentPosition = i;
                         break;
@@ -535,17 +548,17 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
                 mCurrentPosition = count - 1;
             }
 
-            // Display calls if a requested increment is not possible
-            if (increment > 0) {
-                mCurrentPosition += increment;
+            // Display messages if a requested mIncrement is not possible
+            if (mIncrement > 0) {
+                mCurrentPosition += mIncrement;
                 if (mCurrentPosition > count - 1) {
                     Toast.makeText(getApplicationContext(),
                             "At the last item in the list", Toast.LENGTH_LONG)
                             .show();
                     mCurrentPosition = count - 1;
                 }
-            } else if (increment < 0) {
-                mCurrentPosition += increment;
+            } else if (mIncrement < 0) {
+                mCurrentPosition += mIncrement;
                 if (mCurrentPosition < 0) {
                     Toast.makeText(getApplicationContext(),
                             "At the first item in the list", Toast.LENGTH_LONG)
@@ -555,7 +568,13 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
             }
 
             // Request the new call
-            mCurrentId = adapter.getItemId(mCurrentPosition);
+            Data data = mListAdapter.getData(mCurrentPosition);
+            if (data == null) {
+                Utils.errMsg(this, "Error displaying message: Missing " +
+                        "data for position " + mCurrentPosition);
+                return;
+            }
+            mCurrentId = data.getId();
             Intent i = new Intent(this, DisplayCallActivity.class);
             i.putExtra(COL_ID, mCurrentId);
             i.putExtra(URI_KEY, getUri().toString());
@@ -567,7 +586,7 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
             Utils.excMsg(this, "Error displaying call", ex);
         } finally {
             // Reset increment
-            increment = 0;
+            mIncrement = 0;
         }
     }
 
@@ -575,64 +594,15 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
      * Gets a new cursor and starts managing it.
      */
     private void refresh() {
-        // TODO is refresh necessary? See the Notepad example where it is used.
-        // TODO does calling this more than once cause memory leaks or extra
-        // work?
-        // TODO Probably causes extra work but does insure a refresh.
-        try {
-            // First get the names of all the columns in the database
-            Cursor cursor = getContentResolver().query(getUri(), null, null,
-                    null, null);
-            String[] avaliableColumns = cursor.getColumnNames();
-            cursor.close();
-
-            // Make an array of the desired ones that are available
-            String[] desiredColumns = {COL_ID, COL_NUMBER, COL_DATE,
-                    COL_DURATION, COL_TYPE, COL_NAME};
-            ArrayList<String> list = new ArrayList<String>();
-            for (String col : desiredColumns) {
-                for (String col1 : avaliableColumns) {
-                    if (col.equals(col1)) {
-                        list.add(col);
-                        break;
-                    }
-                }
-            }
-            String[] columns = new String[list.size()];
-            list.toArray(columns);
-
-            // Get the available columns from all rows using the current
-            // selection
-            cursor = getContentResolver().query(getUri(), columns,
-                    mFilters[filter].selection, null,
-                    SORT_ORDERSs[mSortOrder].sortOrder);
-            startManagingCursor(cursor);
-
-            // Manage the mListAdapter
-            if (mListAdapter == null) {
-                // Set a custom cursor mListAdapter
-                mListAdapter = new CustomCursorAdapter(getApplicationContext(),
-                        cursor);
-                setListAdapter(mListAdapter);
-            } else {
-                // This should close the current cursor and start using the new
-                // one, hopefully avoiding memory leaks.
-                mListAdapter.changeCursor(cursor);
-            }
-        } catch (Exception ex) {
-            Utils.excMsg(this, "Error finding calls", ex);
-        }
-        // Save the preferences
-        SharedPreferences.Editor editor = getPreferences(MODE_PRIVATE).edit();
-        editor.putInt("filter", filter);
-        editor.putInt("mSortOrder", mSortOrder);
-        editor.commit();
+        // Initialize the list view mAapter
+        mListAdapter = new CustomListAdapter();
+        setListAdapter(mListAdapter);
     }
 
     /**
      * @return The content provider URI used.
      */
-    public Uri getUri() {
+    private Uri getUri() {
         return URI;
     }
 
@@ -663,98 +633,28 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
     }
 
     /**
-     * CursorAdapter for the CallHistoryActivity ListView.
-     */
-    private class CustomCursorAdapter extends CursorAdapter {
-        private LayoutInflater inflater;
-        private int indexDate;
-        private int indexNumber;
-        private int indexId;
-        private int indexDuration;
-        private int indexType;
-        private int indexName;
-
-        public CustomCursorAdapter(Context context, Cursor cursor) {
-            super(context, cursor);
-            inflater = LayoutInflater.from(context);
-            indexId = cursor.getColumnIndex(COL_ID);
-            indexDate = cursor.getColumnIndex(COL_DATE);
-            indexNumber = cursor.getColumnIndex(COL_NUMBER);
-            indexDuration = cursor.getColumnIndex(COL_DURATION);
-            indexType = cursor.getColumnIndex(COL_TYPE);
-            indexName = cursor.getColumnIndex(COL_NAME);
-        }
-
-        @Override
-        public void bindView(View view, Context context, Cursor cursor) {
-            TextView title = (TextView) view.findViewById(R.id.title);
-            TextView subtitle = (TextView) view.findViewById(R.id.subtitle);
-            String id = cursor.getString(indexId);
-            String number = "<Number NA>";
-            if (indexNumber > -1) {
-                number = cursor.getString(indexNumber);
-            }
-            Long dateNum = -1L;
-            if (indexDate > -1) {
-                dateNum = cursor.getLong(indexDate);
-            }
-            String duration = "<Duration NA>";
-            if (indexDuration > -1) {
-                duration = cursor.getString(indexDuration);
-            }
-            int type = -1;
-            if (indexType > -1) {
-                type = cursor.getInt(indexType);
-            }
-            String name = "Unknown";
-            if (indexName > -1) {
-                name = cursor.getString(indexName);
-                if (name == null) {
-                    name = "Unknown";
-                }
-            }
-            title.setText(id + ": " + MessageUtils.formatAddress(number) + " ("
-                    + formatType(type) + ") " + name);
-            subtitle.setText(formatDate(
-                    MessageUtils.mediumFormatter, dateNum)
-                    + " Duration: "
-                    + formatDuration(duration));
-            Log.d(TAG, getClass().getSimpleName() + ".bindView" + " id=" + id
-                    + " number=" + number + " dateNum=" + dateNum);
-            // DEBUG
-            // if (id.equals(new Integer(76).toString())) {
-            // test(1, this.getClass(), PhoneHistoryActivity.this, cursor, id,
-            // getUri());
-            // test(2, this.getClass(), PhoneHistoryActivity.this, null, id,
-            // getUri());
-            // }
-        }
-
-        @Override
-        public View newView(Context context, Cursor cursor, ViewGroup parent) {
-            return inflater.inflate(R.layout.list_row, parent, false);
-        }
-
-    }
-
-    /**
      * Class to manage the data needed for an item in the ListView.
      */
     private static class Data {
         private final long id;
-        private String address;
+        private String number;
         private long dateNum = -1;
+        private String duration;
         private int type;
+        private String name;
         private boolean invalid = true;
 
         private Data(long id) {
             this.id = id;
         }
 
-        private void setValues(String address, long dateNum, int type) {
-            this.address = address;
+        private void setValues(String number, long dateNum, String duration,
+                               int type, String name) {
+            this.number = number;
             this.dateNum = dateNum;
+            this.duration = duration;
             this.type = type;
+            this.name = name;
             invalid = false;
         }
 
@@ -762,16 +662,24 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
             return id;
         }
 
-        private String getAddress() {
-            return address;
+        private String getNumber() {
+            return number;
         }
 
         private long getDateNum() {
             return dateNum;
         }
 
+        private String getDuration() {
+            return duration;
+        }
+
         private int getType() {
             return type;
+        }
+
+        private String getName() {
+            return name;
         }
 
         private boolean isInvalid() {
@@ -789,6 +697,9 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
         private int mIndexId;
         private int mIndexDate;
         private int mIndexType;
+        private int mIndexNumber;
+        private int mIndexDuration;
+        private int mIndexName;
 
         private CustomListAdapter() {
             super();
@@ -811,8 +722,8 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
                 }
 
                 // Make an array of the desired ones that are available
-                String[] desiredColumns = {COL_ID, COL_ADDRESS, COL_DATE,
-                        COL_BODY, COL_TYPE};
+                String[] desiredColumns = {COL_ID, COL_DATE,
+                        COL_TYPE, COL_NUMBER, COL_DURATION, COL_NAME};
                 ArrayList<String> list = new ArrayList<>();
                 for (String col : desiredColumns) {
                     for (String col1 : availableColumns) {
@@ -826,8 +737,9 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
                 list.toArray(mDesiredColumns);
 
                 // Get the available columns from all rows
-                cursor = getContentResolver().query(getUri(), mDesiredColumns,
-                        null, null, null);
+                cursor = getContentResolver().query(getUri(),
+                        mDesiredColumns, mFilters[filter].selection, null,
+                        sortOrders[mSortOrder].sortOrder);
                 if (cursor == null) {
                     Utils.errMsg(CallHistoryActivity.this,
                             "ListAdapter: Error getting data: No items in " +
@@ -838,6 +750,9 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
                 mIndexId = cursor.getColumnIndex(COL_ID);
                 mIndexDate = cursor.getColumnIndex(COL_DATE);
                 mIndexType = cursor.getColumnIndex(COL_TYPE);
+                mIndexNumber = cursor.getColumnIndex(COL_NUMBER);
+                mIndexDuration = cursor.getColumnIndex(COL_DURATION);
+                mIndexName = cursor.getColumnIndex(COL_NAME);
 
                 int count = cursor.getCount();
                 mDataArray = new Data[count];
@@ -943,36 +858,41 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
                         COL_ID + "=" + mDataArray[i].getId(), null, null);
                 if (cursor != null && cursor.moveToFirst()) {
                     long id = cursor.getLong(mIndexId);
-                    // We need to get the address from another provider
-                    String address = "<Address NA>";
-                    String text = MessageUtils.getMmsAddress(CallHistoryActivity
-                            .this, String.format(Locale.US, "%d", id));
-                    if (text != null) {
-                        address = text;
+                    String number = "<Number NA>";
+                    if (mIndexNumber > -1) {
+                        number = cursor.getString(mIndexNumber);
                     }
                     Long dateNum = -1L;
                     if (mIndexDate > -1) {
                         dateNum = cursor.getLong(mIndexDate);
                     }
+                    String duration = "<Duration NA>";
+                    if (mIndexDuration > -1) {
+                        duration = cursor.getString(mIndexDuration);
+                    }
                     int type = -1;
                     if (mIndexType > -1) {
                         type = cursor.getInt(mIndexType);
                     }
-                    data.setValues(address, dateNum, type);
+                    String name = "Unknown";
+                    if (mIndexName > -1) {
+                        name = cursor.getString(mIndexName);
+                        if (name == null) {
+                            name = "Unknown";
+                        }
+                    }
+                    data.setValues(number, dateNum, duration, type, name);
                 }
                 if (cursor != null) cursor.close();
             }
             mDataArray[i] = data;
 
-            titleText = String.format(Locale.US, "%d", data.getId()) +
-                    ": " + MessageUtils.formatSmsType(data.getType())
-                    + MessageUtils.formatAddress(data.getAddress());
-            subTitleText = formatDate(data.getDateNum());
-            String contactName = MessageUtils.getContactNameFromNumber(
-                    CallHistoryActivity.this, data.getAddress());
-            if (contactName != null && !contactName.equals("Unknown")) {
-                titleText += " " + contactName;
-            }
+            titleText = String.format(Locale.US, "%d", data.getId()) + ": " +
+                    MessageUtils.formatAddress(data.getNumber())
+                    + " (" + formatType(data.getType()) + ") " + data.getName();
+            subTitleText = formatDate(MessageUtils.mediumFormatter,
+                    data.getDateNum()) + " Duration: "
+                    + formatDuration(data.getDuration());
             viewHolder.title.setText(titleText);
             viewHolder.subTitle.setText(subTitleText);
             return view;

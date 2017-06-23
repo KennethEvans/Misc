@@ -20,18 +20,6 @@
 
 package net.kenevans.android.misc;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
-
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ContentValues;
@@ -57,6 +45,18 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+
 /**
  * Class to display a single MMS message.
  */
@@ -64,20 +64,20 @@ public class DisplayMMSActivity extends Activity implements IConstants {
     /**
      * Set this to not make any changes to the database.
      */
-    private boolean dryRun = true;
+    private boolean mDryRun = true;
     /**
      * The current default value for the user's offset.
      */
-    private static int lastTimeOffset;
+    private static int mLastTimeOffset;
     /**
      * The Uri to use.
      */
-    public Uri uri;
+    public Uri mUri;
     /**
      * The date multiplier to use to get ms. MMS message timestamps are in sec
      * not ms.
      */
-    public Long dateMultiplier = 1L;
+    public Long mDateMultiplier = 1L;
     /**
      * Name of the file written to the root of the SD card
      */
@@ -102,11 +102,11 @@ public class DisplayMMSActivity extends Activity implements IConstants {
         Date now = new Date();
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(now);
-        lastTimeOffset = calendar.getTimeZone().getOffset(now.getTime());
+        mLastTimeOffset = calendar.getTimeZone().getOffset(now.getTime());
 
         // Get the saved state for lastOffset, otherwise resets to the above.
         SharedPreferences prefs = getPreferences(MODE_PRIVATE);
-        lastTimeOffset = prefs.getInt("timeOffset", lastTimeOffset);
+        mLastTimeOffset = prefs.getInt("timeOffset", mLastTimeOffset);
 
         mTitleTextView = (TextView) findViewById(R.id.titleview);
         mSubtitleTextView = (TextView) findViewById(R.id.subtitleview);
@@ -141,11 +141,11 @@ public class DisplayMMSActivity extends Activity implements IConstants {
         if (extras != null) {
             String uriPath = extras.getString(URI_KEY);
             if (uriPath != null) {
-                uri = Uri.parse(uriPath);
+                mUri = Uri.parse(uriPath);
             }
-            dateMultiplier = extras.getLong(DATE_MULTIPLIER_KEY);
+            mDateMultiplier = extras.getLong(DATE_MULTIPLIER_KEY);
         }
-        if (uri == null) {
+        if (mUri == null) {
             Utils.errMsg(this, "Null content provider database Uri");
             return;
         }
@@ -203,8 +203,8 @@ public class DisplayMMSActivity extends Activity implements IConstants {
         super.onPause();
         // Retain the offset so the user can use it again
         SharedPreferences.Editor editor = getPreferences(MODE_PRIVATE).edit();
-        editor.putInt("timeOffset", lastTimeOffset);
-        editor.putBoolean("dryrun", dryRun);
+        editor.putInt("timeOffset", mLastTimeOffset);
+        editor.putBoolean("dryrun", mDryRun);
         editor.commit();
     }
 
@@ -214,8 +214,8 @@ public class DisplayMMSActivity extends Activity implements IConstants {
         // Restore the offset so the user can use it again
         super.onResume();
         SharedPreferences prefs = getPreferences(MODE_PRIVATE);
-        lastTimeOffset = prefs.getInt("timeOffset", lastTimeOffset);
-        dryRun = prefs.getBoolean("dryrun", dryRun);
+        mLastTimeOffset = prefs.getInt("timeOffset", mLastTimeOffset);
+        mDryRun = prefs.getBoolean("dryrun", mDryRun);
     }
 
     /**
@@ -228,7 +228,7 @@ public class DisplayMMSActivity extends Activity implements IConstants {
             // Only get the row with mRowId
             String selection = COL_ID + "=" + mRowId.longValue();
             String sort = COL_DATE + " DESC";
-            Cursor cursor = getContentResolver().query(uri, columns, selection,
+            Cursor cursor = getContentResolver().query(mUri, columns, selection,
                     null, sort);
 
             int indexDate = cursor.getColumnIndex(COL_DATE);
@@ -240,13 +240,13 @@ public class DisplayMMSActivity extends Activity implements IConstants {
                 Utils.errMsg(this, "Did not find message");
                 return;
             }
-            final Long curDate = cursor.getLong(indexDate) * dateMultiplier;
+            final Long curDate = cursor.getLong(indexDate) * mDateMultiplier;
             // We are through with the cursor
             cursor.close();
 
             // Make a TimeOffsetDialog to get the users value
             final TimeOffsetDialog dialog = new TimeOffsetDialog(this,
-                    lastTimeOffset);
+                    mLastTimeOffset);
             // The title needs to be this long to keep the width reasonable
             // Wasn't able to fix this with resources
             dialog.setTitle(R.string.timeoffset_dialog_title);
@@ -261,9 +261,9 @@ public class DisplayMMSActivity extends Activity implements IConstants {
                                     "Got invalid value for the time offset");
                         } else {
                             // Save this value as the default
-                            lastTimeOffset = offset;
+                            mLastTimeOffset = offset;
                             long newDate = curDate + offset;
-                            if (dryRun) {
+                            if (mDryRun) {
                                 Toast.makeText(
                                         getApplicationContext(),
                                         "Dry run:\n"
@@ -278,7 +278,7 @@ public class DisplayMMSActivity extends Activity implements IConstants {
                                 // The following change the database
                                 ContentValues values = new ContentValues();
                                 values.put(COL_DATE, newDate);
-                                getContentResolver().update(uri, values,
+                                getContentResolver().update(mUri, values,
                                         "_id = " + mRowId, null);
                             }
 
@@ -298,7 +298,7 @@ public class DisplayMMSActivity extends Activity implements IConstants {
                         // This allows the user to define a new default offset
                         Integer offset = dialog.getTimeOffset();
                         if (offset != null) {
-                            lastTimeOffset = offset;
+                            mLastTimeOffset = offset;
                         }
                     }
                 }
@@ -327,13 +327,13 @@ public class DisplayMMSActivity extends Activity implements IConstants {
      * Deletes the message and navigates to the next message.
      */
     private void deleteMessage() {
-        if (dryRun) {
+        if (mDryRun) {
             Toast.makeText(getApplicationContext(),
                     "Dry run:\n" + "Message deleted", Toast.LENGTH_LONG).show();
         } else {
             try {
                 // The following change the database
-                getContentResolver().delete(uri, "_id = " + mRowId, null);
+                getContentResolver().delete(mUri, "_id = " + mRowId, null);
                 navigate(RESULT_NEXT);
             } catch (Exception ex) {
                 Utils.excMsg(this, "Problem deleting message", ex);
@@ -408,8 +408,8 @@ public class DisplayMMSActivity extends Activity implements IConstants {
                         Toast.LENGTH_LONG).show();
 
                 // Send the number using ACTION_SENDTO
-                uri = Uri.parse("smsto:" + SPAM_NUMBER);
-                intent = new Intent(Intent.ACTION_SENDTO, uri);
+                mUri = Uri.parse("smsto:" + SPAM_NUMBER);
+                intent = new Intent(Intent.ACTION_SENDTO, mUri);
                 intent.putExtra("sms_body", msg);
                 startActivity(intent);
             } catch (Exception ex) {
@@ -505,13 +505,13 @@ public class DisplayMMSActivity extends Activity implements IConstants {
                 getText(R.string.off)};
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle(getText(R.string.dryRunTitle));
-        builder.setSingleChoiceItems(items, dryRun ? 0 : 1,
+        builder.setSingleChoiceItems(items, mDryRun ? 0 : 1,
                 new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int item) {
                         dialog.dismiss();
-                        dryRun = item == 0 ? true : false;
+                        mDryRun = item == 0 ? true : false;
                         String msg;
-                        if (dryRun) {
+                        if (mDryRun) {
                             msg = "Time changes are simulated.\nDatabase will" +
                                     " not be changed.";
                         } else {
@@ -597,22 +597,22 @@ public class DisplayMMSActivity extends Activity implements IConstants {
             String selection = COL_ID + "=" + mRowId.longValue();
 
             // First get the names of all the columns in the database
-            Cursor cursor = getContentResolver().query(uri, null, selection,
+            Cursor cursor = getContentResolver().query(mUri, null, selection,
                     null, null);
             String[] columns = cursor.getColumnNames();
             cursor.close();
 
             // Then get the columns for this row
             String sort = COL_DATE + " DESC";
-            cursor = getContentResolver().query(uri, columns, selection, null,
+            cursor = getContentResolver().query(mUri, columns, selection, null,
                     sort);
             int indexId = cursor.getColumnIndex(COL_ID);
             int indexDate = cursor.getColumnIndex(COL_DATE);
             // The address and body are not in this database.
             // There is no SMS type.
             Log.d(TAG, this.getClass().getSimpleName() + ".refresh: "
-                    + " mRowId=" + mRowId + " mUri=" + uri.toString()
-                    + " DATE_MULTIPLIER=" + dateMultiplier);
+                    + " mRowId=" + mRowId + " mUri=" + mUri.toString()
+                    + " DATE_MULTIPLIER=" + mDateMultiplier);
 
             List<String> mimeList = new ArrayList<String>();
             Bitmap bitmap = null;
@@ -628,7 +628,7 @@ public class DisplayMMSActivity extends Activity implements IConstants {
                 String id = cursor.getString(indexId);
                 Long dateNum = -1L;
                 if (indexDate > -1) {
-                    dateNum = cursor.getLong(indexDate) * dateMultiplier;
+                    dateNum = cursor.getLong(indexDate) * mDateMultiplier;
                 }
                 // We need to get the address from another provider
                 String address = "<Address NA>";
@@ -708,7 +708,7 @@ public class DisplayMMSActivity extends Activity implements IConstants {
                 String subTitle = "";
                 Log.d(TAG, getClass().getSimpleName() + ".refresh" + " id="
                         + id + " address=" + address + " dateNum=" + dateNum
-                        + " DATE_MULTIPLIER=" + dateMultiplier);
+                        + " DATE_MULTIPLIER=" + mDateMultiplier);
 
                 // Add the mime types
                 subTitle += "Content Types" + "\n";
