@@ -335,17 +335,15 @@ public class MMSActivity extends ListActivity implements IConstants {
         private final long id;
         private String address;
         private long dateNum = -1;
-        private int type;
         private boolean invalid = true;
 
         private Data(long id) {
             this.id = id;
         }
 
-        private void setValues(String address, long dateNum, int type) {
+        private void setValues(String address, long dateNum) {
             this.address = address;
             this.dateNum = dateNum;
-            this.type = type;
             invalid = false;
         }
 
@@ -359,10 +357,6 @@ public class MMSActivity extends ListActivity implements IConstants {
 
         private long getDateNum() {
             return dateNum;
-        }
-
-        private int getType() {
-            return type;
         }
 
         private boolean isInvalid() {
@@ -379,7 +373,6 @@ public class MMSActivity extends ListActivity implements IConstants {
         private final LayoutInflater mInflator;
         private int mIndexId;
         private int mIndexDate;
-        private int mIndexType;
 
         private CustomListAdapter() {
             super();
@@ -428,7 +421,6 @@ public class MMSActivity extends ListActivity implements IConstants {
 
                 mIndexId = cursor.getColumnIndex(COL_ID);
                 mIndexDate = cursor.getColumnIndex(COL_DATE);
-                mIndexType = cursor.getColumnIndex(COL_TYPE);
 
                 int count = cursor.getCount();
                 mDataArray = new Data[count];
@@ -546,19 +538,14 @@ public class MMSActivity extends ListActivity implements IConstants {
                         dateNum = cursor.getLong(mIndexDate) *
                                 getDateMultiplier();
                     }
-                    int type = -1;
-                    if (mIndexType > -1) {
-                        type = cursor.getInt(mIndexType);
-                    }
-                    data.setValues(address, dateNum, type);
+                    data.setValues(address, dateNum);
                 }
                 if (cursor != null) cursor.close();
             }
             mDataArray[i] = data;
 
             titleText = String.format(Locale.US, "%d", data.getId()) +
-                    ": " + MessageUtils.formatSmsType(data.getType())
-                    + MessageUtils.formatAddress(data.getAddress());
+                    ": " + MessageUtils.formatAddress(data.getAddress());
             subTitleText = formatDate(data.getDateNum());
             String contactName = MessageUtils.getContactNameFromNumber(
                     MMSActivity.this, data.getAddress());

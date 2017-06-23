@@ -27,7 +27,9 @@ import java.io.FileWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Locale;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ListActivity;
 import android.content.Context;
@@ -46,11 +48,14 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.BaseAdapter;
 import android.widget.CursorAdapter;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import static net.kenevans.android.misc.MessageUtils.formatDate;
 
 /**
  * Manages a ListView of all the calls in the database specified by the URI
@@ -451,12 +456,12 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
                         }
                         out.write(id
                                 + "\t"
-                                + MessageUtils.formatDate(
+                                + formatDate(
                                 MessageUtils.mediumFormatter, dateNum)
                                 + "\t" + MessageUtils.formatAddress(number)
                                 + "\t" + formatType(type) + "\t"
                                 + formatDuration(duration) + "\t" + name +
-								"\n");
+                                "\n");
                         cursor.moveToNext();
                     }
                 } catch (Exception ex) {
@@ -710,7 +715,7 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
             }
             title.setText(id + ": " + MessageUtils.formatAddress(number) + " ("
                     + formatType(type) + ") " + name);
-            subtitle.setText(MessageUtils.formatDate(
+            subtitle.setText(formatDate(
                     MessageUtils.mediumFormatter, dateNum)
                     + " Duration: "
                     + formatDuration(duration));
@@ -730,6 +735,256 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
             return inflater.inflate(R.layout.list_row, parent, false);
         }
 
+    }
+
+    /**
+     * Class to manage the data needed for an item in the ListView.
+     */
+    private static class Data {
+        private final long id;
+        private String address;
+        private long dateNum = -1;
+        private int type;
+        private boolean invalid = true;
+
+        private Data(long id) {
+            this.id = id;
+        }
+
+        private void setValues(String address, long dateNum, int type) {
+            this.address = address;
+            this.dateNum = dateNum;
+            this.type = type;
+            invalid = false;
+        }
+
+        private long getId() {
+            return id;
+        }
+
+        private String getAddress() {
+            return address;
+        }
+
+        private long getDateNum() {
+            return dateNum;
+        }
+
+        private int getType() {
+            return type;
+        }
+
+        private boolean isInvalid() {
+            return invalid;
+        }
+    }
+
+    /**
+     * ListView adapter class for this activity.
+     */
+    private class CustomListAdapter extends BaseAdapter {
+        private String[] mDesiredColumns;
+        private Data[] mDataArray;
+        private final LayoutInflater mInflator;
+        private int mIndexId;
+        private int mIndexDate;
+        private int mIndexType;
+
+        private CustomListAdapter() {
+            super();
+            // DEBUG
+//            Log.d(TAG, this.getClass().getSimpleName() + " Start");
+//            Date start = new Date();
+            mInflator = getLayoutInflater();
+            Cursor cursor = null;
+            int nItems = 0;
+            try {
+                // First get the names of all the columns in the database
+                String[] availableColumns;
+                cursor = getContentResolver().query(getUri(), null, null,
+                        null, null);
+                if (cursor == null) {
+                    availableColumns = new String[0];
+                } else {
+                    availableColumns = cursor.getColumnNames();
+                    cursor.close();
+                }
+
+                // Make an array of the desired ones that are available
+                String[] desiredColumns = {COL_ID, COL_ADDRESS, COL_DATE,
+                        COL_BODY, COL_TYPE};
+                ArrayList<String> list = new ArrayList<>();
+                for (String col : desiredColumns) {
+                    for (String col1 : availableColumns) {
+                        if (col.equals(col1)) {
+                            list.add(col);
+                            break;
+                        }
+                    }
+                }
+                mDesiredColumns = new String[list.size()];
+                list.toArray(mDesiredColumns);
+
+                // Get the available columns from all rows
+                cursor = getContentResolver().query(getUri(), mDesiredColumns,
+                        null, null, null);
+                if (cursor == null) {
+                    Utils.errMsg(CallHistoryActivity.this,
+                            "ListAdapter: Error getting data: No items in " +
+                                    "database");
+                    return;
+                }
+
+                mIndexId = cursor.getColumnIndex(COL_ID);
+                mIndexDate = cursor.getColumnIndex(COL_DATE);
+                mIndexType = cursor.getColumnIndex(COL_TYPE);
+
+                int count = cursor.getCount();
+                mDataArray = new Data[count];
+
+                if (count <= 0) {
+                    Utils.infoMsg(CallHistoryActivity.this, "No items in " +
+                            "database");
+                } else {
+                    // Loop over items
+                    if (cursor.moveToFirst()) {
+                        while (!cursor.isAfterLast()) {
+                            long id = cursor.getLong(mIndexId);
+                            mDataArray[nItems] = new Data(id);
+                            nItems++;
+                            cursor.moveToNext();
+                        }
+                    }
+                }
+            } catch (Exception ex) {
+                Utils.excMsg(CallHistoryActivity.this,
+                        "ListAdapter: Error getting data", ex);
+            } finally {
+                try {
+                    if (cursor != null) cursor.close();
+                } catch (Exception ex) {
+                    // Do nothing
+                }
+            }
+            // DEBUG
+//            Date end = new Date();
+//            double elapsed = (end.getTime() - start.getTime()) / 1000.;
+//            Log.d(TAG, "Elapsed time=" + elapsed);
+            Log.d(TAG, "Data list created with " + nItems + " items");
+        }
+
+        private Data getData(int i) {
+            if (mDataArray == null || i < 0 || i >= mDataArray.length) {
+                return null;
+            }
+            return mDataArray[i];
+        }
+
+        @Override
+        public int getCount() {
+            return mDataArray == null ? 0 : mDataArray.length;
+        }
+
+        @Override
+        public Object getItem(int i) {
+            if (mDataArray == null || i < 0 || i >= mDataArray.length) {
+                return null;
+            }
+            return mDataArray[i];
+        }
+
+        @Override
+        public long getItemId(int i) {
+            return i;
+        }
+
+        @Override
+        public View getView(int i, View view, ViewGroup viewGroup) {
+            // DEBUG
+//            Log.d(TAG, this.getClass().getSimpleName() + ": i=" + i);
+            ViewHolder viewHolder;
+            // General ListView optimization code.
+            if (view == null) {
+                view = mInflator.inflate(R.layout.list_row, viewGroup,
+                        false);
+                viewHolder = new ViewHolder();
+                viewHolder.title = (TextView) view.findViewById(R.id.title);
+                viewHolder.subTitle = (TextView) view.findViewById(R.id
+                        .subtitle);
+                view.setTag(viewHolder);
+            } else {
+                viewHolder = (ViewHolder) view.getTag();
+            }
+            String titleText;
+            String subTitleText;
+
+            // Check if index is OK.
+            if (i < 0 || i >= mDataArray.length) {
+                titleText = "Error";
+                subTitleText = "Bad view index" + i + " (Should be 0 to "
+                        + mDataArray.length + ")";
+                viewHolder.title.setText(titleText);
+                viewHolder.subTitle.setText(subTitleText);
+                return view;
+            }
+            Data data = mDataArray[i];
+            if (data == null) {
+                titleText = "Error";
+                subTitleText = "Cannot find data for i=" + i;
+                viewHolder.title.setText(titleText);
+                viewHolder.subTitle.setText(subTitleText);
+                return view;
+            }
+
+            if (data.isInvalid()) {
+                // Get the values for this item
+                Cursor cursor = getContentResolver().query(getUri(),
+                        mDesiredColumns,
+                        COL_ID + "=" + mDataArray[i].getId(), null, null);
+                if (cursor != null && cursor.moveToFirst()) {
+                    long id = cursor.getLong(mIndexId);
+                    // We need to get the address from another provider
+                    String address = "<Address NA>";
+                    String text = MessageUtils.getMmsAddress(CallHistoryActivity
+                            .this, String.format(Locale.US, "%d", id));
+                    if (text != null) {
+                        address = text;
+                    }
+                    Long dateNum = -1L;
+                    if (mIndexDate > -1) {
+                        dateNum = cursor.getLong(mIndexDate);
+                    }
+                    int type = -1;
+                    if (mIndexType > -1) {
+                        type = cursor.getInt(mIndexType);
+                    }
+                    data.setValues(address, dateNum, type);
+                }
+                if (cursor != null) cursor.close();
+            }
+            mDataArray[i] = data;
+
+            titleText = String.format(Locale.US, "%d", data.getId()) +
+                    ": " + MessageUtils.formatSmsType(data.getType())
+                    + MessageUtils.formatAddress(data.getAddress());
+            subTitleText = formatDate(data.getDateNum());
+            String contactName = MessageUtils.getContactNameFromNumber(
+                    CallHistoryActivity.this, data.getAddress());
+            if (contactName != null && !contactName.equals("Unknown")) {
+                titleText += " " + contactName;
+            }
+            viewHolder.title.setText(titleText);
+            viewHolder.subTitle.setText(subTitleText);
+            return view;
+        }
+    }
+
+    /**
+     * Convenience class for managing views for a ListView row.
+     */
+    private static class ViewHolder {
+        TextView title;
+        TextView subTitle;
     }
 
 }
