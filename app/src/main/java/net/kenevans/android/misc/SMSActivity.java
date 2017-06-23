@@ -43,7 +43,6 @@ import android.widget.Toast;
 import java.util.ArrayList;
 import java.util.Locale;
 
-import static android.R.attr.type;
 import static net.kenevans.android.misc.MessageUtils.formatDate;
 
 /**
@@ -71,21 +70,20 @@ public class SMSActivity extends ListActivity implements IConstants {
     /**
      * The Uri to use.
      */
-    public static final Uri URI
-            = SMS_URI;
+    public static final Uri URI = SMS_URI;
 
     /**
      * The date multiplier to use to get ms. MMS message timestamps are in sec
      * not ms.
      */
-    public static final Long DATE_MULTIPLIER = 1L;
+    private static final Long DATE_MULTIPLIER = 1L;
 
     /**
      * Enum to specify the sort order.
      */
-    enum Order {
+    private enum Order {
         TIME(COL_DATE + " DESC"), ID(COL_ID + " DESC");
-        public String sqlCommand;
+        public final String sqlCommand;
 
         Order(String sqlCommand) {
             this.sqlCommand = sqlCommand;
@@ -129,8 +127,7 @@ public class SMSActivity extends ListActivity implements IConstants {
     protected void onListItemClick(ListView lv, View view, int position, long
             id) {
         Log.d(TAG, this.getClass().getSimpleName() + ": onListItemClick: " +
-                "position="
-                + position + " id=" + id);
+                "position=" + position + " id=" + id);
         Data data = mListAdapter.getData(position);
         if (data == null) return;
         Log.d(TAG, "data: id=" + data.getId() + " " + data.getAddress());
@@ -181,9 +178,6 @@ public class SMSActivity extends ListActivity implements IConstants {
         Log.d(TAG, this.getClass().getSimpleName() + ".onPause: mCurrentId="
                 + mCurrentId);
         super.onPause();
-        if (mListAdapter != null) {
-            mListAdapter.clear();
-        }
     }
 
     /**
@@ -229,7 +223,13 @@ public class SMSActivity extends ListActivity implements IConstants {
             if (mCurrentPosition > count - 1 || mCurrentPosition < 0) {
                 changed = true;
             } else {
-                id = mListAdapter.getData(mCurrentPosition).getId();
+                Data data = mListAdapter.getData(mCurrentPosition);
+                if (data == null) {
+                    Utils.errMsg(this, "Error displaying message: Missing " +
+                            "data for position " + mCurrentPosition);
+                    return;
+                }
+                id = data.getId();
                 if (id != mCurrentId) {
                     changed = true;
                 }
@@ -240,7 +240,13 @@ public class SMSActivity extends ListActivity implements IConstants {
                     + id + " changed=" + changed);
             if (changed) {
                 for (int i = 0; i < count; i++) {
-                    id = mListAdapter.getData(mCurrentPosition).getId();
+                    Data data = mListAdapter.getData(mCurrentPosition);
+                    if (data == null) {
+                        Utils.errMsg(this, "Error displaying message: Missing" +
+                                " " + "data for position " + mCurrentPosition);
+                        return;
+                    }
+                    id = data.getId();
                     if (id == mCurrentId) {
                         mCurrentPosition = i;
                         break;
@@ -274,7 +280,13 @@ public class SMSActivity extends ListActivity implements IConstants {
             }
 
             // Request the new message
-            mCurrentId = mListAdapter.getData(mCurrentPosition).getId();
+            Data data = mListAdapter.getData(mCurrentPosition);
+            if (data == null) {
+                Utils.errMsg(this, "Error displaying message: Missing " +
+                        "data for position " + mCurrentPosition);
+                return;
+            }
+            mCurrentId = data.getId();
             Intent i = new Intent(this, DisplaySMSActivity.class);
             i.putExtra(COL_ID, mCurrentId);
             i.putExtra(URI_KEY, getUri().toString());
@@ -369,14 +381,14 @@ public class SMSActivity extends ListActivity implements IConstants {
     /**
      * @return The content provider URI used.
      */
-    public Uri getUri() {
+    private Uri getUri() {
         return URI;
     }
 
     /**
      * @return The date multiplier to use.
      */
-    public Long getDateMultiplier() {
+    private Long getDateMultiplier() {
         return DATE_MULTIPLIER;
     }
 
@@ -384,16 +396,19 @@ public class SMSActivity extends ListActivity implements IConstants {
      * Class to manage the data needed for an item in the ListView.
      */
     private static class Data {
-        private long id;
+        private final long id;
         private String address;
         private long dateNum = -1;
-        private int type;
+        private boolean invalid = true;
 
-        public Data(long id, String address, long dateNum, int type) {
+        private Data(long id) {
             this.id = id;
+        }
+
+        private void setValues(String address, long dateNum) {
             this.address = address;
             this.dateNum = dateNum;
-            this.type = type;
+            invalid = false;
         }
 
         private long getId() {
@@ -408,8 +423,8 @@ public class SMSActivity extends ListActivity implements IConstants {
             return dateNum;
         }
 
-        private int getType() {
-            return type;
+        private boolean isInvalid() {
+            return invalid;
         }
     }
 
@@ -417,78 +432,80 @@ public class SMSActivity extends ListActivity implements IConstants {
      * ListView adapter class for this activity.
      */
     private class CustomListAdapter extends BaseAdapter {
-        private ArrayList<Data> mData;
-        private LayoutInflater mInflator;
-        private int indexId;
-        private int indexDate;
-        private int indexAddress;
-        private int indexType;
+        private String[] mDesiredColumns;
+        private Data[] mDataArray;
+        private final LayoutInflater mInflator;
+        private int mIndexId;
+        private int mIndexDate;
+        private int mIndexAddress;
 
         private CustomListAdapter() {
             super();
-            mData = new ArrayList<>();
+            // DEBUG
+//            Log.d(TAG, this.getClass().getSimpleName() + " Start");
+//            Date start = new Date();
             mInflator = getLayoutInflater();
             Cursor cursor = null;
             int nItems = 0;
             try {
                 // First get the names of all the columns in the database
+                String[] availableColumns;
                 cursor = getContentResolver().query(getUri(), null, null,
                         null, null);
-                String[] avaliableColumns = cursor.getColumnNames();
-                cursor.close();
+                if (cursor == null) {
+                    availableColumns = new String[0];
+                } else {
+                    availableColumns = cursor.getColumnNames();
+                    cursor.close();
+                }
 
                 // Make an array of the desired ones that are available
-                String[] desiredColumns = {COL_ID, COL_ADDRESS, COL_DATE,
-                        COL_BODY, COL_TYPE};
-                ArrayList<String> list = new ArrayList<String>();
+                String[] desiredColumns = {COL_ID, COL_ADDRESS, COL_DATE};
+                ArrayList<String> list = new ArrayList<>();
                 for (String col : desiredColumns) {
-                    for (String col1 : avaliableColumns) {
+                    for (String col1 : availableColumns) {
                         if (col.equals(col1)) {
                             list.add(col);
                             break;
                         }
                     }
                 }
-                String[] columns = new String[list.size()];
-                list.toArray(columns);
+                mDesiredColumns = new String[list.size()];
+                list.toArray(mDesiredColumns);
 
                 // Get the available columns from all rows
-                // String selection = COL_ID + "<=76" + " OR " + COL_ID + "=13";
-                String selection = null;
-                cursor = getContentResolver().query(getUri(), columns,
-                        selection,
-                        null, mSortOrder.sqlCommand);
-
-                indexId = cursor.getColumnIndex(COL_ID);
-                indexDate = cursor.getColumnIndex(COL_DATE);
-                indexAddress = cursor.getColumnIndex(COL_ADDRESS);
-                indexType = cursor.getColumnIndex(COL_TYPE);
-
-                // Loop over items
-                cursor.moveToFirst();
-                while (!cursor.isAfterLast()) {
-                    nItems++;
-                    long id = cursor.getLong(indexId);
-                    String address = "<Address NA>";
-                    if (indexAddress > -1) {
-                        address = cursor.getString(indexAddress);
-                    }
-                    Long dateNum = -1L;
-                    if (indexDate > -1) {
-                        dateNum = cursor.getLong(indexDate) *
-                                getDateMultiplier();
-                    }
-                    int type = -1;
-                    if (indexType > -1) {
-                        type = cursor.getInt(indexType);
-                    }
-                    addData(new Data(id, address, dateNum, type));
-                    cursor.moveToNext();
+                cursor = getContentResolver().query(getUri(), mDesiredColumns,
+                        null, null, mSortOrder.sqlCommand);
+                if (cursor == null) {
+                    Utils.errMsg(SMSActivity.this,
+                            "ListAdapter: Error getting data: No items in " +
+                                    "database");
+                    return;
                 }
-                if (cursor != null) cursor.close();
+
+                mIndexId = cursor.getColumnIndex(COL_ID);
+                mIndexDate = cursor.getColumnIndex(COL_DATE);
+                mIndexAddress = cursor.getColumnIndex(COL_ADDRESS);
+
+                int count = cursor.getCount();
+                mDataArray = new Data[count];
+
+                if (count <= 0) {
+                    Utils.infoMsg(SMSActivity.this, "No items in database");
+                } else {
+                    // Loop over items
+                    if (cursor.moveToFirst()) {
+                        while (!cursor.isAfterLast()) {
+                            long id = cursor.getLong(mIndexId);
+                            mDataArray[nItems] = new Data(id);
+                            nItems++;
+                            cursor.moveToNext();
+                        }
+                    }
+                }
             } catch (Exception ex) {
                 Utils.excMsg(SMSActivity.this,
-                        "Error getting data", ex);
+                        "ListAdapter: Error getting data", ex);
             } finally {
                 try {
                     if (cursor != null) cursor.close();
@@ -496,31 +513,31 @@ public class SMSActivity extends ListActivity implements IConstants {
                     // Do nothing
                 }
             }
+            // DEBUG
+//            Date end = new Date();
+//            double elapsed = (end.getTime() - start.getTime()) / 1000.;
+//            Log.d(TAG, "Elapsed time=" + elapsed);
             Log.d(TAG, "Data list created with " + nItems + " items");
         }
 
-        private void addData(Data data) {
-            if (!mData.contains(data)) {
-                mData.add(data);
+        private Data getData(int i) {
+            if (mDataArray == null || i < 0 || i >= mDataArray.length) {
+                return null;
             }
-        }
-
-        private Data getData(int position) {
-            return mData.get(position);
-        }
-
-        private void clear() {
-            mData.clear();
+            return mDataArray[i];
         }
 
         @Override
         public int getCount() {
-            return mData.size();
+            return mDataArray == null ? 0 : mDataArray.length;
         }
 
         @Override
         public Object getItem(int i) {
-            return mData.get(i);
+            if (mDataArray == null || i < 0 || i >= mDataArray.length) {
+                return null;
+            }
+            return mDataArray[i];
         }
 
         @Override
@@ -530,8 +547,8 @@ public class SMSActivity extends ListActivity implements IConstants {
 
         @Override
         public View getView(int i, View view, ViewGroup viewGroup) {
-            // // DEBUG
-            // Log.d(TAG, "getView: " + i);
+            // DEBUG
+//            Log.d(TAG, this.getClass().getSimpleName() + ": i=" + i);
             ViewHolder viewHolder;
             // General ListView optimization code.
             if (view == null) {
@@ -545,18 +562,63 @@ public class SMSActivity extends ListActivity implements IConstants {
             } else {
                 viewHolder = (ViewHolder) view.getTag();
             }
+            String titleText;
+            String subTitleText;
 
-            Data data = mData.get(i);
-            String titleText = String.format(Locale.US, "%d", data.getId()) +
-                    ": " + MessageUtils.formatSmsType(type)
-                    + MessageUtils.formatAddress(data.getAddress());
+            // Check if index is OK.
+            if (i < 0 || i >= mDataArray.length) {
+                titleText = "Error";
+                subTitleText = "Bad view index" + i + " (Should be 0 to "
+                        + mDataArray.length + ")";
+                viewHolder.title.setText(titleText);
+                viewHolder.subTitle.setText(subTitleText);
+                return view;
+            }
+            Data data = mDataArray[i];
+            if (data == null) {
+                titleText = "Error";
+                subTitleText = "Cannot find data for i=" + i;
+                viewHolder.title.setText(titleText);
+                viewHolder.subTitle.setText(subTitleText);
+                return view;
+            }
+
+            if (data.isInvalid()) {
+                // Get the values for this item
+                Cursor cursor = getContentResolver().query(getUri(),
+                        mDesiredColumns,
+                        COL_ID + "=" + mDataArray[i].getId(), null, mSortOrder
+                                .sqlCommand);
+                if (cursor != null && cursor.moveToFirst()) {
+                    String address = "<Address NA>";
+                    if (mIndexAddress > -1) {
+                        address = cursor.getString(mIndexAddress);
+                    }
+                    Long dateNum = -1L;
+                    if (mIndexDate > -1) {
+                        dateNum = cursor.getLong(mIndexDate) *
+                                getDateMultiplier();
+                    }
+                    if (mIndexDate > -1) {
+                        dateNum = cursor.getLong(mIndexDate) *
+                                getDateMultiplier();
+                    }
+                    data.setValues(address, dateNum);
+                }
+                if (cursor != null) cursor.close();
+            }
+            mDataArray[i] = data;
+
+            titleText = String.format(Locale.US, "%d", data.getId()) +
+                    ": " + MessageUtils.formatAddress(data.getAddress());
+            subTitleText = formatDate(data.getDateNum());
             String contactName = MessageUtils.getContactNameFromNumber(
                     SMSActivity.this, data.getAddress());
-            if (!contactName.equals("Unknown")) {
+            if (contactName != null && !contactName.equals("Unknown")) {
                 titleText += " " + contactName;
             }
             viewHolder.title.setText(titleText);
-            viewHolder.subTitle.setText(formatDate(data.getDateNum()));
+            viewHolder.subTitle.setText(subTitleText);
             return view;
         }
     }

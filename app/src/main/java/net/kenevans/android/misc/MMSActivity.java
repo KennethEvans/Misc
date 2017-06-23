@@ -76,8 +76,7 @@ public class MMSActivity extends ListActivity implements IConstants {
      * The date multiplier to use to get ms. MMS message timestamps are in sec
      * not ms.
      */
-    private static final Long DATE_MULTIPLIER
-            = 1000L;
+    private static final Long DATE_MULTIPLIER = 1000L;
 
     /**
      * Enum to specify the sort order.
@@ -395,8 +394,7 @@ public class MMSActivity extends ListActivity implements IConstants {
                 }
 
                 // Make an array of the desired ones that are available
-                String[] desiredColumns = {COL_ID, COL_ADDRESS, COL_DATE,
-                        COL_BODY, COL_TYPE};
+                String[] desiredColumns = {COL_ID, COL_DATE};
                 ArrayList<String> list = new ArrayList<>();
                 for (String col : desiredColumns) {
                     for (String col1 : availableColumns) {
