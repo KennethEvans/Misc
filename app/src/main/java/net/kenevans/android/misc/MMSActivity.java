@@ -71,13 +71,13 @@ public class MMSActivity extends ListActivity implements IConstants {
     /**
      * The Uri to use.
      */
-    public static final Uri URI = MMS_URI;
+    private static final Uri URI = MMS_URI;
 
     /**
      * The date multiplier to use to get ms. MMS message timestamps are in sec
      * not ms.
      */
-    public static final Long DATE_MULTIPLIER
+    private static final Long DATE_MULTIPLIER
             = 1000L;
 
     /**
@@ -276,7 +276,7 @@ public class MMSActivity extends ListActivity implements IConstants {
 
             // Request the new message
             mCurrentId = mListAdapter.getData(mCurrentPosition).getId();
-            Intent i = new Intent(this, DisplaySMSActivity.class);
+            Intent i = new Intent(this, DisplayMMSActivity.class);
             i.putExtra(COL_ID, mCurrentId);
             i.putExtra(URI_KEY, getUri().toString());
             i.putExtra(DATE_MULTIPLIER_KEY, getDateMultiplier());
@@ -304,14 +304,14 @@ public class MMSActivity extends ListActivity implements IConstants {
     /**
      * @return The content provider URI used.
      */
-    public Uri getUri() {
+    private Uri getUri() {
         return URI;
     }
 
     /**
      * @return The date multiplier to use.
      */
-    public Long getDateMultiplier() {
+    private Long getDateMultiplier() {
         return DATE_MULTIPLIER;
     }
 
@@ -323,12 +323,25 @@ public class MMSActivity extends ListActivity implements IConstants {
         private String address;
         private long dateNum = -1;
         private int type;
+        private boolean invalid = true;
+
+        private Data(long id) {
+            this.id = id;
+        }
 
         private Data(long id, String address, long dateNum, int type) {
             this.id = id;
             this.address = address;
             this.dateNum = dateNum;
             this.type = type;
+            invalid = false;
+        }
+
+        private void setValues(String address, long dateNum, int type) {
+            this.address = address;
+            this.dateNum = dateNum;
+            this.type = type;
+            invalid = false;
         }
 
         private long getId() {
@@ -346,21 +359,29 @@ public class MMSActivity extends ListActivity implements IConstants {
         private int getType() {
             return type;
         }
+
+        public boolean isInvalid() {
+            return invalid;
+        }
     }
 
     /**
      * ListView adapter class for this activity.
      */
     private class CustomListAdapter extends BaseAdapter {
-        private ArrayList<Data> mData;
+        private String[] mDesiredColumns;
+        private long[] mIdArray;
+        private Data[] mDataArray;
         private LayoutInflater mInflator;
-        private int indexId;
-        private int indexDate;
-        private int indexType;
+        private int mIndexId;
+        private int mIndexDate;
+        private int mIndexType;
 
         private CustomListAdapter() {
             super();
-            mData = new ArrayList<>();
+            // DEBUG
+//            Log.d(TAG, this.getClass().getSimpleName() + " Start");
+//            Date start = new Date();
             mInflator = getLayoutInflater();
             Cursor cursor = null;
             int nItems = 0;
@@ -383,46 +404,38 @@ public class MMSActivity extends ListActivity implements IConstants {
                         }
                     }
                 }
-                String[] columns = new String[list.size()];
-                list.toArray(columns);
+                mDesiredColumns = new String[list.size()];
+                list.toArray(mDesiredColumns);
 
                 // Get the available columns from all rows
-                // String selection = COL_ID + "<=76" + " OR " + COL_ID + "=13";
-                cursor = getContentResolver().query(getUri(), columns,
+                cursor = getContentResolver().query(getUri(), mDesiredColumns,
                         null, null, mSortOrder.sqlCommand);
 
-                indexId = cursor.getColumnIndex(COL_ID);
-                indexDate = cursor.getColumnIndex(COL_DATE);
-                indexType = cursor.getColumnIndex(COL_TYPE);
+                mIndexId = cursor.getColumnIndex(COL_ID);
+                mIndexDate = cursor.getColumnIndex(COL_DATE);
+                mIndexType = cursor.getColumnIndex(COL_TYPE);
 
-                // Loop over items
-                cursor.moveToFirst();
-                while (!cursor.isAfterLast()) {
-                    nItems++;
-                    long id = cursor.getLong(indexId);
-                    // We need to get the address from another provider
-                    String address = "<Address NA>";
-                    String text = MessageUtils.getMmsAddress(MMSActivity
-                            .this, String.format(Locale.US, "%d", id));
-                    if (text != null) {
-                        address = text;
+                int count = cursor.getCount();
+                mIdArray = new long[count];
+                mDataArray = new Data[count];
+
+                if (count <= 0) {
+                    Utils.infoMsg(MMSActivity.this, "No items in database");
+                } else {
+                    // Loop over items
+                    if (cursor.moveToFirst()) {
+                        while (!cursor.isAfterLast()) {
+                            long id = cursor.getLong(mIndexId);
+                            mIdArray[nItems] = id;
+                            mDataArray[nItems] = new Data(id);
+                            nItems++;
+                            cursor.moveToNext();
+                        }
                     }
-                    Long dateNum = -1L;
-                    if (indexDate > -1) {
-                        dateNum = cursor.getLong(indexDate) *
-                                getDateMultiplier();
-                    }
-                    int type = -1;
-                    if (indexType > -1) {
-                        type = cursor.getInt(indexType);
-                    }
-                    addData(new Data(id, address, dateNum, type));
-                    cursor.moveToNext();
                 }
-                if (cursor != null) cursor.close();
             } catch (Exception ex) {
                 Utils.excMsg(MMSActivity.this,
-                        "Error getting data", ex);
+                        "ListAdapter: Error getting data", ex);
             } finally {
                 try {
                     if (cursor != null) cursor.close();
@@ -430,31 +443,36 @@ public class MMSActivity extends ListActivity implements IConstants {
                     // Do nothing
                 }
             }
+            // DEBUG
+//            Date end = new Date();
+//            double elapsed = (end.getTime() - start.getTime()) / 1000.;
+//            Log.d(TAG, "Elapsed time=" + elapsed);
             Log.d(TAG, "Data list created with " + nItems + " items");
         }
 
-        private void addData(Data data) {
-            if (!mData.contains(data)) {
-                mData.add(data);
+        private Data getData(int i) {
+            if (mDataArray == null || i < 0 || i >= mDataArray.length) {
+                return null;
             }
-        }
-
-        private Data getData(int position) {
-            return mData.get(position);
+            return mDataArray[i];
         }
 
         private void clear() {
-            mData.clear();
+            mIdArray = null;
+            mDataArray = null;
         }
 
         @Override
         public int getCount() {
-            return mData.size();
+            return mDataArray == null ? 0 : mDataArray.length;
         }
 
         @Override
         public Object getItem(int i) {
-            return mData.get(i);
+            if (mDataArray == null || i < 0 || i >= mDataArray.length) {
+                return null;
+            }
+            return mDataArray[i];
         }
 
         @Override
@@ -464,8 +482,8 @@ public class MMSActivity extends ListActivity implements IConstants {
 
         @Override
         public View getView(int i, View view, ViewGroup viewGroup) {
-            // // DEBUG
-            // Log.d(TAG, "getView: " + i);
+            // DEBUG
+//            Log.d(TAG, this.getClass().getSimpleName() + ": i=" + i);
             ViewHolder viewHolder;
             // General ListView optimization code.
             if (view == null) {
@@ -479,18 +497,68 @@ public class MMSActivity extends ListActivity implements IConstants {
             } else {
                 viewHolder = (ViewHolder) view.getTag();
             }
+            String titleText;
+            String subTitleText;
 
-            Data data = mData.get(i);
-            String titleText = String.format(Locale.US, "%d", data.getId()) +
+            // Check if index is OK.
+            if (i < 0 || i >= mIdArray.length) {
+                titleText = "Error";
+                subTitleText = "Bad view index" + i + " (Should be 0 to "
+                        + mIdArray.length + ")";
+                viewHolder.title.setText(titleText);
+                viewHolder.subTitle.setText(subTitleText);
+                return view;
+            }
+            Data data = mDataArray[i];
+            if (data == null) {
+                titleText = "Error";
+                subTitleText = "Cannot find data for i=" + i;
+                viewHolder.title.setText(titleText);
+                viewHolder.subTitle.setText(subTitleText);
+                return view;
+            }
+
+            if (data.invalid) {
+                // Get the values for this item
+                Cursor cursor = getContentResolver().query(getUri(),
+                        mDesiredColumns,
+                        COL_ID + "=" + mIdArray[i], null, mSortOrder
+                                .sqlCommand);
+                if (cursor != null && cursor.moveToFirst()) {
+                    long id = cursor.getLong(mIndexId);
+                    // We need to get the address from another provider
+                    String address = "<Address NA>";
+                    String text = MessageUtils.getMmsAddress(MMSActivity
+                            .this, String.format(Locale.US, "%d", id));
+                    if (text != null) {
+                        address = text;
+                    }
+                    Long dateNum = -1L;
+                    if (mIndexDate > -1) {
+                        dateNum = cursor.getLong(mIndexDate) *
+                                getDateMultiplier();
+                    }
+                    int type = -1;
+                    if (mIndexType > -1) {
+                        type = cursor.getInt(mIndexType);
+                    }
+                    data.setValues(address, dateNum, type);
+                }
+                if (cursor != null) cursor.close();
+            }
+            mDataArray[i] = data;
+
+            titleText = String.format(Locale.US, "%d", data.getId()) +
                     ": " + MessageUtils.formatSmsType(type)
                     + MessageUtils.formatAddress(data.getAddress());
+            subTitleText = formatDate(data.getDateNum());
             String contactName = MessageUtils.getContactNameFromNumber(
                     MMSActivity.this, data.getAddress());
-            if (!contactName.equals("Unknown")) {
+            if (contactName != null && !contactName.equals("Unknown")) {
                 titleText += " " + contactName;
             }
             viewHolder.title.setText(titleText);
-            viewHolder.subTitle.setText(formatDate(data.getDateNum()));
+            viewHolder.subTitle.setText(subTitleText);
             return view;
         }
     }
