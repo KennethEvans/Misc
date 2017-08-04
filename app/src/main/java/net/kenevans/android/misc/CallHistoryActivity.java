@@ -63,10 +63,6 @@ import static net.kenevans.android.misc.MessageUtils.formatDate;
  * Manages a ListView of all the calls in the database specified by the URI
  * field.
  */
-
-/**
- * @author evans
- */
 public class CallHistoryActivity extends ListActivity implements IConstants {
     /**
      * The current position when DISPLAY_CALL is requested. Used with the
@@ -169,6 +165,9 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
         if (mSortOrder < 0 || mSortOrder >= sortOrders.length) {
             mSortOrder = 0;
         }
+
+        // Set fast scroll
+        getListView().setFastScrollEnabled(true);
 
         // Call refresh to set the contents
         // Does not have to be done in resume
@@ -325,7 +324,7 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
         if (duration == null || duration.length() == 0) {
             return "<Unknown>";
         }
-        int seconds = -1;
+        int seconds;
         try {
             seconds = Integer.parseInt(duration);
         } catch (NumberFormatException ex) {
@@ -337,7 +336,8 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
         int minutes = seconds / 60;
         seconds -= minutes * 60;
 
-        return String.format("%d:%02d:%02d", hours, minutes, seconds);
+        return String.format(Locale.US, "%d:%02d:%02d", hours, minutes,
+                seconds);
     }
 
     /**
@@ -404,7 +404,7 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
                     }
                 }
                 String fileName = String.format(SAVE_FILE_NAME,
-                        formatter.format(now), now.getTime());
+                        formatter.format(now));
                 File file = new File(dir, fileName);
                 FileWriter writer = new FileWriter(file);
                 out = new BufferedWriter(writer);
@@ -430,7 +430,7 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
 
                     // Loop over items
                     cursor.moveToFirst();
-                    while (cursor.isAfterLast() == false) {
+                    while (!cursor.isAfterLast()) {
                         String id = cursor.getString(indexId);
                         String number = "<Number NA>";
                         if (indexNumber > -1) {
@@ -475,7 +475,6 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
                 Utils.infoMsg(this, "Wrote " + file.getPath());
             } else {
                 Utils.errMsg(this, "Cannot write to SD card");
-                return;
             }
         } catch (Exception ex) {
             Utils.excMsg(this, "Error saving to SD card", ex);

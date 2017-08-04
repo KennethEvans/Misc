@@ -86,8 +86,6 @@ public class AppsActivity extends Activity implements IConstants {
 
         // Get the TextView
         mTextView = (TextView) findViewById(R.id.textview);
-        // Make it scroll
-        mTextView.setMovementMethod(new ScrollingMovementMethod());
 
         // refresh will be called in onResume
     }
@@ -231,10 +229,13 @@ public class AppsActivity extends Activity implements IConstants {
      */
     private void copyToClipboard() {
         try {
-            ClipboardManager cm = (ClipboardManager) getSystemService
+            android.content.ClipboardManager cm = (android.content
+                    .ClipboardManager) getSystemService
                     (CLIPBOARD_SERVICE);
             TextView tv = (TextView) findViewById(R.id.textview);
-            cm.setText(tv.getText());
+            android.content.ClipData clip = android.content.ClipData
+                    .newPlainText("AppInfo", tv.getText());
+            cm.setPrimaryClip(clip);
         } catch (Exception ex) {
             Utils.excMsg(this, "Error setting Clipboard", ex);
         }
@@ -268,7 +269,7 @@ public class AppsActivity extends Activity implements IConstants {
                     }
                 }
                 String fileName = String.format(SAVE_FILE_NAME,
-                        formatter.format(now), now.getTime());
+                        formatter.format(now));
                 File file = new File(dir, fileName);
                 FileWriter writer = new FileWriter(file);
                 out = new BufferedWriter(writer);
@@ -357,7 +358,7 @@ public class AppsActivity extends Activity implements IConstants {
         StringBuffer buf = new StringBuffer();
         buf.append("VERSION.RELEASE=" + Build.VERSION.RELEASE + "\n");
         buf.append("VERSION.INCREMENTAL=" + Build.VERSION.INCREMENTAL + "\n");
-        buf.append("VERSION.SDK=" + Build.VERSION.SDK + "\n");
+        buf.append("VERSION.SDK=" + Build.VERSION.SDK_INT + "\n");
         buf.append("BOARD=" + Build.BOARD + "\n");
         buf.append("BRAND=" + Build.BRAND + "\n");
         buf.append("DEVICE=" + Build.DEVICE + "\n");
@@ -378,22 +379,36 @@ public class AppsActivity extends Activity implements IConstants {
         // Internal Memory
         File path = Environment.getDataDirectory();
         StatFs stat = new StatFs(path.getPath());
-        int blockSize = stat.getBlockSize();
-        double total = (double) stat.getBlockCount() * blockSize;
-        double available = (double) stat.getAvailableBlocks() * blockSize;
-        double free = (double) stat.getFreeBlocks() * blockSize;
+        long blockSize;
+        double total, available, free;
+        if (Build.VERSION.SDK_INT >= 18) {
+            blockSize = stat.getBlockSizeLong();
+            total = (double) stat.getBlockCountLong() * blockSize;
+            available = (double) stat.getAvailableBlocksLong() * blockSize;
+            free = (double) stat.getFreeBlocksLong() * blockSize;
+        } else {
+            blockSize = stat.getBlockSize();
+            total = (double) stat.getBlockCount() * blockSize;
+            available = (double) stat.getAvailableBlocks() * blockSize;
+            free = (double) stat.getFreeBlocks() * blockSize;
+        }
         double used = total - available;
         String format = ": %.0f KB = %.2f MB = %.2f GB\n";
         buf.append("Internal Memory\n");
-        buf.append(String.format("  Total" + format, total * KB, total * MB,
+        buf.append(String.format(Locale.US, "  Total" + format, total * KB,
+                total * MB,
                 total * GB));
-        buf.append(String.format("  Used" + format, used * KB, used * MB, used
-                * GB));
-        buf.append(String.format("  Available" + format, available * KB,
+        buf.append(String.format(Locale.US, "  Used" + format, used * KB,
+                used * MB, used
+                        * GB));
+        buf.append(String.format(Locale.US, "  Available" + format, available
+                        * KB,
                 available * MB, available * GB));
-        buf.append(String.format("  Free" + format, free * KB, free * MB, free
-                * GB));
-        buf.append(String.format("  Block Size: %d Bytes\n", blockSize));
+        buf.append(String.format(Locale.US, "  Free" + format, free * KB,
+                free * MB, free
+                        * GB));
+        buf.append(String.format(Locale.US, "  Block Size: %d Bytes\n",
+                blockSize));
 
         // External Memory
         buf.append("\nExternal Memory\n");
@@ -403,20 +418,31 @@ public class AppsActivity extends Activity implements IConstants {
         } else {
             path = Environment.getExternalStorageDirectory();
             stat = new StatFs(path.getPath());
-            blockSize = stat.getBlockSize();
-            total = (double) stat.getBlockCount() * blockSize;
-            available = (double) stat.getAvailableBlocks() * blockSize;
-            free = (double) stat.getFreeBlocks() * blockSize;
+            if (Build.VERSION.SDK_INT >= 18) {
+                blockSize = stat.getBlockSizeLong();
+                total = (double) stat.getBlockCountLong() * blockSize;
+                available = (double) stat.getAvailableBlocksLong() * blockSize;
+                free = (double) stat.getFreeBlocksLong() * blockSize;
+            } else {
+                blockSize = stat.getBlockSize();
+                total = (double) stat.getBlockCount() * blockSize;
+                available = (double) stat.getAvailableBlocks() * blockSize;
+                free = (double) stat.getFreeBlocks() * blockSize;
+            }
             used = total - available;
-            buf.append(String.format("  Total" + format, total * KB,
+            buf.append(String.format(Locale.US, "  Total" + format, total * KB,
                     total * MB, total * GB));
-            buf.append(String.format("  Used" + format, used * KB, used * MB,
+            buf.append(String.format(Locale.US, "  Used" + format, used * KB,
+                    used * MB,
                     used * GB));
-            buf.append(String.format("  Available" + format, available * KB,
+            buf.append(String.format(Locale.US, "  Available" + format,
+                    available * KB,
                     available * MB, available * GB));
-            buf.append(String.format("  Free" + format, free * KB, free * MB,
+            buf.append(String.format(Locale.US, "  Free" + format, free * KB,
+                    free * MB,
                     free * GB));
-            buf.append(String.format("  Block Size: %d Bytes\n", blockSize));
+            buf.append(String.format(Locale.US, "  Block Size: %d Bytes\n",
+                    blockSize));
         }
 
         // RAM
@@ -554,11 +580,11 @@ public class AppsActivity extends Activity implements IConstants {
      * @return
      */
     private ArrayList<PInfo> getInstalledApps(boolean getSysPackages) {
-        ArrayList<PInfo> res = new ArrayList<PInfo>();
+        ArrayList<PInfo> res = new ArrayList<>();
         List<PackageInfo> packages = getPackageManager()
                 .getInstalledPackages(0);
         PInfo newInfo = null;
-        PackageInfo pkg = null;
+        PackageInfo pkg;
         for (int i = 0; i < packages.size(); i++) {
             pkg = packages.get(i);
             if ((!getSysPackages) && (pkg.versionName == null)) {
@@ -577,7 +603,7 @@ public class AppsActivity extends Activity implements IConstants {
      * @return
      */
     private ArrayList<PInfo> getPreferredApps() {
-        ArrayList<PInfo> res = new ArrayList<PInfo>();
+        ArrayList<PInfo> res = new ArrayList<>();
         // This returns nothing
         // List<PackageInfo> packages = getPackageManager()
         // .getPreferredPackages(0);
@@ -588,11 +614,11 @@ public class AppsActivity extends Activity implements IConstants {
                         + ".getPreferredApps: installed packages size="
                         + packages.size());
 
-        List<IntentFilter> filters = new ArrayList<IntentFilter>();
-        List<ComponentName> activities = new ArrayList<ComponentName>();
-        PInfo newInfo = null;
-        PackageInfo pkg = null;
-        int nPref = 0, nFilters = 0, nActivities = 0;
+        List<IntentFilter> filters = new ArrayList<>();
+        List<ComponentName> activities = new ArrayList<>();
+        PInfo newInfo;
+        PackageInfo pkg;
+        int nPref, nFilters, nActivities;
         for (int i = 0; i < packages.size(); i++) {
             pkg = packages.get(i);
             if (pkg.versionName == null) {

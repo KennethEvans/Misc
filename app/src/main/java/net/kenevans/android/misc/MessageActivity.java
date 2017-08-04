@@ -47,10 +47,6 @@ import android.widget.Toast;
 /**
  * Manages a ListView of all the messages in the database specified by the URI field.
  */
-/**
- * @author evans
- * 
- */
 public class MessageActivity extends ListActivity implements IConstants {
 	/**
 	 * The current position when ACTIVITY_DISPLAY_MESSAGE is requested. Used
@@ -71,7 +67,7 @@ public class MessageActivity extends ListActivity implements IConstants {
 	public static final Uri uri = MMS_SMS_CONVERSATIONS_URI;
 
 	/** Enum to specify the sort order. */
-	enum Order {
+	private enum Order {
 		TIME(VAR_NORMALIZED_DATE + " DESC"), ID(COL_ID + " DESC");
 		public String sqlCommand;
 
@@ -88,6 +84,9 @@ public class MessageActivity extends ListActivity implements IConstants {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+
+		// Set fast scroll
+		getListView().setFastScrollEnabled(true);
 
 		// Call refresh to set the contents
 		refresh();
@@ -188,8 +187,8 @@ public class MessageActivity extends ListActivity implements IConstants {
 	/**
 	 * Returns whether the given id corresponds to an MMS message.
 	 * 
-	 * @param id
-	 * @return
+	 * @param id The id.
+	 * @return If the given id corresponds to an MMS message.
 	 */
 	public boolean isMMS(long id) {
 		String[] values = MessageUtils.getStringValues(this, id, uri,
@@ -267,7 +266,7 @@ public class MessageActivity extends ListActivity implements IConstants {
 
 			// Request the new message from the appropriate activity
 			currentId = adapter.getItemId(currentPosition);
-			Intent i = null;
+			Intent i;
 			if (isMMS(currentId)) {
 				i = new Intent(this, DisplayMMSActivity.class);
 				i.putExtra(COL_ID, currentId);
@@ -309,7 +308,7 @@ public class MessageActivity extends ListActivity implements IConstants {
 			// Make an array of the desired ones that are available
 			String[] desiredColumns = { COL_ID, COL_ADDRESS, COL_DATE,
 					COL_BODY, COL_TYPE, COL_CT_T };
-			ArrayList<String> list = new ArrayList<String>();
+			ArrayList<String> list = new ArrayList<>();
 			for (String col : desiredColumns) {
 				for (String col1 : avaliableColumns) {
 					if (col.equals(col1)) {

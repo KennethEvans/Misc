@@ -100,6 +100,9 @@ public class MMSActivity extends ListActivity implements IConstants {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // Set fast scroll
+        getListView().setFastScrollEnabled(true);
     }
 
     @Override
