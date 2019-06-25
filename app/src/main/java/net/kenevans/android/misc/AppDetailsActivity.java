@@ -22,7 +22,6 @@
 package net.kenevans.android.misc;
 
 import android.app.AlertDialog;
-import android.app.ListActivity;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -53,6 +52,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import androidx.appcompat.app.AppCompatActivity;
+
 /**
  * Manages a ListView of applications and shows their details settings.
  */
@@ -60,7 +61,7 @@ import java.util.List;
 /**
  * @author evans
  */
-public class AppDetailsActivity extends ListActivity implements IConstants {
+public class AppDetailsActivity extends AppCompatActivity implements IConstants {
     /***
      * List of app names to show in the ListView.
      */
@@ -78,10 +79,20 @@ public class AppDetailsActivity extends ListActivity implements IConstants {
      * Adapter to manage the ListView.
      */
     private AppDetailsListAdapter mAppDetailsListdapter;
+    private ListView mListView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.list_view);
+        mListView = findViewById(R.id.mainListView);
+        mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view,
+                                    int position, long id) {
+                onListItemClick(mListView, view, position, id);
+            }
+        });
 
         // Get the preferences
         SharedPreferences prefs = PreferenceManager
@@ -92,8 +103,7 @@ public class AppDetailsActivity extends ListActivity implements IConstants {
         createAppDetailsFromAppNames(appNames);
 
         // Handle long click in the ListView
-        final ListView lv = getListView();
-        lv.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener
+        mListView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener
                 () {
             @Override
             public boolean onItemLongClick(AdapterView<?> av, View view,
@@ -159,14 +169,12 @@ public class AppDetailsActivity extends ListActivity implements IConstants {
         return false;
     }
 
-    @Override
     protected void onListItemClick(ListView lv, View view, int pos, long
             id) {
-        super.onListItemClick(lv, view, pos, id);
         if (mAppDetails == null || pos < 0 || pos >= mAppDetails.size()) {
             return;
         }
-        AppDetails appDetails = (AppDetails) getListView().getItemAtPosition
+        AppDetails appDetails = (AppDetails) mListView.getItemAtPosition
                 (pos);
         // Don't do anything if it is not valid (has no packageName)
         if (appDetails == null || appDetails.getPackageName() == null) {
@@ -346,7 +354,7 @@ public class AppDetailsActivity extends ListActivity implements IConstants {
         if (mAppDetailsListdapter == null) {
             // Set the adapter
             mAppDetailsListdapter = new AppDetailsListAdapter();
-            setListAdapter(mAppDetailsListdapter);
+            mListView.setAdapter(mAppDetailsListdapter);
         } else {
             // Refresh the View
             mAppDetailsListdapter.notifyDataSetChanged();

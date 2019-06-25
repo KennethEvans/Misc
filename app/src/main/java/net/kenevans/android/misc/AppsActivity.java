@@ -21,19 +21,6 @@
 
 package net.kenevans.android.misc;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
-
-import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.ActivityManager.MemoryInfo;
 import android.app.AlertDialog;
@@ -49,8 +36,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.StatFs;
-import android.text.ClipboardManager;
-import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.util.SparseBooleanArray;
 import android.view.Menu;
@@ -58,10 +43,24 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.widget.TextView;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+
+import androidx.appcompat.app.AppCompatActivity;
+
 /**
  * Activity to display information about installed apps.
  */
-public class AppsActivity extends Activity implements IConstants {
+public class AppsActivity extends AppCompatActivity implements IConstants {
     /**
      * Template for the name of the file written to the root of the SD card
      */
@@ -85,7 +84,7 @@ public class AppsActivity extends Activity implements IConstants {
         // requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
 
         // Get the TextView
-        mTextView = (TextView) findViewById(R.id.textview);
+        mTextView = findViewById(R.id.textview);
 
         // refresh will be called in onResume
     }
@@ -160,7 +159,7 @@ public class AppsActivity extends Activity implements IConstants {
         editor.putBoolean("doPreferredApplications", doPreferredApplications);
         editor.putBoolean("doNonSystemApps", doNonSystemApps);
         editor.putBoolean("doSystemApps", doSystemApps);
-        editor.commit();
+        editor.apply();
     }
 
     @Override
@@ -232,7 +231,7 @@ public class AppsActivity extends Activity implements IConstants {
             android.content.ClipboardManager cm = (android.content
                     .ClipboardManager) getSystemService
                     (CLIPBOARD_SERVICE);
-            TextView tv = (TextView) findViewById(R.id.textview);
+            TextView tv = findViewById(R.id.textview);
             android.content.ClipData clip = android.content.ClipData
                     .newPlainText("AppInfo", tv.getText());
             cm.setPrimaryClip(clip);
@@ -281,7 +280,6 @@ public class AppsActivity extends Activity implements IConstants {
                 Utils.infoMsg(this, "Wrote " + file.getPath());
             } else {
                 Utils.errMsg(this, "Cannot write to SD card");
-                return;
             }
         } catch (Exception ex) {
             Utils.excMsg(this, "Error saving to SD card", ex);
@@ -352,29 +350,27 @@ public class AppsActivity extends Activity implements IConstants {
     /**
      * Gets the Build information.
      *
-     * @return
+     * @return The information.
      */
     private String getBuildInfo() {
-        StringBuffer buf = new StringBuffer();
-        buf.append("VERSION.RELEASE=" + Build.VERSION.RELEASE + "\n");
-        buf.append("VERSION.INCREMENTAL=" + Build.VERSION.INCREMENTAL + "\n");
-        buf.append("VERSION.SDK=" + Build.VERSION.SDK_INT + "\n");
-        buf.append("BOARD=" + Build.BOARD + "\n");
-        buf.append("BRAND=" + Build.BRAND + "\n");
-        buf.append("DEVICE=" + Build.DEVICE + "\n");
-        buf.append("FINGERPRINT=" + Build.FINGERPRINT + "\n");
-        buf.append("HOST=" + Build.HOST + "\n");
-        buf.append("ID=" + Build.ID + "\n");
-        return buf.toString();
+        return ("VERSION.RELEASE=" + Build.VERSION.RELEASE + "\n") +
+                "VERSION.INCREMENTAL=" + Build.VERSION.INCREMENTAL + "\n" +
+                "VERSION.SDK=" + Build.VERSION.SDK_INT + "\n" +
+                "BOARD=" + Build.BOARD + "\n" +
+                "BRAND=" + Build.BRAND + "\n" +
+                "DEVICE=" + Build.DEVICE + "\n" +
+                "FINGERPRINT=" + Build.FINGERPRINT + "\n" +
+                "HOST=" + Build.HOST + "\n" +
+                "ID=" + Build.ID + "\n";
     }
 
     /**
      * Gets the Memory information.
      *
-     * @return
+     * @return The information.
      */
     public String getMemoryInfo() {
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
 
         // Internal Memory
         File path = Environment.getDataDirectory();
@@ -460,15 +456,15 @@ public class AppsActivity extends Activity implements IConstants {
         } else {
             total = ram / KB;
             used = total - available;
-            buf.append(String.format("  Total" + format, total * KB,
+            buf.append(String.format(Locale.US, "  Total" + format, total * KB,
                     total * MB, total * GB));
-            buf.append(String.format("  Used" + format, used * KB, used * MB,
-                    used * GB));
+            buf.append(String.format(Locale.US, "  Used" + format, used * KB,
+                    used * MB, used * GB));
         }
-        buf.append(String.format("  Available" + format, available * KB,
-                available * MB, available * GB));
-        buf.append(String.format("  Threshold" + format, threshold * KB,
-                threshold * MB, threshold * GB));
+        buf.append(String.format(Locale.US, "  Available" + format,
+                available * KB, available * MB, available * GB));
+        buf.append(String.format(Locale.US, "  Threshold" + format,
+                threshold * KB, threshold * MB, threshold * GB));
         if (low) {
             buf.append("  Memory is low\n");
         }
@@ -564,26 +560,24 @@ public class AppsActivity extends Activity implements IConstants {
      * User-installed packages (Market or otherwise) should not be denoted as
      * system packages.
      *
-     * @param pkgInfo
-     * @return
+     * @param pkgInfo The PackageInfo.
+     * @return The information.
      */
     private boolean isSystemPackage(PackageInfo pkgInfo) {
-        return ((pkgInfo.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM)
-                != 0) ? true
-                : false;
+        return (pkgInfo.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0;
     }
 
     /**
      * Gets a List of PInfo's for the installed packages.
      *
-     * @param getSysPackages
-     * @return
+     * @param getSysPackages Whether to get system packages or not.
+     * @return The list of PInfo.
      */
     private ArrayList<PInfo> getInstalledApps(boolean getSysPackages) {
         ArrayList<PInfo> res = new ArrayList<>();
         List<PackageInfo> packages = getPackageManager()
                 .getInstalledPackages(0);
-        PInfo newInfo = null;
+        PInfo newInfo;
         PackageInfo pkg;
         for (int i = 0; i < packages.size(); i++) {
             pkg = packages.get(i);
@@ -600,7 +594,7 @@ public class AppsActivity extends Activity implements IConstants {
     /**
      * Gets a List of preferred packages.
      *
-     * @return
+     * @return The list of preferred packages.
      */
     private ArrayList<PInfo> getPreferredApps() {
         ArrayList<PInfo> res = new ArrayList<>();
@@ -714,7 +708,7 @@ public class AppsActivity extends Activity implements IConstants {
     /**
      * Gets information about the applications.
      *
-     * @return
+     * @return The information.
      */
     private String getAppsInfo() {
         String info = "Application Information\n";
@@ -815,16 +809,16 @@ public class AppsActivity extends Activity implements IConstants {
      * Class to manage a single PackageInfo.
      */
     class PInfo implements Comparable<PInfo> {
-        private String appname = "";
-        private String pname = "";
-        private String versionName = "";
+        private String appname;
+        private String pname;
+        private String versionName;
         private String info = null;
         boolean isSystem;
 
         // private int versionCode = 0;
         // private Drawable icon;
 
-        public PInfo(PackageInfo pkg) {
+        PInfo(PackageInfo pkg) {
             appname = pkg.applicationInfo.loadLabel(getPackageManager())
                     .toString();
             pname = pkg.packageName;
@@ -866,7 +860,7 @@ public class AppsActivity extends Activity implements IConstants {
             this.info = info;
         }
 
-        public void appendInfo(String info) {
+        void appendInfo(String info) {
             this.info += info;
         }
 

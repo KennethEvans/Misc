@@ -22,7 +22,6 @@
 package net.kenevans.android.misc;
 
 import android.app.AlertDialog;
-import android.app.ListActivity;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
@@ -38,6 +37,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.ListView;
@@ -47,13 +47,13 @@ import android.widget.Toast;
 import java.util.ArrayList;
 import java.util.Locale;
 
-import static android.R.attr.id;
+import androidx.appcompat.app.AppCompatActivity;
 
 /**
  * Manages a ListView of all the contacts in the database specified by the
  * URI field.
  */
-public class ContactsActivity extends ListActivity implements IConstants {
+public class ContactsActivity extends AppCompatActivity implements IConstants {
     /**
      * The current position when ACTIVITY_DISPLAY_MESSAGE is requested. Used
      * with the resultCodes RESULT_PREV and RESULT_NEXT when they are returned.
@@ -96,13 +96,23 @@ public class ContactsActivity extends ListActivity implements IConstants {
     private Order mSortOrder = Order.NAME;
 
     private CustomListAdapter mListAdapter;
+    private ListView mListView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.list_view);
+        mListView = findViewById(R.id.mainListView);
+        mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view,
+                                    int position, long id) {
+                onListItemClick(mListView, view, position, id);
+            }
+        });
 
         // Set fast scroll
-        getListView().setFastScrollEnabled(true);
+        mListView.setFastScrollEnabled(true);
     }
 
     @Override
@@ -126,7 +136,6 @@ public class ContactsActivity extends ListActivity implements IConstants {
         return false;
     }
 
-    @Override
     protected void onListItemClick(ListView lv, View view, int position, long
             id) {
         Log.d(TAG, this.getClass().getSimpleName() + ": onListItemClick: " +
@@ -311,7 +320,7 @@ public class ContactsActivity extends ListActivity implements IConstants {
     private void refresh() {
         // Initialize the list view mListAdapter
         mListAdapter = new CustomListAdapter();
-        setListAdapter(mListAdapter);
+        mListView.setAdapter(mListAdapter);
     }
 
     /**
@@ -479,8 +488,8 @@ public class ContactsActivity extends ListActivity implements IConstants {
                 view = mInflator.inflate(R.layout.list_row_image, viewGroup,
                         false);
                 viewHolder = new ViewHolder();
-                viewHolder.title = (TextView) view.findViewById(R.id.title);
-                viewHolder.imageView = (ImageView) view.findViewById(R.id
+                viewHolder.title = view.findViewById(R.id.title);
+                viewHolder.imageView = view.findViewById(R.id
                         .imageview);
                 view.setTag(viewHolder);
             } else {

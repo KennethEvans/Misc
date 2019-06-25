@@ -21,7 +21,6 @@
 
 package net.kenevans.android.misc;
 
-import android.app.ListActivity;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
@@ -35,16 +34,18 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AppCompatActivity;
+
 /**
  * Class that has a ListView of Activities to be launched.
  */
-public class MiscActivity extends ListActivity {
+public class MiscActivity extends AppCompatActivity {
     /**
      * Array of items used to populate the ListView when debugging.
      */
     private static final Data[] DEBUG_DATA = {
-            new Data("Track Towers", "Show the current tower location",
-                    MapLocationActivity.class),
+//            new Data("Track Towers", "Show the current tower location",
+//                    MapLocationActivity.class),
             new Data("Network Information",
                     "Get information about the carrier", NetworkActivity.class),
             // new Data("Current Time",
@@ -77,8 +78,8 @@ public class MiscActivity extends ListActivity {
      * Array of items used to populate the ListView for release.
      */
     private static final Data[] RELEASE_DATA = {
-            new Data("Track Towers", "Show the current tower location",
-                    MapLocationActivity.class),
+//            new Data("Track Towers", "Show the current tower location",
+//                    MapLocationActivity.class),
             new Data("Network Information",
                     "Get information about the carrier", NetworkActivity.class),
             new Data("Application Info", "Display Application Information",
@@ -104,35 +105,46 @@ public class MiscActivity extends ListActivity {
     /**
      * The Array of items actually used to populate the ListView.
      */
-    private Data[] data = RELEASE_DATA;
+    private Data[] mData = RELEASE_DATA;
+    private ListView mListView;
+
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.list_view);
+        mListView = findViewById(R.id.mainListView);
+
+        try {
+            getSupportActionBar().setDisplayShowHomeEnabled(true);
+            getSupportActionBar().setLogo(R.drawable.bluemouse);
+            getSupportActionBar().setDisplayUseLogoEnabled(true);
+        } catch (Exception ex) {
+            // Do nothing
+        }
 
         // Use different items when debugging
         if (Utils.isDebugBuild(this)) {
-            data = DEBUG_DATA;
+            mData = DEBUG_DATA;
         }
 
         // set the ListAdapter
-        setListAdapter(new MiscAdapter(this, data));
+        mListView.setAdapter(new MiscAdapter(this, mData));
 
-        ListView lv = getListView();
-        lv.setOnItemClickListener(new OnItemClickListener() {
+        mListView.setOnItemClickListener(new OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int pos,
                                     long id) {
-                if (pos < 0 || pos >= data.length) {
+                if (pos < 0 || pos >= mData.length) {
                     return;
                 }
-                if (data[pos].activityClass == null) {
+                if (mData[pos].activityClass == null) {
                     Toast.makeText(getApplicationContext(),
-                            data[pos].title + " Selected", Toast.LENGTH_SHORT)
+                            mData[pos].title + " Selected", Toast.LENGTH_SHORT)
                             .show();
                 } else {
                     Intent i = new Intent(MiscActivity.this,
-                            data[pos].activityClass);
+                            mData[pos].activityClass);
                     try {
                         startActivity(i);
                     } catch (Exception ex) {
@@ -145,7 +157,8 @@ public class MiscActivity extends ListActivity {
     }
 
     /**
-     * A class to hold the data used to define the contents of the list item and
+     * A class to hold the mData used to define the contents of the list item
+     * and
      * to implement the onItemClick handler.
      */
     private static class Data {
@@ -185,8 +198,8 @@ public class MiscActivity extends ListActivity {
         }
 
         /**
-         * Since the data comes from an array, just returning the index is
-         * sufficient to get at the data. If we were using a more complex data
+         * Since the mData comes from an array, just returning the index is
+         * sufficient to get at the mData. If we were using a more complex mData
          * structure, we would return whatever object represents one row in the
          * list.
          *
@@ -228,10 +241,10 @@ public class MiscActivity extends ListActivity {
 
                 // Creates a ViewHolder and store references to the two children
                 // views
-                // we want to bind data to.
+                // we want to bind mData to.
                 holder = new ViewHolder();
-                holder.title = (TextView) convertView.findViewById(R.id.title);
-                holder.subtitle = (TextView) convertView
+                holder.title = convertView.findViewById(R.id.title);
+                holder.subtitle = convertView
                         .findViewById(R.id.subtitle);
 
                 convertView.setTag(holder);
@@ -240,7 +253,7 @@ public class MiscActivity extends ListActivity {
                 holder = (ViewHolder) convertView.getTag();
             }
 
-            // Bind the data efficiently with the holder.
+            // Bind the mData efficiently with the holder.
             holder.title.setText(data[pos].title);
             holder.subtitle.setText(data[pos].subtitle);
 

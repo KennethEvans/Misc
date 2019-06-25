@@ -22,7 +22,6 @@
 package net.kenevans.android.misc;
 
 import android.app.AlertDialog;
-import android.app.ListActivity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -40,6 +39,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -48,6 +48,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import androidx.appcompat.app.AppCompatActivity;
+
 /**
  * Manages a ListView of Wifi networks and their properties.
  */
@@ -55,7 +57,7 @@ import java.util.List;
 /**
  * @author evans
  */
-public class WifiActivity extends ListActivity implements IConstants {
+public class WifiActivity extends AppCompatActivity implements IConstants {
     /**
      * Enum to specify the sort order.
      */
@@ -86,11 +88,20 @@ public class WifiActivity extends ListActivity implements IConstants {
      * The scan results.
      */
     private ArrayList<WifiNetwork> mNetworks;
-
+    private ListView mListView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.list_view);
+        mListView = findViewById(R.id.mainListView);
+        mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view,
+                                    int position, long id) {
+                onListItemClick(mListView, view, position, id);
+            }
+        });
 
         // Get the stored sort order
         SharedPreferences prefs = PreferenceManager
@@ -123,7 +134,7 @@ public class WifiActivity extends ListActivity implements IConstants {
                 Collections.sort(mNetworks);
                 // Set the adapter
                 mNetworkListdapter = new NetworkListAdapter();
-                setListAdapter(mNetworkListdapter);
+                mListView.setAdapter(mNetworkListdapter);
             }
         };
         registerReceiver(mReceiver, new IntentFilter(
@@ -155,10 +166,8 @@ public class WifiActivity extends ListActivity implements IConstants {
         return false;
     }
 
-    @Override
     protected void onListItemClick(ListView lv, View view, int position, long
             id) {
-        super.onListItemClick(lv, view, position, id);
         WifiNetwork network = mNetworks.get(position);
         String msg = "Supports\n";
         String[] capabilities = network.getCapabilities().split("]");
@@ -239,7 +248,7 @@ public class WifiActivity extends ListActivity implements IConstants {
      */
     private void refresh() {
         try {
-            setListAdapter(mNetworkListdapter);
+            mListView.setAdapter(mNetworkListdapter);
             if (mNetworkListdapter != null) {
                 // Clear the data to indicate we are waiting
                 mNetworkListdapter.clear();

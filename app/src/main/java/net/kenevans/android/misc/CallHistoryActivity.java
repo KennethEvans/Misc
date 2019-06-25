@@ -21,17 +21,7 @@
 
 package net.kenevans.android.misc;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Locale;
-
 import android.app.AlertDialog;
-import android.app.ListActivity;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -47,23 +37,30 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.BaseAdapter;
-import android.widget.CursorAdapter;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import static android.R.attr.id;
-import static android.R.attr.name;
-import static android.R.attr.type;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Locale;
+
+import androidx.appcompat.app.AppCompatActivity;
+
 import static net.kenevans.android.misc.MessageUtils.formatDate;
 
 /**
  * Manages a ListView of all the calls in the database specified by the URI
  * field.
  */
-public class CallHistoryActivity extends ListActivity implements IConstants {
+public class CallHistoryActivity extends AppCompatActivity implements IConstants {
     /**
      * The current position when DISPLAY_CALL is requested. Used with the
      * resultCodes RESULT_PREV and RESULT_NEXT when they are returned.
@@ -98,6 +95,8 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
         }
     }
 
+    private ListView mListView;
+
     /**
      * Array of hard-coded mFilters
      */
@@ -126,6 +125,15 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.list_view);
+        mListView = findViewById(R.id.mainListView);
+        mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view,
+                                    int position, long id) {
+                onListItemClick(mListView, view, position, id);
+            }
+        });
 
         // Create mFilters here so getText is available
         mFilters = new Filter[]{
@@ -167,7 +175,7 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
         }
 
         // Set fast scroll
-        getListView().setFastScrollEnabled(true);
+        mListView.setFastScrollEnabled(true);
 
         // Call refresh to set the contents
         // Does not have to be done in resume
@@ -204,10 +212,8 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
         return false;
     }
 
-    @Override
     protected void onListItemClick(ListView lv, View view, int position, long
             id) {
-        super.onListItemClick(lv, view, position, id);
         // Save the position when starting the activity
         mCurrentPosition = position;
         mCurrentId = id;
@@ -317,8 +323,8 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
     /**
      * Format the duration to be hh:mm:ss.
      *
-     * @param duration
-     * @return
+     * @param duration The given duration.
+     * @return The formatted duration.
      */
     public static String formatDuration(String duration) {
         if (duration == null || duration.length() == 0) {
@@ -343,8 +349,8 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
     /**
      * Format the type as a string.
      *
-     * @param type
-     * @return
+     * @param type The given type.
+     * @return The formatted type.
      */
     public static String formatType(int type) {
         if (type == CallLog.Calls.INCOMING_TYPE) {
@@ -386,7 +392,8 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
             if (sdCardRoot.canWrite()) {
                 // Create the file name
                 String format = "yyyy-MM-dd-HHmmss";
-                SimpleDateFormat formatter = new SimpleDateFormat(format);
+                SimpleDateFormat formatter = new SimpleDateFormat(format,
+                        Locale.US);
                 Date now = new Date();
                 File dir = new File(sdCardRoot, SD_CARD_MISC_DIR);
                 if (dir.exists() && dir.isFile()) {
@@ -436,7 +443,7 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
                         if (indexNumber > -1) {
                             number = cursor.getString(indexNumber);
                         }
-                        Long dateNum = -1L;
+                        long dateNum = -1L;
                         if (indexDate > -1) {
                             dateNum = cursor.getLong(indexDate);
                         }
@@ -492,7 +499,7 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
      * adjusting for being within range. Resets the increment to 0 after.
      */
     private void displayCall() {
-        ListAdapter adapter = getListAdapter();
+        ListAdapter adapter = mListView.getAdapter();
         if (mListAdapter == null) {
             return;
         }
@@ -595,7 +602,7 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
     private void refresh() {
         // Initialize the list view mAapter
         mListAdapter = new CustomListAdapter();
-        setListAdapter(mListAdapter);
+        mListView.setAdapter(mListAdapter);
     }
 
     /**
@@ -822,8 +829,8 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
                 view = mInflator.inflate(R.layout.list_row, viewGroup,
                         false);
                 viewHolder = new ViewHolder();
-                viewHolder.title = (TextView) view.findViewById(R.id.title);
-                viewHolder.subTitle = (TextView) view.findViewById(R.id
+                viewHolder.title = view.findViewById(R.id.title);
+                viewHolder.subTitle = view.findViewById(R.id
                         .subtitle);
                 view.setTag(viewHolder);
             } else {
@@ -861,7 +868,7 @@ public class CallHistoryActivity extends ListActivity implements IConstants {
                     if (mIndexNumber > -1) {
                         number = cursor.getString(mIndexNumber);
                     }
-                    Long dateNum = -1L;
+                    long dateNum = -1L;
                     if (mIndexDate > -1) {
                         dateNum = cursor.getLong(mIndexDate);
                     }
