@@ -81,7 +81,7 @@ public class CallHistoryActivity extends AppCompatActivity implements IConstants
     /**
      * The Uri to use for the database.
      */
-    public static final Uri URI = CALLLOG_CALLS_URI;
+    private static final Uri URI = CALLLOG_CALLS_URI;
 
     /**
      * Enum to specify the sort order.

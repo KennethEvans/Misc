@@ -50,8 +50,8 @@ import java.util.Locale;
 import androidx.appcompat.app.AppCompatActivity;
 
 /**
- * Manages a ListView of all the contacts in the database specified by the
- * URI field.
+ * manages a listview of all the contacts in the database specified by the
+ * uri field.
  */
 public class ContactsActivity extends AppCompatActivity implements IConstants {
     /**
@@ -74,8 +74,7 @@ public class ContactsActivity extends AppCompatActivity implements IConstants {
     /**
      * The Uri to use.
      */
-    private static final Uri URI
-            = ContactsContract.Contacts.CONTENT_URI;
+    private static final Uri URI = ContactsContract.Contacts.CONTENT_URI;
 
     /**
      * Enum to specify the sort order.

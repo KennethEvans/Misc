@@ -72,7 +72,7 @@ public class SMSActivity extends AppCompatActivity implements IConstants {
     /**
      * The Uri to use.
      */
-    public static final Uri URI = SMS_URI;
+    private static final Uri URI = SMS_URI;
 
     /**
      * The date multiplier to use to get ms. MMS message timestamps are in sec
@@ -303,8 +303,7 @@ public class SMSActivity extends AppCompatActivity implements IConstants {
             mCurrentId = data.getId();
             Intent i = new Intent(this, DisplaySMSActivity.class);
             i.putExtra(COL_ID, mCurrentId);
-            i.putExtra(URI_KEY, getUri().toString());
-            i.putExtra(DATE_MULTIPLIER_KEY, getDateMultiplier());
+            i.putExtra(URI_KEY, URI.toString());
             Log.d(TAG, this.getClass().getSimpleName()
                     + ".displayMessage: position=" + mCurrentPosition
                     + " mCurrentId=" + mCurrentId);
@@ -393,20 +392,6 @@ public class SMSActivity extends AppCompatActivity implements IConstants {
     // }
 
     /**
-     * @return The content provider URI used.
-     */
-    private Uri getUri() {
-        return URI;
-    }
-
-    /**
-     * @return The date multiplier to use.
-     */
-    private Long getDateMultiplier() {
-        return DATE_MULTIPLIER;
-    }
-
-    /**
      * Class to manage the data needed for an item in the ListView.
      */
     private static class Data {
@@ -464,7 +449,7 @@ public class SMSActivity extends AppCompatActivity implements IConstants {
             try {
                 // First get the names of all the columns in the database
                 String[] availableColumns;
-                cursor = getContentResolver().query(getUri(), null, null,
+                cursor = getContentResolver().query(URI, null, null,
                         null, null);
                 if (cursor == null) {
                     availableColumns = new String[0];
@@ -488,7 +473,7 @@ public class SMSActivity extends AppCompatActivity implements IConstants {
                 list.toArray(mDesiredColumns);
 
                 // Get the available columns from all rows
-                cursor = getContentResolver().query(getUri(), mDesiredColumns,
+                cursor = getContentResolver().query(URI, mDesiredColumns,
                         null, null, mSortOrder.sqlCommand);
                 if (cursor == null) {
                     Utils.errMsg(SMSActivity.this,
@@ -597,9 +582,11 @@ public class SMSActivity extends AppCompatActivity implements IConstants {
                 return view;
             }
 
+            // Only calculate what is needed (i.e visible)
+            // Speeds up tremendously over calculating everything before
             if (data.isInvalid()) {
                 // Get the values for this item
-                Cursor cursor = getContentResolver().query(getUri(),
+                Cursor cursor = getContentResolver().query(URI,
                         mDesiredColumns,
                         COL_ID + "=" + mDataArray[i].getId(), null, mSortOrder
                                 .sqlCommand);
@@ -611,17 +598,12 @@ public class SMSActivity extends AppCompatActivity implements IConstants {
                     Long dateNum = -1L;
                     if (mIndexDate > -1) {
                         dateNum = cursor.getLong(mIndexDate) *
-                                getDateMultiplier();
-                    }
-                    if (mIndexDate > -1) {
-                        dateNum = cursor.getLong(mIndexDate) *
-                                getDateMultiplier();
+                                DATE_MULTIPLIER;
                     }
                     data.setValues(address, dateNum);
                 }
                 if (cursor != null) cursor.close();
             }
-            mDataArray[i] = data;
 
             titleText = String.format(Locale.US, "%d", data.getId()) +
                     ": " + MessageUtils.formatAddress(data.getAddress());

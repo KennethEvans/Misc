@@ -20,7 +20,7 @@
 
 package net.kenevans.android.misc;
 
-import android.app.Activity;
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.database.Cursor;
@@ -34,18 +34,21 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+
 /**
  * Class to display a single message.
  */
-public class DisplayContactActivity extends Activity implements IConstants {
+public class DisplayContactActivity extends AppCompatActivity implements IConstants {
     /**
      * The content provider URI to use.
      */
@@ -61,6 +64,7 @@ public class DisplayContactActivity extends Activity implements IConstants {
     /**
      * Called when the activity is first created.
      */
+    @SuppressLint("ClickableViewAccessibility")
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -75,24 +79,29 @@ public class DisplayContactActivity extends Activity implements IConstants {
         mInfoTextView = (TextView) findViewById(R.id.infoview);
         mImageView = (ImageView) findViewById(R.id.imageview);
 
-        // mSubtitleTextView.setMovementMethod(new ScrollingMovementMethod());
-        // mContactTextView.setMovementMethod(new ScrollingMovementMethod());
+        // Swipe
+        View.OnTouchListener listener =
+                new SwipeDetector(DisplayContactActivity.this) {
+                    @Override
+                    public void onSwipeLeft() {
+                        Log.d(TAG, "onSwipeLeft");
+                        super.onSwipeLeft();
+                        navigate(RESULT_NEXT);
+                    }
 
-        // Buttons
-        ImageButton button = (ImageButton) findViewById(R.id.upbutton);
-        button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                navigate(RESULT_NEXT);
-            }
-        });
-        button = (ImageButton) findViewById(R.id.downbutton);
-        button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                navigate(RESULT_PREV);
-            }
-        });
+                    @Override
+                    public void onSwipeRight() {
+                        Log.d(TAG, "onSwipeRight");
+                        super.onSwipeRight();
+                        navigate(RESULT_PREV);
+                    }
+                };
+        ScrollView scrollView = (ScrollView) findViewById(R.id.scrollview);
+        scrollView.setOnTouchListener(listener);
+        mTitleTextView.setOnTouchListener(listener);
+        mSubtitleTextView.setOnTouchListener(listener);
+        mInfoTextView.setOnTouchListener(listener);
+        mImageView.setOnTouchListener(listener);
 
         mRowId = (savedInstanceState == null) ? null
                 : (Long) savedInstanceState.getSerializable(COL_ID);
@@ -186,7 +195,7 @@ public class DisplayContactActivity extends Activity implements IConstants {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setMessage(
                 "Are you sure you want to delete "
-                        + "this call from the call log database? "
+                        + "this contact from the contacts database? "
                         + "It cannot be undone.")
                 .setCancelable(false)
                 .setPositiveButton(getText(R.string.yes_label),
@@ -200,7 +209,7 @@ public class DisplayContactActivity extends Activity implements IConstants {
                                     navigate(RESULT_NEXT);
                                 } catch (Exception ex) {
                                     Utils.excMsg(DisplayContactActivity.this,
-                                            "Problem deleting call", ex);
+                                            "Problem deleting contact", ex);
                                 }
                             }
                         })
@@ -220,8 +229,8 @@ public class DisplayContactActivity extends Activity implements IConstants {
      * delete, and deletes the selected ones.
      */
     private void deleteContacts() {
-        final List<RawContactInfo> rciList = new ArrayList<RawContactInfo>();
-        final List<CharSequence> items = new ArrayList<CharSequence>();
+        final List<RawContactInfo> rciList = new ArrayList<>();
+        final List<CharSequence> items = new ArrayList<>();
         Cursor rawCursor = getContentResolver().query
                 (ContactsContract.RawContacts.CONTENT_URI,
                         null,
@@ -241,12 +250,11 @@ public class DisplayContactActivity extends Activity implements IConstants {
         }
         rawCursor.close();
 
-        final ArrayList<Integer> selectedList = new ArrayList();
+        final ArrayList<Integer> selectedList = new ArrayList<>();
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
 //        builder.setTitle(getText(R.string.sort_title));
         builder.setTitle("Raw Contacts to Delete");
-        builder.setMultiChoiceItems(items.toArray(new CharSequence[items.size
-                        ()]), null,
+        builder.setMultiChoiceItems(items.toArray(new CharSequence[0]), null,
                 new DialogInterface.OnMultiChoiceClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog,
@@ -443,9 +451,10 @@ public class DisplayContactActivity extends Activity implements IConstants {
             this.name = name;
         }
 
+        @NonNull
         @Override
         public String toString() {
-            return new String(name + " (rawId=" + rawId + ")");
+            return name + " (rawId=" + rawId + ")";
         }
 
         public String getRawId() {

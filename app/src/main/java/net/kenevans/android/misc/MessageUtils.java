@@ -21,16 +21,11 @@
 
 package net.kenevans.android.misc;
 
-import java.io.InputStream;
-import java.text.MessageFormat;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-
+import android.Manifest;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -39,7 +34,14 @@ import android.provider.ContactsContract;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 
-import static android.R.id.list;
+import java.io.InputStream;
+import java.text.MessageFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+
+import androidx.core.app.ActivityCompat;
 
 /**
  * Class that contains general purpose message utilities.
@@ -221,7 +223,7 @@ public class MessageUtils implements IConstants {
             String selection = COL_ID + "=" + id;
             cursor = context.getContentResolver().query(uri, columns,
                     selection, null, null);
-            if (cursor != null) return null;
+            if (cursor == null) return null;
             cursor.moveToFirst();
             int index;
             for (int i = 0; i < nCols; i++) {
@@ -231,7 +233,7 @@ public class MessageUtils implements IConstants {
                 }
             }
         } catch (Exception ex) {
-            Log.e(TAG, MessageActivity.class.getSimpleName()
+            Log.e(TAG, MessageUtils.class.getSimpleName()
                     + ".getStringValues Exception: " + ex.getMessage());
         } finally {
             if (cursor != null) {
@@ -245,11 +247,12 @@ public class MessageUtils implements IConstants {
      * Gets the MMS address for the given id.
      *
      * @param context The calling context.
+     * @param type    The type (137 for From and 151 for To).
      * @param id      The ID.
      * @return The MMS address.
      */
-    static String getMmsAddress(Context context, String id) {
-        String addrSelection = "type=137 AND msg_id=" + id;
+    static String getMmsAddress(Context context, int type, String id) {
+        String addrSelection = "type=" + type + " AND msg_id=" + id;
         String uriStr = MessageFormat.format("content://mms/{0}/addr", id);
         Uri uriAddress = Uri.parse(uriStr);
         String[] columns = {"address"};
@@ -302,6 +305,7 @@ public class MessageUtils implements IConstants {
         cursor.close();
 //        Log.d(TAG, MessageUtils.class.getSimpleName() + ".getMmsAddress: "
 //                + " address=" + address);
+//        if(address.equals(("insert-address-token"))) address = "(Outgoing)";
         return address;
     }
 
@@ -692,7 +696,7 @@ public class MessageUtils implements IConstants {
         int col = cursor.getColumnIndex(colName);
         String stringVal = "";
         if (col > -1 && !cursor.isNull(col)) {
-            Long timeVal = cursor.getLong(col);
+            long timeVal = cursor.getLong(col);
             if (timeVal != 0) {
                 stringVal = formatDate(mediumFormatter, timeVal);
             }
@@ -995,6 +999,21 @@ public class MessageUtils implements IConstants {
     private static String getThisPhoneNumber(Context context) {
         TelephonyManager tMgr = (TelephonyManager) context
                 .getSystemService(Context.TELEPHONY_SERVICE);
+        if (ActivityCompat.checkSelfPermission(context,
+                Manifest.permission.READ_SMS) != PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(context, Manifest.permission.READ_PHONE_NUMBERS) != PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
+            // Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode,
+            //   String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See
+            // the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return "<Permission denied>";
+        }
         return tMgr.getLine1Number();
     }
 

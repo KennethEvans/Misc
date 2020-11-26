@@ -45,6 +45,7 @@
     <string name="map_item">Map</string>
     <string name="map_location_title">Location</string>
     <string name="messagelistener_title">Message Listener</string>
+    <string name="mmssms_title">MMS and SMS Messages</string>
     <string name="mms_title">MMS Messages</string>
     <string name="network_title">Network Information</string>
     <string name="next_item">Next</string>

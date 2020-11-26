@@ -20,7 +20,7 @@
 
 package net.kenevans.android.misc;
 
-import android.app.Activity;
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.ContentValues;
 import android.content.DialogInterface;
@@ -38,7 +38,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
-import android.widget.ImageButton;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -48,10 +48,12 @@ import java.io.FileWriter;
 import java.util.Calendar;
 import java.util.Date;
 
+import androidx.appcompat.app.AppCompatActivity;
+
 /**
  * Class to display a single message.
  */
-public class DisplaySMSActivity extends Activity implements IConstants {
+public class DisplaySMSActivity extends AppCompatActivity implements IConstants {
     /**
      * Set this to not make any changes to the database.
      */
@@ -63,7 +65,7 @@ public class DisplaySMSActivity extends Activity implements IConstants {
     /**
      * The Uri to use.
      */
-    public Uri mUri;
+    private Uri mUri;
     /**
      * The date multiplier to use to get ms. MMS message timestamps are in sec
      * not ms.
@@ -83,6 +85,7 @@ public class DisplaySMSActivity extends Activity implements IConstants {
     /**
      * Called when the activity is first created.
      */
+    @SuppressLint("ClickableViewAccessibility")
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -105,21 +108,29 @@ public class DisplaySMSActivity extends Activity implements IConstants {
         mBodyTextView = (TextView) findViewById(R.id.bodyview);
         mBodyTextView.setMovementMethod(new ScrollingMovementMethod());
 
-        // Buttons
-        ImageButton button = (ImageButton) findViewById(R.id.upbutton);
-        button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                navigate(RESULT_NEXT);
-            }
-        });
-        button = (ImageButton) findViewById(R.id.downbutton);
-        button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                navigate(RESULT_PREV);
-            }
-        });
+        // Swipe
+        View.OnTouchListener listener =
+                new SwipeDetector(DisplaySMSActivity.this) {
+                    @Override
+                    public void onSwipeLeft() {
+                        Log.d(TAG, "onSwipeLeft");
+                        super.onSwipeLeft();
+                        navigate(RESULT_NEXT);
+                    }
+
+                    @Override
+                    public void onSwipeRight() {
+                        Log.d(TAG, "onSwipeRight");
+                        super.onSwipeRight();
+                        navigate(RESULT_PREV);
+                    }
+                };
+        ScrollView scrollView = (ScrollView) findViewById(R.id.scrollview);
+        scrollView.setOnTouchListener(listener);
+        mTitleTextView.setOnTouchListener(listener);
+        mBodyTextView.setOnTouchListener(listener);
+        mSubtitleTextView.setOnTouchListener(listener);
+        mInfoTextView.setOnTouchListener(listener);
 
         mRowId = (savedInstanceState == null) ? null
                 : (Long) savedInstanceState.getSerializable(COL_ID);
@@ -132,7 +143,6 @@ public class DisplaySMSActivity extends Activity implements IConstants {
             if (uriPath != null) {
                 mUri = Uri.parse(uriPath);
             }
-            mDateMultiplier = extras.getLong(DATE_MULTIPLIER_KEY);
         }
         if (mUri == null) {
             Utils.errMsg(this, "Null content provider database Uri");
@@ -216,7 +226,7 @@ public class DisplaySMSActivity extends Activity implements IConstants {
         try {
             String[] columns = {COL_DATE};
             // Only get the row with mRowId
-            String selection = COL_ID + "=" + mRowId.longValue();
+            String selection = COL_ID + "=" + mRowId;
             String sort = COL_DATE + " DESC";
             Cursor cursor = getContentResolver().query(mUri, columns, selection,
                     null, sort);
@@ -446,15 +456,16 @@ public class DisplaySMSActivity extends Activity implements IConstants {
                     if (pos > 1 && !(pos > msg.length())) {
                         msg = msg.substring(pos);
                     }
-                    String string = MessageUtils.formatSmsType(getSmsType())
-                            + msg + "\n" + mBodyTextView.getText().toString()
-                            + "\n\n";
+                    String string =
+                            MessageUtils.formatSmsType(getSmsType()) + msg +
+                                    "\n"
+                                    + mBodyTextView.getText().toString() +
+                                    "\n\n";
                     out.append(string);
                     Utils.infoMsg(this, "Wrote " + file.getPath());
                 }
             } else {
                 Utils.errMsg(this, "Cannot write to SD card");
-                return;
             }
         } catch (Exception ex) {
             Utils.excMsg(this, "Error saving to SD card", ex);
@@ -497,7 +508,7 @@ public class DisplaySMSActivity extends Activity implements IConstants {
                 new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int item) {
                         dialog.dismiss();
-                        mDryRun = item == 0 ? true : false;
+                        mDryRun = item == 0;
                         String msg;
                         if (mDryRun) {
                             msg = "Time changes are simulated.\nDatabase will" +
@@ -519,15 +530,16 @@ public class DisplaySMSActivity extends Activity implements IConstants {
      * @return The type or -1 on failure.
      */
     private int getSmsType() {
+        Cursor cursor = null;
         try {
             // Only get the row with mRowId
-            String selection = COL_ID + "=" + mRowId.longValue();
+            String selection = COL_ID + "=" + mRowId;
 
             // Then get the columns for this row
             String sort = COL_DATE + " DESC";
             String[] columns = {COL_TYPE};
 
-            Cursor cursor = getContentResolver().query(mUri, columns, selection,
+            cursor = getContentResolver().query(mUri, columns, selection,
                     null, sort);
             int indexType = cursor.getColumnIndex(COL_TYPE);
 
@@ -545,6 +557,8 @@ public class DisplaySMSActivity extends Activity implements IConstants {
             }
         } catch (Exception ex) {
             return -1;
+        } finally {
+            if (cursor != null) cursor.close();
         }
     }
 
@@ -555,7 +569,7 @@ public class DisplaySMSActivity extends Activity implements IConstants {
     private void refresh() {
         try {
             // Only get the row with mRowId
-            String selection = COL_ID + "=" + mRowId.longValue();
+            String selection = COL_ID + "=" + mRowId;
 
             // First get the names of all the columns in the database
             Cursor cursor = getContentResolver().query(mUri, null, selection,
@@ -573,8 +587,7 @@ public class DisplaySMSActivity extends Activity implements IConstants {
             int indexType = cursor.getColumnIndex(COL_TYPE);
             int indexBody = cursor.getColumnIndex(COL_BODY);
             Log.d(TAG, this.getClass().getSimpleName() + ".refresh: "
-                    + " mRowId=" + mRowId + " mUri=" + mUri.toString()
-                    + " DATE_MULTIPLIER=" + mDateMultiplier);
+                    + " mRowId=" + mRowId + " mUri=" + mUri.toString());
 
             // There should only be one row returned, the last will be the most
             // recent if more are returned owing to the sort above
@@ -585,7 +598,7 @@ public class DisplaySMSActivity extends Activity implements IConstants {
                 mBodyTextView.setText("Failed to find message " + mRowId);
             } else {
                 String id = cursor.getString(indexId);
-                Long dateNum = -1L;
+                long dateNum = -1L;
                 if (indexDate > -1) {
                     dateNum = cursor.getLong(indexDate) * mDateMultiplier;
                 }
@@ -610,8 +623,7 @@ public class DisplaySMSActivity extends Activity implements IConstants {
                         + MessageUtils.formatDate(dateNum);
                 String subTitle = "";
                 Log.d(TAG, getClass().getSimpleName() + ".refresh" + " id="
-                        + id + " address=" + address + " dateNum=" + dateNum
-                        + " DATE_MULTIPLIER=" + mDateMultiplier);
+                        + id + " address=" + address + " dateNum=" + dateNum);
 
                 // Add all the fields in the database
                 subTitle += MessageUtils.getColumnNamesAndValues(cursor);

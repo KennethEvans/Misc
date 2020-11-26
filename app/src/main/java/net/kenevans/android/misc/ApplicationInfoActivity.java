@@ -60,7 +60,7 @@ import androidx.appcompat.app.AppCompatActivity;
 /**
  * Activity to display information about installed apps.
  */
-public class AppsActivity extends AppCompatActivity implements IConstants {
+public class ApplicationInfoActivity extends AppCompatActivity implements IConstants {
     /**
      * Template for the name of the file written to the root of the SD card
      */
@@ -377,17 +377,10 @@ public class AppsActivity extends AppCompatActivity implements IConstants {
         StatFs stat = new StatFs(path.getPath());
         long blockSize;
         double total, available, free;
-        if (Build.VERSION.SDK_INT >= 18) {
-            blockSize = stat.getBlockSizeLong();
-            total = (double) stat.getBlockCountLong() * blockSize;
-            available = (double) stat.getAvailableBlocksLong() * blockSize;
-            free = (double) stat.getFreeBlocksLong() * blockSize;
-        } else {
-            blockSize = stat.getBlockSize();
-            total = (double) stat.getBlockCount() * blockSize;
-            available = (double) stat.getAvailableBlocks() * blockSize;
-            free = (double) stat.getFreeBlocks() * blockSize;
-        }
+        blockSize = stat.getBlockSizeLong();
+        total = (double) stat.getBlockCountLong() * blockSize;
+        available = (double) stat.getAvailableBlocksLong() * blockSize;
+        free = (double) stat.getFreeBlocksLong() * blockSize;
         double used = total - available;
         String format = ": %.0f KB = %.2f MB = %.2f GB\n";
         buf.append("Internal Memory\n");
@@ -414,17 +407,10 @@ public class AppsActivity extends AppCompatActivity implements IConstants {
         } else {
             path = Environment.getExternalStorageDirectory();
             stat = new StatFs(path.getPath());
-            if (Build.VERSION.SDK_INT >= 18) {
-                blockSize = stat.getBlockSizeLong();
-                total = (double) stat.getBlockCountLong() * blockSize;
-                available = (double) stat.getAvailableBlocksLong() * blockSize;
-                free = (double) stat.getFreeBlocksLong() * blockSize;
-            } else {
-                blockSize = stat.getBlockSize();
-                total = (double) stat.getBlockCount() * blockSize;
-                available = (double) stat.getAvailableBlocks() * blockSize;
-                free = (double) stat.getFreeBlocks() * blockSize;
-            }
+            blockSize = stat.getBlockSizeLong();
+            total = (double) stat.getBlockCountLong() * blockSize;
+            available = (double) stat.getAvailableBlocksLong() * blockSize;
+            free = (double) stat.getFreeBlocksLong() * blockSize;
             used = total - available;
             buf.append(String.format(Locale.US, "  Total" + format, total * KB,
                     total * MB, total * GB));
@@ -479,25 +465,16 @@ public class AppsActivity extends AppCompatActivity implements IConstants {
      */
     public static Long getTotalRAM() {
         String path = "/proc/meminfo";
-        BufferedReader br = null;
         String[] tokens;
-        try {
-            br = new BufferedReader(new FileReader(path));
+        try (BufferedReader br = new BufferedReader(new FileReader(path))) {
             // Assume it is in the first line and assume it is in kb
             String line = br.readLine();
             tokens = line.split("\\s+");
             return Long.parseLong(tokens[1]);
         } catch (Exception ex) {
             return null;
-        } finally {
-            if (br != null) {
-                try {
-                    br.close();
-                } catch (Exception ex) {
-                    // Do nothing
-                }
-            }
         }
+        // Do nothing
     }
 
     // /**

@@ -20,7 +20,7 @@
 
 package net.kenevans.android.misc;
 
-import android.app.Activity;
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.database.Cursor;
@@ -33,15 +33,17 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.appcompat.app.AppCompatActivity;
 
 /**
  * Class to display a single message.
  */
-public class DisplayCallActivity extends Activity implements IConstants {
+public class DisplayCallActivity extends AppCompatActivity implements IConstants {
     /**
      * Set this to not make any changes to the database.
      */
@@ -50,7 +52,7 @@ public class DisplayCallActivity extends Activity implements IConstants {
     /**
      * The Uri to use.
      */
-    public Uri uri;
+    private Uri mUri;
 
     private TextView mTitleTextView;
     private TextView mSubtitleTextView;
@@ -62,6 +64,7 @@ public class DisplayCallActivity extends Activity implements IConstants {
     /**
      * Called when the activity is first created.
      */
+    @SuppressLint("ClickableViewAccessibility")
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -76,24 +79,29 @@ public class DisplayCallActivity extends Activity implements IConstants {
         mInfoTextView = (TextView) findViewById(R.id.infoview);
         mImageView = (ImageView) findViewById(R.id.imageview);
 
-        // mSubtitleTextView.setMovementMethod(new ScrollingMovementMethod());
-        // mContactTextView.setMovementMethod(new ScrollingMovementMethod());
+        // Swipe
+        View.OnTouchListener listener =
+                new SwipeDetector(DisplayCallActivity.this) {
+                    @Override
+                    public void onSwipeLeft() {
+                        Log.d(TAG, "onSwipeLeft");
+                        super.onSwipeLeft();
+                        navigate(RESULT_NEXT);
+                    }
 
-        // Buttons
-        ImageButton button = (ImageButton) findViewById(R.id.upbutton);
-        button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                navigate(RESULT_NEXT);
-            }
-        });
-        button = (ImageButton) findViewById(R.id.downbutton);
-        button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                navigate(RESULT_PREV);
-            }
-        });
+                    @Override
+                    public void onSwipeRight() {
+                        Log.d(TAG, "onSwipeRight");
+                        super.onSwipeRight();
+                        navigate(RESULT_PREV);
+                    }
+                };
+        ScrollView scrollView = (ScrollView) findViewById(R.id.scrollview);
+        scrollView.setOnTouchListener(listener);
+        mTitleTextView.setOnTouchListener(listener);
+        mSubtitleTextView.setOnTouchListener(listener);
+        mInfoTextView.setOnTouchListener(listener);
+        mImageView.setOnTouchListener(listener);
 
         mRowId = (savedInstanceState == null) ? null
                 : (Long) savedInstanceState.getSerializable(COL_ID);
@@ -104,10 +112,10 @@ public class DisplayCallActivity extends Activity implements IConstants {
         if (extras != null) {
             String uriPath = extras.getString(URI_KEY);
             if (uriPath != null) {
-                uri = Uri.parse(uriPath);
+                mUri = Uri.parse(uriPath);
             }
         }
-        if (uri == null) {
+        if (mUri == null) {
             Utils.errMsg(this, "Null content provider database Uri");
             return;
         }
@@ -197,7 +205,7 @@ public class DisplayCallActivity extends Activity implements IConstants {
                                 } else {
                                     try {
                                         // The following change the database
-                                        getContentResolver().delete(uri,
+                                        getContentResolver().delete(mUri,
                                                 "_id = " + mRowId, null);
                                         navigate(RESULT_NEXT);
                                         // This was used temporarily to change
@@ -219,7 +227,7 @@ public class DisplayCallActivity extends Activity implements IConstants {
                 .setNegativeButton(getText(R.string.cancel_label),
                         new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int
-									id) {
+                                    id) {
                                 dialog.cancel();
                             }
                         });
@@ -234,17 +242,17 @@ public class DisplayCallActivity extends Activity implements IConstants {
     private void refresh() {
         try {
             // Only get the row with mRowId
-            String selection = COL_ID + "=" + mRowId.longValue();
+            String selection = COL_ID + "=" + mRowId;
 
             // First get the names of all the columns in the database
-            Cursor cursor = getContentResolver().query(uri, null, selection,
+            Cursor cursor = getContentResolver().query(mUri, null, selection,
                     null, null);
             String[] columns = cursor.getColumnNames();
             cursor.close();
 
             // Then get the columns for this row
             String sort = COL_DATE + " DESC";
-            cursor = getContentResolver().query(uri, columns, selection, null,
+            cursor = getContentResolver().query(mUri, columns, selection, null,
                     sort);
             int indexId = cursor.getColumnIndex(COL_ID);
             int indexDate = cursor.getColumnIndex(COL_DATE);
@@ -253,7 +261,7 @@ public class DisplayCallActivity extends Activity implements IConstants {
             int indexType = cursor.getColumnIndex(COL_TYPE);
             int indexName = cursor.getColumnIndex(COL_NAME);
             Log.d(TAG, this.getClass().getSimpleName() + ".refresh: "
-                    + " mRowId=" + mRowId + " mUri=" + uri.toString());
+                    + " mRowId=" + mRowId + " mUri=" + mUri.toString());
 
             // There should only be one row returned, the last will be the most
             // recent if more are returned owing to the sort above
@@ -267,7 +275,7 @@ public class DisplayCallActivity extends Activity implements IConstants {
                 if (indexNumber > -1) {
                     number = cursor.getString(indexNumber);
                 }
-                Long dateNum = -1L;
+                long dateNum = -1L;
                 if (indexDate > -1) {
                     dateNum = cursor.getLong(indexDate);
                 }
@@ -320,7 +328,7 @@ public class DisplayCallActivity extends Activity implements IConstants {
 
                 // Set the contact view
                 if (mContactTextView != null) {
-                    String contactInfo = null;
+                    String contactInfo;
                     if (name != null && name.length() > 0) {
                         contactInfo = MessageUtils.getContactInfo(this, name);
                     } else {
@@ -333,13 +341,15 @@ public class DisplayCallActivity extends Activity implements IConstants {
 
                 // Set the image view
                 if (mImageView != null) {
-                    long contactId = MessageUtils.getContactIdFromName(this, name);
+                    long contactId = MessageUtils.getContactIdFromName(this,
+                            name);
                     Bitmap bitmap = MessageUtils.loadContactPhoto(
                             getContentResolver(), contactId);
                     if (bitmap == null) {
                         // DEBUG
                         // bitmap =
-                        // BitmapFactory.decodeFile("/sdcard/Pictures/Art/Wildcat.jpg");
+                        // BitmapFactory.decodeFile
+                        // ("/sdcard/Pictures/Art/Wildcat.jpg");
                         bitmap = BitmapFactory.decodeResource(getResources(),
                                 R.drawable.android_icon);
                     }

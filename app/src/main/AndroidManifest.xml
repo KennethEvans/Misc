@@ -20,8 +20,6 @@
     <!-- Google Maps API, WiFiActivity -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
-    <!-- Application Info, others -->
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
     <!-- WifiActivity -->
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE"/>
@@ -48,7 +46,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name="net.kenevans.android.misc.AppsActivity"
+            android:name="net.kenevans.android.misc.ApplicationInfoActivity"
             android:label="@string/apps_title">
         </activity>
         <activity
@@ -90,8 +88,8 @@
             android:label="@string/network_title">
         </activity>
         <activity
-            android:name="net.kenevans.android.misc.MessageActivity"
-            android:label="@string/sms_mms_title">
+            android:name="net.kenevans.android.misc.MMSSMSActivity"
+            android:label="@string/mmssms_title">
         </activity>
         <activity
             android:name="net.kenevans.android.misc.MMSActivity"

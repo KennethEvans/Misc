@@ -20,7 +20,7 @@
 
 package net.kenevans.android.misc;
 
-import android.app.Activity;
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.ContentValues;
 import android.content.DialogInterface;
@@ -40,8 +40,8 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
-import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -52,15 +52,18 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
+import androidx.appcompat.app.AppCompatActivity;
+
 /**
  * Class to display a single MMS message.
  */
-public class DisplayMMSActivity extends Activity implements IConstants {
+public class DisplayMMSActivity extends AppCompatActivity implements IConstants {
     /**
      * Set this to not make any changes to the database.
      */
@@ -72,7 +75,7 @@ public class DisplayMMSActivity extends Activity implements IConstants {
     /**
      * The Uri to use.
      */
-    public Uri mUri;
+    private Uri mUri;
     /**
      * The date multiplier to use to get ms. MMS message timestamps are in sec
      * not ms.
@@ -93,10 +96,11 @@ public class DisplayMMSActivity extends Activity implements IConstants {
     /**
      * Called when the activity is first created.
      */
+    @SuppressLint("ClickableViewAccessibility")
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.displaymmsmessage);
+        setContentView(R.layout.displaymessage);
 
         // Use minus the users time offset as the initial suggested value
         Date now = new Date();
@@ -116,21 +120,30 @@ public class DisplayMMSActivity extends Activity implements IConstants {
         mBodyTextView.setMovementMethod(new ScrollingMovementMethod());
         mImageView = (ImageView) findViewById(R.id.imageview);
 
-        // Buttons
-        ImageButton button = (ImageButton) findViewById(R.id.upbutton);
-        button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                navigate(RESULT_NEXT);
-            }
-        });
-        button = (ImageButton) findViewById(R.id.downbutton);
-        button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                navigate(RESULT_PREV);
-            }
-        });
+        // Swipe
+        View.OnTouchListener listener =
+                new SwipeDetector(DisplayMMSActivity.this) {
+                    @Override
+                    public void onSwipeLeft() {
+                        Log.d(TAG, "onSwipeLeft");
+                        super.onSwipeLeft();
+                        navigate(RESULT_NEXT);
+                    }
+
+                    @Override
+                    public void onSwipeRight() {
+                        Log.d(TAG, "onSwipeRight");
+                        super.onSwipeRight();
+                        navigate(RESULT_PREV);
+                    }
+                };
+        ScrollView scrollView = (ScrollView) findViewById(R.id.scrollview);
+        scrollView.setOnTouchListener(listener);
+        mTitleTextView.setOnTouchListener(listener);
+        mBodyTextView.setOnTouchListener(listener);
+        mSubtitleTextView.setOnTouchListener(listener);
+        mInfoTextView.setOnTouchListener(listener);
+        mImageView.setOnTouchListener(listener);
 
         mRowId = (savedInstanceState == null) ? null
                 : (Long) savedInstanceState.getSerializable(COL_ID);
@@ -143,7 +156,6 @@ public class DisplayMMSActivity extends Activity implements IConstants {
             if (uriPath != null) {
                 mUri = Uri.parse(uriPath);
             }
-            mDateMultiplier = extras.getLong(DATE_MULTIPLIER_KEY);
         }
         if (mUri == null) {
             Utils.errMsg(this, "Null content provider database Uri");
@@ -226,7 +238,7 @@ public class DisplayMMSActivity extends Activity implements IConstants {
         try {
             String[] columns = {COL_DATE};
             // Only get the row with mRowId
-            String selection = COL_ID + "=" + mRowId.longValue();
+            String selection = COL_ID + "=" + mRowId;
             String sort = COL_DATE + " DESC";
             Cursor cursor = getContentResolver().query(mUri, columns, selection,
                     null, sort);
@@ -456,9 +468,6 @@ public class DisplayMMSActivity extends Activity implements IConstants {
                     if (pos > 1 && !(pos > msg.length())) {
                         msg = msg.substring(pos);
                     }
-                    // String string = MessageUtils.formatSmsType(getSmsType())
-                    // + msg + "\n" + mBodyTextView.getText().toString()
-                    // + "\n\n";
                     String string = "MMS " + msg + "\n"
                             + mBodyTextView.getText().toString() + "\n\n";
                     out.append(string);
@@ -466,7 +475,6 @@ public class DisplayMMSActivity extends Activity implements IConstants {
                 }
             } else {
                 Utils.errMsg(this, "Cannot write to SD card");
-                return;
             }
         } catch (Exception ex) {
             Utils.excMsg(this, "Error saving to SD card", ex);
@@ -509,7 +517,7 @@ public class DisplayMMSActivity extends Activity implements IConstants {
                 new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int item) {
                         dialog.dismiss();
-                        mDryRun = item == 0 ? true : false;
+                        mDryRun = item == 0;
                         String msg;
                         if (mDryRun) {
                             msg = "Time changes are simulated.\nDatabase will" +
@@ -528,8 +536,8 @@ public class DisplayMMSActivity extends Activity implements IConstants {
     /**
      * Gets the MMS text for the given id.
      *
-     * @param id
-     * @return
+     * @param id The id.
+     * @return The text.
      */
     public String getMmsText(String id) {
         Uri partURI = Uri.parse("content://mms/part/" + id);
@@ -538,7 +546,8 @@ public class DisplayMMSActivity extends Activity implements IConstants {
         try {
             is = getContentResolver().openInputStream(partURI);
             if (is != null) {
-                InputStreamReader isr = new InputStreamReader(is, "UTF-8");
+                InputStreamReader isr = new InputStreamReader(is,
+                        StandardCharsets.UTF_8);
                 BufferedReader reader = new BufferedReader(isr);
                 String temp = reader.readLine();
                 while (temp != null) {
@@ -553,7 +562,7 @@ public class DisplayMMSActivity extends Activity implements IConstants {
             if (is != null) {
                 try {
                     is.close();
-                } catch (IOException e) {
+                } catch (IOException ignored) {
                 }
             }
         }
@@ -563,8 +572,8 @@ public class DisplayMMSActivity extends Activity implements IConstants {
     /**
      * Gets the MMS bitmap for the given id.
      *
-     * @param _id
-     * @return
+     * @param _id The id.
+     * @return The bitmap.
      */
     public Bitmap getMmsImage(String _id) {
         Uri partURI = Uri.parse("content://mms/part/" + _id);
@@ -580,7 +589,7 @@ public class DisplayMMSActivity extends Activity implements IConstants {
             if (is != null) {
                 try {
                     is.close();
-                } catch (IOException e) {
+                } catch (IOException ignored) {
                 }
             }
         }
@@ -594,7 +603,7 @@ public class DisplayMMSActivity extends Activity implements IConstants {
     private void refresh() {
         try {
             // Only get the row with mRowId
-            String selection = COL_ID + "=" + mRowId.longValue();
+            String selection = COL_ID + "=" + mRowId;
 
             // First get the names of all the columns in the database
             Cursor cursor = getContentResolver().query(mUri, null, selection,
@@ -611,10 +620,9 @@ public class DisplayMMSActivity extends Activity implements IConstants {
             // The address and body are not in this database.
             // There is no SMS type.
             Log.d(TAG, this.getClass().getSimpleName() + ".refresh: "
-                    + " mRowId=" + mRowId + " mUri=" + mUri.toString()
-                    + " DATE_MULTIPLIER=" + mDateMultiplier);
+                    + " mRowId=" + mRowId + " mUri=" + mUri.toString());
 
-            List<String> mimeList = new ArrayList<String>();
+            List<String> mimeList = new ArrayList<>();
             Bitmap bitmap = null;
 
             // There should only be one row returned, the last will be the most
@@ -626,29 +634,37 @@ public class DisplayMMSActivity extends Activity implements IConstants {
                 mBodyTextView.setText("Failed to find message " + mRowId);
             } else {
                 String id = cursor.getString(indexId);
-                Long dateNum = -1L;
+                long dateNum = -1L;
                 if (indexDate > -1) {
                     dateNum = cursor.getLong(indexDate) * mDateMultiplier;
                 }
-                // We need to get the address from another provider
+
+                // Determine if From or To
                 String address = "<Address NA>";
-                String text = MessageUtils.getMmsAddress(this, id);
-                if (text != null) {
-                    address = text;
+                String fromAddr = MessageUtils.getMmsAddress(this, 137, id);
+                String toAddr = MessageUtils.getMmsAddress(this, 151, id);
+                if (fromAddr != null) {
+                    if (!fromAddr.equals("insert-address-token")) {
+                        address = "From: " + fromAddr;
+                    } else {
+                        // Is outgoing
+                        if (toAddr != null) {
+                            address = "To: " + toAddr;
+                        }
+                    }
                 }
 
                 // We need to get the body from the part
                 String body = "<Body NA>";
                 String partSelection = "mid=" + id;
-                Uri partUri = MMS_PART_URI;
-                Cursor partCursor = getContentResolver().query(partUri, null,
+                Cursor partCursor = getContentResolver().query(MMS_PART_URI, null,
                         partSelection, null, null);
                 // DEBUG
                 String debugString = "";
                 int nPart = 0;
 
                 if (partCursor.moveToFirst()) {
-                    String data = null;
+                    String data;
                     do {
                         // DEBUG
                         debugString += "\n\nPart " + nPart++;
@@ -666,8 +682,8 @@ public class DisplayMMSActivity extends Activity implements IConstants {
                         if (cType != null) {
                             mimeList.add(cType);
                         }
+                        String text;
                         if ("text/plain".equals(cType)) {
-                            text = null;
                             data = partCursor.getString(partCursor
                                     .getColumnIndex(COL_DATA));
                             if (data != null) {
@@ -707,8 +723,7 @@ public class DisplayMMSActivity extends Activity implements IConstants {
                         + MessageUtils.formatDate(dateNum);
                 String subTitle = "";
                 Log.d(TAG, getClass().getSimpleName() + ".refresh" + " id="
-                        + id + " address=" + address + " dateNum=" + dateNum
-                        + " DATE_MULTIPLIER=" + mDateMultiplier);
+                        + id + " address=" + address + " dateNum=" + dateNum);
 
                 // Add the mime types
                 subTitle += "Content Types" + "\n";
@@ -724,6 +739,11 @@ public class DisplayMMSActivity extends Activity implements IConstants {
                     subTitle += "  " + addr + "\n";
                 }
                 subTitle += "\n";
+
+                // Add all the fields in the database
+                subTitle += "All Fields\n";
+                subTitle += MessageUtils.getColumnNamesAndValues(cursor);
+                subTitle += "\n\n";
 
                 // DEBUG
                 // Add the part column names
@@ -743,7 +763,6 @@ public class DisplayMMSActivity extends Activity implements IConstants {
                 String info = MessageUtils.formatDate(
                         MessageUtils.shortFormatter, dateNum)
                         + "\n"
-                        + "MMS "
                         + MessageUtils.formatAddress(address);
                 String contactName = MessageUtils.getContactNameFromNumber(
                         this, address);
