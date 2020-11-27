@@ -101,11 +101,11 @@ public class DisplaySMSActivity extends AppCompatActivity implements IConstants 
         SharedPreferences prefs = getPreferences(MODE_PRIVATE);
         mLastTimeOffset = prefs.getInt("timeOffset", mLastTimeOffset);
 
-        mTitleTextView = (TextView) findViewById(R.id.titleview);
-        mSubtitleTextView = (TextView) findViewById(R.id.subtitleview);
+        mTitleTextView = findViewById(R.id.titleview);
+        mSubtitleTextView = findViewById(R.id.subtitleview);
         mSubtitleTextView.setMovementMethod(new ScrollingMovementMethod());
-        mInfoTextView = (TextView) findViewById(R.id.infoview);
-        mBodyTextView = (TextView) findViewById(R.id.bodyview);
+        mInfoTextView = findViewById(R.id.infoview);
+        mBodyTextView = findViewById(R.id.bodyview);
         mBodyTextView.setMovementMethod(new ScrollingMovementMethod());
 
         // Swipe
@@ -115,17 +115,17 @@ public class DisplaySMSActivity extends AppCompatActivity implements IConstants 
                     public void onSwipeLeft() {
                         Log.d(TAG, "onSwipeLeft");
                         super.onSwipeLeft();
-                        navigate(RESULT_NEXT);
+                        navigate(RESULT_PREV);
                     }
 
                     @Override
                     public void onSwipeRight() {
                         Log.d(TAG, "onSwipeRight");
                         super.onSwipeRight();
-                        navigate(RESULT_PREV);
+                        navigate(RESULT_NEXT);
                     }
                 };
-        ScrollView scrollView = (ScrollView) findViewById(R.id.scrollview);
+        ScrollView scrollView = findViewById(R.id.scrollview);
         scrollView.setOnTouchListener(listener);
         mTitleTextView.setOnTouchListener(listener);
         mBodyTextView.setOnTouchListener(listener);

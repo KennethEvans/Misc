@@ -146,9 +146,9 @@ public class MMSSMSActivity extends AppCompatActivity implements IConstants {
             mIncrement = 0;
             // Note that earlier items are at higher positions in the list
             if (resultCode == RESULT_PREV) {
-                mIncrement = 1;
-            } else if (resultCode == RESULT_NEXT) {
                 mIncrement = -1;
+            } else if (resultCode == RESULT_NEXT) {
+                mIncrement = 1;
             }
         }
     }
@@ -321,9 +321,9 @@ public class MMSSMSActivity extends AppCompatActivity implements IConstants {
      * Class to manage the data needed for an item in the ListView.
      */
     private static class Data {
-        private long id = -1;
+        private long id;
         private String address;
-        private long dateNum = -1;
+        private long dateNum;
         private MessageType type;
         private boolean invalid = true;
 

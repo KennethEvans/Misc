@@ -73,11 +73,11 @@ public class DisplayContactActivity extends AppCompatActivity implements IConsta
         // Get the saved state
         // SharedPreferences prefs = getPreferences(MODE_PRIVATE);
 
-        mTitleTextView = (TextView) findViewById(R.id.titleview);
-        mSubtitleTextView = (TextView) findViewById(R.id.subtitleview);
-        mContactTextView = (TextView) findViewById(R.id.contactview);
-        mInfoTextView = (TextView) findViewById(R.id.infoview);
-        mImageView = (ImageView) findViewById(R.id.imageview);
+        mTitleTextView = findViewById(R.id.titleview);
+        mSubtitleTextView = findViewById(R.id.subtitleview);
+        mContactTextView = findViewById(R.id.contactview);
+        mInfoTextView = findViewById(R.id.infoview);
+        mImageView = findViewById(R.id.imageview);
 
         // Swipe
         View.OnTouchListener listener =
@@ -86,17 +86,17 @@ public class DisplayContactActivity extends AppCompatActivity implements IConsta
                     public void onSwipeLeft() {
                         Log.d(TAG, "onSwipeLeft");
                         super.onSwipeLeft();
-                        navigate(RESULT_NEXT);
+                        navigate(RESULT_PREV);
                     }
 
                     @Override
                     public void onSwipeRight() {
                         Log.d(TAG, "onSwipeRight");
                         super.onSwipeRight();
-                        navigate(RESULT_PREV);
+                        navigate(RESULT_NEXT);
                     }
                 };
-        ScrollView scrollView = (ScrollView) findViewById(R.id.scrollview);
+        ScrollView scrollView = findViewById(R.id.scrollview);
         scrollView.setOnTouchListener(listener);
         mTitleTextView.setOnTouchListener(listener);
         mSubtitleTextView.setOnTouchListener(listener);
@@ -332,7 +332,7 @@ public class DisplayContactActivity extends AppCompatActivity implements IConsta
     private void refresh() {
         try {
             // Only get the row with mRowId
-            String selection = COL_ID + "=" + mRowId.longValue();
+            String selection = COL_ID + "=" + mRowId;
 
             // First get the names of all the columns in the database
             Cursor cursor = getContentResolver().query(mUri, null, selection,
@@ -391,8 +391,8 @@ public class DisplayContactActivity extends AppCompatActivity implements IConsta
 
                 // Set the contact view
                 if (mContactTextView != null) {
-                    String contactInfo = null;
-                    if (name != null && name.length() > 0) {
+                    String contactInfo;
+                    if (name.length() > 0) {
                         contactInfo = MessageUtils.getContactInfo(this, name);
                     } else {
                         contactInfo = "Unknown Contact";

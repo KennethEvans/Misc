@@ -234,9 +234,9 @@ public class CallHistoryActivity extends AppCompatActivity implements IConstants
             mIncrement = 0;
             // Note that earlier items are at higher positions in the list
             if (resultCode == RESULT_PREV) {
-                mIncrement = 1;
-            } else if (resultCode == RESULT_NEXT) {
                 mIncrement = -1;
+            } else if (resultCode == RESULT_NEXT) {
+                mIncrement = 1;
             }
         }
     }
