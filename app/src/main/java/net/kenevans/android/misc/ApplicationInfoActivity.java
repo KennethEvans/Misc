@@ -21,6 +21,7 @@
 
 package net.kenevans.android.misc;
 
+import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.ActivityManager.MemoryInfo;
 import android.app.AlertDialog;
@@ -31,11 +32,14 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.ParcelFileDescriptor;
 import android.os.StatFs;
+import android.provider.DocumentsContract;
 import android.util.Log;
 import android.util.SparseBooleanArray;
 import android.view.Menu;
@@ -44,10 +48,11 @@ import android.view.MenuItem;
 import android.widget.TextView;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileReader;
-import java.io.FileWriter;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -176,6 +181,24 @@ public class ApplicationInfoActivity extends AppCompatActivity implements IConst
         refresh();
     }
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode,
+                                    Intent intent) {
+        super.onActivityResult(requestCode, resultCode, intent);
+        // DEBUG
+        Log.d(TAG, this.getClass().getSimpleName()
+                + ".onActivityResult: requestCode=" + requestCode
+                + " resultCode=" + resultCode);
+        if (requestCode == CREATE_DOCUMENT && resultCode == Activity.RESULT_OK) {
+            Uri uri;
+            if (intent != null) {
+                uri = intent.getData();
+                Log.d(TAG, "uri=" + uri);
+                doSave(uri);
+            }
+        }
+    }
+
     /**
      * Updates the application information. First sets a processing message,
      * then calls an asynchronous task to get the information. Getting the
@@ -241,51 +264,62 @@ public class ApplicationInfoActivity extends AppCompatActivity implements IConst
     }
 
     /**
-     * Saves the info to the SD card
+     * Asks for the name of the save file
      */
     private void save() {
-        BufferedWriter out = null;
         try {
             File sdCardRoot = Environment.getExternalStorageDirectory();
-            if (sdCardRoot.canWrite()) {
-                String format = "yyyy-MM-dd-HHmmss";
-                SimpleDateFormat formatter = new SimpleDateFormat(format,
-                        Locale.US);
-                Date now = new Date();
-                File dir = new File(sdCardRoot, SD_CARD_MISC_DIR);
-                if (dir.exists() && dir.isFile()) {
-                    Utils.errMsg(this, "Cannot create directory: " + dir
-                            + "\nA file with that name exists.");
-                    return;
-                }
-                if (!dir.exists()) {
-                    Log.d(TAG, this.getClass().getSimpleName()
-                            + ": create: dir=" + dir.getPath());
-                    boolean res = dir.mkdir();
-                    if (!res) {
-                        Utils.errMsg(this, "Cannot create directory: " + dir);
-                        return;
-                    }
-                }
-                String fileName = String.format(SAVE_FILE_NAME,
-                        formatter.format(now));
-                File file = new File(dir, fileName);
-                FileWriter writer = new FileWriter(file);
-                out = new BufferedWriter(writer);
-                CharSequence charSeq = mTextView.getText();
-                out.write(charSeq.toString());
-                if (charSeq.length() == 0) {
-                    Utils.warnMsg(this, "The file written is empty");
-                }
-                Utils.infoMsg(this, "Wrote " + file.getPath());
-            } else {
-                Utils.errMsg(this, "Cannot write to SD card");
+            String format = "yyyy-MM-dd-HHmmss";
+            SimpleDateFormat formatter = new SimpleDateFormat(format,
+                    Locale.US);
+            Date now = new Date();
+            String fileName = String.format(SAVE_FILE_NAME,
+                    formatter.format(now));
+            Uri.Builder builder = new Uri.Builder();
+            builder.path(sdCardRoot.getPath())
+                    .appendPath(SD_CARD_MISC_DIR);
+            Uri uri = builder.build();
+
+            Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+            intent.addCategory(Intent.CATEGORY_OPENABLE);
+            intent.setType("text/plain");
+            intent.putExtra(Intent.EXTRA_TITLE, fileName);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                intent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, uri);
             }
+            Log.d(TAG, this.getClass().getSimpleName()
+                    + ".save: uri=" + uri);
+            startActivityForResult(intent, CREATE_DOCUMENT);
+        } catch (Exception ex) {
+            Utils.excMsg(this, "Error requesting saving to SD card", ex);
+        }
+    }
+
+    /**
+     * Saves the info to the SD card
+     *
+     * @param uri The Uri to use for writing.
+     */
+    private void doSave(Uri uri) {
+        FileOutputStream writer = null;
+        try {
+            Charset charset = StandardCharsets.UTF_8;
+            ParcelFileDescriptor pfd = getContentResolver().
+                    openFileDescriptor(uri, "w");
+            writer =
+                    new FileOutputStream(pfd.getFileDescriptor());
+            CharSequence charSeq = mTextView.getText();
+            byte[] bytes = charSeq.toString().getBytes(charset);
+            writer.write(bytes);
+            if (charSeq.length() == 0) {
+                Utils.warnMsg(this, "The file written is empty");
+            }
+            Utils.infoMsg(this, "Wrote " + uri.getPath());
         } catch (Exception ex) {
             Utils.excMsg(this, "Error saving to SD card", ex);
         } finally {
             try {
-                out.close();
+                if (writer != null) writer.close();
             } catch (Exception ex) {
                 // Do nothing
             }
@@ -403,7 +437,7 @@ public class ApplicationInfoActivity extends AppCompatActivity implements IConst
         buf.append("\nExternal Memory\n");
         if (!Environment.getExternalStorageState().equals(
                 Environment.MEDIA_MOUNTED)) {
-            buf.append("  No Extenal Memory\n");
+            buf.append("  No External Memory\n");
         } else {
             path = Environment.getExternalStorageDirectory();
             stat = new StatFs(path.getPath());
@@ -533,7 +567,7 @@ public class ApplicationInfoActivity extends AppCompatActivity implements IConst
     // }
 
     /**
-     * Return whether the given PackgeInfo represents a system package or not.
+     * Return whether the given PackageInfo represents a system package or not.
      * User-installed packages (Market or otherwise) should not be denoted as
      * system packages.
      *
@@ -599,8 +633,8 @@ public class ApplicationInfoActivity extends AppCompatActivity implements IConst
                     activities, pkg.packageName);
             nFilters = filters.size();
             nActivities = activities.size();
-            Log.d(TAG, pkg.packageName + " nPref=" + nPref + " nFilters="
-                    + nFilters + " nActivities=" + nActivities);
+//            Log.d(TAG, pkg.packageName + " nPref=" + nPref + " nFilters="
+//                    + nFilters + " nActivities=" + nActivities);
             if (nPref > 0 || nFilters > 0 || nActivities > 0) {
                 newInfo = new PInfo(pkg);
                 newInfo.setInfo("");
@@ -786,9 +820,9 @@ public class ApplicationInfoActivity extends AppCompatActivity implements IConst
      * Class to manage a single PackageInfo.
      */
     class PInfo implements Comparable<PInfo> {
-        private String appname;
-        private String pname;
-        private String versionName;
+        private final String appname;
+        private final String pname;
+        private final String versionName;
         private String info = null;
         boolean isSystem;
 

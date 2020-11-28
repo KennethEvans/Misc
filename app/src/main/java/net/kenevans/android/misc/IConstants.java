@@ -226,6 +226,10 @@ public interface IConstants {
      */
     int SPAM_MESSAGE = 1;
     /**
+     * Result code for creating a document.
+     */
+    int CREATE_DOCUMENT = 10;
+    /**
      * Result code for DISPLAY_MESSAGE indicating the previous message.
      */
     int RESULT_PREV = 1000;

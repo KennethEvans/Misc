@@ -21,15 +21,19 @@
 
 package net.kenevans.android.misc;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.ParcelFileDescriptor;
 import android.provider.CallLog;
+import android.provider.DocumentsContract;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -39,7 +43,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
-import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -238,6 +241,13 @@ public class CallHistoryActivity extends AppCompatActivity implements IConstants
             } else if (resultCode == RESULT_NEXT) {
                 mIncrement = 1;
             }
+        } else if (requestCode == CREATE_DOCUMENT && resultCode == Activity.RESULT_OK) {
+            Uri uri;
+            if (intent != null) {
+                uri = intent.getData();
+                Log.d(TAG, "uri=" + uri);
+                doSave(uri);
+            }
         }
     }
 
@@ -355,14 +365,21 @@ public class CallHistoryActivity extends AppCompatActivity implements IConstants
     public static String formatType(int type) {
         if (type == CallLog.Calls.INCOMING_TYPE) {
             return "Incoming";
-        }
-        if (type == CallLog.Calls.OUTGOING_TYPE) {
+        } else if (type == CallLog.Calls.OUTGOING_TYPE) {
             return "Outgoing";
-        }
-        if (type == CallLog.Calls.MISSED_TYPE) {
+        } else if (type == CallLog.Calls.MISSED_TYPE) {
             return "Missed";
+        } else if (type == CallLog.Calls.VOICEMAIL_TYPE) {
+            return "Voicemail";
+        } else if (type == CallLog.Calls.REJECTED_TYPE) {
+            return "Rejected";
+        } else if (type == CallLog.Calls.BLOCKED_TYPE) {
+            return "Blocked";
+        } else if (type == CallLog.Calls.ANSWERED_EXTERNALLY_TYPE) {
+            return "Answered Externally";
+        } else {
+            return "<Unknown type>";
         }
-        return "<Unknown type>";
     }
 
     /**
@@ -375,7 +392,8 @@ public class CallHistoryActivity extends AppCompatActivity implements IConstants
             intent.setClass(this, InfoActivity.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
                     | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-            intent.putExtra(INFO_URL, "file:///android_asset/callhistory.html");
+            intent.putExtra(INFO_URL, "file:///android_asset/callhistory" +
+                    ".html");
             startActivity(intent);
         } catch (Exception ex) {
             Utils.excMsg(this, "Error showing Help", ex);
@@ -383,115 +401,122 @@ public class CallHistoryActivity extends AppCompatActivity implements IConstants
     }
 
     /**
-     * Saves the info to the SD card
+     * Asks for the name of the save file
      */
     private void save() {
-        BufferedWriter out = null;
         try {
             File sdCardRoot = Environment.getExternalStorageDirectory();
-            if (sdCardRoot.canWrite()) {
-                // Create the file name
-                String format = "yyyy-MM-dd-HHmmss";
-                SimpleDateFormat formatter = new SimpleDateFormat(format,
-                        Locale.US);
-                Date now = new Date();
-                File dir = new File(sdCardRoot, SD_CARD_MISC_DIR);
-                if (dir.exists() && dir.isFile()) {
-                    Utils.errMsg(this, "Cannot create directory: " + dir
-                            + "\nA file with that name exists.");
-                    return;
-                }
-                if (!dir.exists()) {
-                    Log.d(TAG, this.getClass().getSimpleName()
-                            + ": create: dir=" + dir.getPath());
-                    boolean res = dir.mkdir();
-                    if (!res) {
-                        Utils.errMsg(this, "Cannot create directory: " + dir);
-                        return;
-                    }
-                }
-                String fileName = String.format(SAVE_FILE_NAME,
-                        formatter.format(now));
-                File file = new File(dir, fileName);
-                FileWriter writer = new FileWriter(file);
-                out = new BufferedWriter(writer);
-                out.write("id\t" + "date\t" + "number\t" + "type\t"
-                        + "duration\t" + "name\n");
+            String format = "yyyy-MM-dd-HHmmss";
+            SimpleDateFormat formatter = new SimpleDateFormat(format,
+                    Locale.US);
+            Date now = new Date();
+            String fileName = String.format(SAVE_FILE_NAME,
+                    formatter.format(now));
+            Uri.Builder builder = new Uri.Builder();
+            builder.path(sdCardRoot.getPath())
+                    .appendPath(SD_CARD_MISC_DIR);
+            Uri uri = builder.build();
 
-                // Get the database again to avoid traversing the ListView,
-                // which only has visible items
-                Cursor cursor = null;
-                try {
-                    // Get a cursor
-                    String[] desiredColumns = {COL_ID, COL_NUMBER, COL_DATE,
-                            COL_DURATION, COL_TYPE, COL_NAME};
-                    cursor = getContentResolver().query(getUri(),
-                            desiredColumns, mFilters[filter].selection, null,
-                            sortOrders[mSortOrder].sortOrder);
-                    int indexId = cursor.getColumnIndex(COL_ID);
-                    int indexDate = cursor.getColumnIndex(COL_DATE);
-                    int indexNumber = cursor.getColumnIndex(COL_NUMBER);
-                    int indexDuration = cursor.getColumnIndex(COL_DURATION);
-                    int indexType = cursor.getColumnIndex(COL_TYPE);
-                    int indexName = cursor.getColumnIndex(COL_NAME);
+            Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+            intent.addCategory(Intent.CATEGORY_OPENABLE);
+            intent.setType("text/csv");
+            intent.putExtra(Intent.EXTRA_TITLE, fileName);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                intent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, uri);
+            }
+            Log.d(TAG, this.getClass().getSimpleName()
+                    + ".save: uri=" + uri);
+            startActivityForResult(intent, CREATE_DOCUMENT);
+        } catch (Exception ex) {
+            Utils.excMsg(this, "Error requesting saving to SD card", ex);
+        }
+    }
 
-                    // Loop over items
-                    cursor.moveToFirst();
-                    while (!cursor.isAfterLast()) {
-                        String id = cursor.getString(indexId);
-                        String number = "<Number NA>";
-                        if (indexNumber > -1) {
-                            number = cursor.getString(indexNumber);
-                        }
-                        long dateNum = -1L;
-                        if (indexDate > -1) {
-                            dateNum = cursor.getLong(indexDate);
-                        }
-                        String duration = "<Duration NA>";
-                        if (indexDuration > -1) {
-                            duration = cursor.getString(indexDuration);
-                        }
-                        int type = -1;
-                        if (indexType > -1) {
-                            type = cursor.getInt(indexType);
-                        }
-                        String name = "Unknown";
-                        if (indexName > -1) {
-                            name = cursor.getString(indexName);
-                            if (name == null) {
-                                name = "Unknown";
-                            }
-                        }
-                        out.write(id
-                                + "\t"
-                                + formatDate(
-                                MessageUtils.mediumFormatter, dateNum)
-                                + "\t" + MessageUtils.formatAddress(number)
-                                + "\t" + formatType(type) + "\t"
-                                + formatDuration(duration) + "\t" + name +
-                                "\n");
-                        cursor.moveToNext();
-                    }
-                } catch (Exception ex) {
-                    out.write("Error finding calls\n" + ex.getMessage());
-                } finally {
-                    if (cursor != null) {
-                        cursor.close();
+    /**
+     * Saves the info to the SD card
+     */
+    private void doSave(Uri uri) {
+        FileWriter writer = null;
+        BufferedWriter out = null;
+        Cursor cursor = null;
+        try {
+            ParcelFileDescriptor pfd = getContentResolver().
+                    openFileDescriptor(uri, "w");
+            writer =
+                    new FileWriter(pfd.getFileDescriptor());
+
+            out = new BufferedWriter(writer);
+            out.write("id," + "date," + "number," + "type,"
+                    + "duration," + "name\n");
+
+            // Get the database again to avoid traversing the ListView,
+            // which only has visible items
+
+            // Get a cursor
+            String[] desiredColumns = {COL_ID, COL_NUMBER, COL_DATE,
+                    COL_DURATION, COL_TYPE, COL_NAME};
+            cursor = getContentResolver().query(getUri(),
+                    desiredColumns, mFilters[filter].selection, null,
+                    sortOrders[mSortOrder].sortOrder);
+            int indexId = cursor.getColumnIndex(COL_ID);
+            int indexDate = cursor.getColumnIndex(COL_DATE);
+            int indexNumber = cursor.getColumnIndex(COL_NUMBER);
+            int indexDuration = cursor.getColumnIndex(COL_DURATION);
+            int indexType = cursor.getColumnIndex(COL_TYPE);
+            int indexName = cursor.getColumnIndex(COL_NAME);
+
+            // Loop over items
+            cursor.moveToFirst();
+            while (!cursor.isAfterLast()) {
+                String id = cursor.getString(indexId);
+                String number = "<Number NA>";
+                if (indexNumber > -1) {
+                    number = cursor.getString(indexNumber);
+                }
+                long dateNum = -1L;
+                if (indexDate > -1) {
+                    dateNum = cursor.getLong(indexDate);
+                }
+                String duration = "<Duration NA>";
+                if (indexDuration > -1) {
+                    duration = cursor.getString(indexDuration);
+                }
+                int type = -1;
+                if (indexType > -1) {
+                    type = cursor.getInt(indexType);
+                }
+                String name = "Unknown";
+                if (indexName > -1) {
+                    name = cursor.getString(indexName);
+                    if (name == null) {
+                        name = "Unknown";
                     }
                 }
-                Utils.infoMsg(this, "Wrote " + file.getPath());
-            } else {
-                Utils.errMsg(this, "Cannot write to SD card");
+                out.write(id
+                        + ","
+                        + "\""
+                        + formatDate(MessageUtils.mediumFormatter,
+                        dateNum) + "\","
+                        + MessageUtils.formatAddress(number) + ","
+                        + formatType(type) + ","
+                        + formatDuration(duration) + "," + name +
+                        "\n");
+                cursor.moveToNext();
             }
         } catch (Exception ex) {
-            Utils.excMsg(this, "Error saving to SD card", ex);
+            Utils.excMsg(this, "Error finding calls", ex);
         } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
             try {
-                out.close();
+                if (writer != null) writer.close();
+                if (out != null) out.close();
             } catch (Exception ex) {
-                // Do nothing
+                // No nothing
             }
         }
+        Utils.infoMsg(this, "Wrote " + uri.getPath());
     }
 
     /**
@@ -499,13 +524,13 @@ public class CallHistoryActivity extends AppCompatActivity implements IConstants
      * adjusting for being within range. Resets the increment to 0 after.
      */
     private void displayCall() {
-        ListAdapter adapter = mListView.getAdapter();
         if (mListAdapter == null) {
             return;
         }
         try {
             int count = mListAdapter.getCount();
-            Log.d(TAG, this.getClass().getSimpleName() + ".displayCall: count="
+            Log.d(TAG, this.getClass().getSimpleName() + ".displayCall: " +
+                    "count="
                     + count);
             if (count == 0) {
                 Utils.infoMsg(this, "There are no items in the list");
@@ -519,7 +544,8 @@ public class CallHistoryActivity extends AppCompatActivity implements IConstants
             } else {
                 Data data = mListAdapter.getData(mCurrentPosition);
                 if (data == null) {
-                    Utils.errMsg(this, "Error displaying message: Missing " +
+                    Utils.errMsg(this, "Error displaying message: Missing" +
+                            " " +
                             "data for position " + mCurrentPosition);
                     return;
                 }
@@ -530,13 +556,15 @@ public class CallHistoryActivity extends AppCompatActivity implements IConstants
             }
             // Determine the new mCurrentPosition
             Log.d(TAG, this.getClass().getSimpleName()
-                    + ".displayCall: position=" + mCurrentPosition + " id=" + id
+                    + ".displayCall: position=" + mCurrentPosition + " " +
+                    "id=" + id
                     + " changed=" + changed);
             if (changed) {
                 for (int i = 0; i < count; i++) {
                     Data data = mListAdapter.getData(mCurrentPosition);
                     if (data == null) {
-                        Utils.errMsg(this, "Error displaying message: Missing" +
+                        Utils.errMsg(this, "Error displaying message: " +
+                                "Missing" +
                                 " " + "data for position " + mCurrentPosition);
                         return;
                     }
@@ -559,7 +587,8 @@ public class CallHistoryActivity extends AppCompatActivity implements IConstants
                 mCurrentPosition += mIncrement;
                 if (mCurrentPosition > count - 1) {
                     Toast.makeText(getApplicationContext(),
-                            "At the last item in the list", Toast.LENGTH_LONG)
+                            "At the last item in the list",
+                            Toast.LENGTH_LONG)
                             .show();
                     mCurrentPosition = count - 1;
                 }
@@ -567,7 +596,8 @@ public class CallHistoryActivity extends AppCompatActivity implements IConstants
                 mCurrentPosition += mIncrement;
                 if (mCurrentPosition < 0) {
                     Toast.makeText(getApplicationContext(),
-                            "At the first item in the list", Toast.LENGTH_LONG)
+                            "At the first item in the list",
+                            Toast.LENGTH_LONG)
                             .show();
                     mCurrentPosition = 0;
                 }
@@ -616,8 +646,8 @@ public class CallHistoryActivity extends AppCompatActivity implements IConstants
      * Class to manage a filter.
      */
     private static class Filter {
-        private CharSequence name;
-        private String selection;
+        private final CharSequence name;
+        private final String selection;
 
         private Filter(CharSequence menuName, String selection) {
             this.name = menuName;
@@ -629,8 +659,8 @@ public class CallHistoryActivity extends AppCompatActivity implements IConstants
      * Class to manage a sort order.
      */
     private static class SortOrder {
-        private CharSequence name;
-        private String sortOrder;
+        private final CharSequence name;
+        private final String sortOrder;
 
         private SortOrder(CharSequence menuName, String sortOrder) {
             this.name = menuName;
@@ -748,7 +778,8 @@ public class CallHistoryActivity extends AppCompatActivity implements IConstants
                         sortOrders[mSortOrder].sortOrder);
                 if (cursor == null) {
                     Utils.errMsg(CallHistoryActivity.this,
-                            "ListAdapter: Error getting data: No items in " +
+                            "ListAdapter: Error getting data: No items in" +
+                                    " " +
                                     "database");
                     return;
                 }
@@ -863,7 +894,6 @@ public class CallHistoryActivity extends AppCompatActivity implements IConstants
                         mDesiredColumns,
                         COL_ID + "=" + mDataArray[i].getId(), null, null);
                 if (cursor != null && cursor.moveToFirst()) {
-                    long id = cursor.getLong(mIndexId);
                     String number = "<Number NA>";
                     if (mIndexNumber > -1) {
                         number = cursor.getString(mIndexNumber);
