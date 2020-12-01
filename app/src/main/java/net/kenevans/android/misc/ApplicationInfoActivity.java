@@ -193,8 +193,71 @@ public class ApplicationInfoActivity extends AppCompatActivity implements IConst
             Uri uri;
             if (intent != null) {
                 uri = intent.getData();
-                Log.d(TAG, "uri=" + uri);
+                List<String> segments = uri.getPathSegments();
+                Uri.Builder builder = new Uri.Builder();
+                for (int i = 0; i < segments.size() - 1; i++) {
+                    builder.appendPath(segments.get(i));
+                }
+                Uri parent = builder.build();
+                Log.d(TAG, "uri=" + uri + " parent=" + parent);
                 doSave(uri);
+            }
+        }
+    }
+
+    /**
+     * Asks for the name of the save file
+     */
+    private void save() {
+        try {
+            Date now = new Date();
+            String format = "yyyy-MM-dd-HHmmss";
+            SimpleDateFormat formatter = new SimpleDateFormat(format,
+                    Locale.US);
+            String fileName = String.format(SAVE_FILE_NAME,
+                    formatter.format(now));
+
+            Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+            intent.addCategory(Intent.CATEGORY_OPENABLE);
+            intent.setType("text/plain");
+            intent.putExtra(Intent.EXTRA_TITLE, fileName);
+//            if (Build.VERSION.SDK_INT >= 26) {
+//                // This doesn't work yet.
+//                intent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, uri);
+//            }
+            startActivityForResult(intent, CREATE_DOCUMENT);
+        } catch (Exception ex) {
+            Utils.excMsg(this, "Error requesting saving to SD card", ex);
+        }
+    }
+
+    /**
+     * Does the actual writing for the save.
+     *
+     * @param uri The Uri to use for writing.
+     */
+    private void doSave(Uri uri) {
+        FileOutputStream writer = null;
+        try {
+            Charset charset = StandardCharsets.UTF_8;
+            ParcelFileDescriptor pfd = getContentResolver().
+                    openFileDescriptor(uri, "w");
+            writer =
+                    new FileOutputStream(pfd.getFileDescriptor());
+            CharSequence charSeq = mTextView.getText();
+            byte[] bytes = charSeq.toString().getBytes(charset);
+            writer.write(bytes);
+            if (charSeq.length() == 0) {
+                Utils.warnMsg(this, "The file written is empty");
+            }
+            Utils.infoMsg(this, "Wrote " + uri.getPath());
+        } catch (Exception ex) {
+            Utils.excMsg(this, "Error saving to SD card", ex);
+        } finally {
+            try {
+                if (writer != null) writer.close();
+            } catch (Exception ex) {
+                // Do nothing
             }
         }
     }
@@ -260,69 +323,6 @@ public class ApplicationInfoActivity extends AppCompatActivity implements IConst
             cm.setPrimaryClip(clip);
         } catch (Exception ex) {
             Utils.excMsg(this, "Error setting Clipboard", ex);
-        }
-    }
-
-    /**
-     * Asks for the name of the save file
-     */
-    private void save() {
-        try {
-            File sdCardRoot = Environment.getExternalStorageDirectory();
-            String format = "yyyy-MM-dd-HHmmss";
-            SimpleDateFormat formatter = new SimpleDateFormat(format,
-                    Locale.US);
-            Date now = new Date();
-            String fileName = String.format(SAVE_FILE_NAME,
-                    formatter.format(now));
-            Uri.Builder builder = new Uri.Builder();
-            builder.path(sdCardRoot.getPath())
-                    .appendPath(SD_CARD_MISC_DIR);
-            Uri uri = builder.build();
-
-            Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
-            intent.addCategory(Intent.CATEGORY_OPENABLE);
-            intent.setType("text/plain");
-            intent.putExtra(Intent.EXTRA_TITLE, fileName);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                intent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, uri);
-            }
-            Log.d(TAG, this.getClass().getSimpleName()
-                    + ".save: uri=" + uri);
-            startActivityForResult(intent, CREATE_DOCUMENT);
-        } catch (Exception ex) {
-            Utils.excMsg(this, "Error requesting saving to SD card", ex);
-        }
-    }
-
-    /**
-     * Saves the info to the SD card
-     *
-     * @param uri The Uri to use for writing.
-     */
-    private void doSave(Uri uri) {
-        FileOutputStream writer = null;
-        try {
-            Charset charset = StandardCharsets.UTF_8;
-            ParcelFileDescriptor pfd = getContentResolver().
-                    openFileDescriptor(uri, "w");
-            writer =
-                    new FileOutputStream(pfd.getFileDescriptor());
-            CharSequence charSeq = mTextView.getText();
-            byte[] bytes = charSeq.toString().getBytes(charset);
-            writer.write(bytes);
-            if (charSeq.length() == 0) {
-                Utils.warnMsg(this, "The file written is empty");
-            }
-            Utils.infoMsg(this, "Wrote " + uri.getPath());
-        } catch (Exception ex) {
-            Utils.excMsg(this, "Error saving to SD card", ex);
-        } finally {
-            try {
-                if (writer != null) writer.close();
-            } catch (Exception ex) {
-                // Do nothing
-            }
         }
     }
 

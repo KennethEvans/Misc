@@ -28,12 +28,10 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.ParcelFileDescriptor;
 import android.provider.CallLog;
-import android.provider.DocumentsContract;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -225,33 +223,6 @@ public class CallHistoryActivity extends AppCompatActivity implements IConstants
     }
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode,
-                                    Intent intent) {
-        super.onActivityResult(requestCode, resultCode, intent);
-        // DEBUG
-        Log.d(TAG, this.getClass().getSimpleName()
-                + ".onActivityResult: requestCode=" + requestCode
-                + " resultCode=" + resultCode + " mCurrentPosition="
-                + mCurrentPosition);
-        if (requestCode == DISPLAY_CALL) {
-            mIncrement = 0;
-            // Note that earlier items are at higher positions in the list
-            if (resultCode == RESULT_PREV) {
-                mIncrement = -1;
-            } else if (resultCode == RESULT_NEXT) {
-                mIncrement = 1;
-            }
-        } else if (requestCode == CREATE_DOCUMENT && resultCode == Activity.RESULT_OK) {
-            Uri uri;
-            if (intent != null) {
-                uri = intent.getData();
-                Log.d(TAG, "uri=" + uri);
-                doSave(uri);
-            }
-        }
-    }
-
-    @Override
     protected void onResume() {
         Log.d(TAG, this.getClass().getSimpleName()
                 + ".onResume: mCurrentPosition=" + mCurrentPosition
@@ -272,6 +243,143 @@ public class CallHistoryActivity extends AppCompatActivity implements IConstants
                 + mCurrentId);
         super.onPause();
         // We save the preferences in refresh
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode,
+                                    Intent intent) {
+        super.onActivityResult(requestCode, resultCode, intent);
+        if (requestCode == CREATE_DOCUMENT && resultCode == Activity.RESULT_OK) {
+            Uri uri;
+            if (intent != null) {
+                uri = intent.getData();
+                Log.d(TAG, "uri=" + uri);
+                doSave(uri);
+            }
+        }
+    }
+
+    /**
+     * Asks for the name of the save file
+     */
+    private void save() {
+        try {
+            File sdCardRoot = Environment.getExternalStorageDirectory();
+            String format = "yyyy-MM-dd-HHmmss";
+            SimpleDateFormat formatter = new SimpleDateFormat(format,
+                    Locale.US);
+            Date now = new Date();
+            String fileName = String.format(SAVE_FILE_NAME,
+                    formatter.format(now));
+            Uri.Builder builder = new Uri.Builder();
+            builder.path(sdCardRoot.getPath())
+                    .appendPath(SD_CARD_MISC_DIR);
+            Uri uri = builder.build();
+
+            Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+            intent.addCategory(Intent.CATEGORY_OPENABLE);
+            intent.setType("text/csv");
+            intent.putExtra(Intent.EXTRA_TITLE, fileName);
+            // Set initial directory
+//            if (Build.VERSION.SDK_INT >= 26) {
+//                // This doesn't work yet.
+//                intent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, uri);
+//            }
+            Log.d(TAG, this.getClass().getSimpleName()
+                    + ".save: uri=" + uri);
+            startActivityForResult(intent, CREATE_DOCUMENT);
+        } catch (Exception ex) {
+            Utils.excMsg(this, "Error requesting saving to SD card", ex);
+        }
+    }
+
+    /**
+     * Does the actual writing for the save.
+     *
+     * @param uri The Uri to use for writing.
+     */
+    private void doSave(Uri uri) {
+        FileWriter writer = null;
+        BufferedWriter out = null;
+        Cursor cursor = null;
+        try {
+            ParcelFileDescriptor pfd = getContentResolver().
+                    openFileDescriptor(uri, "w");
+            writer =
+                    new FileWriter(pfd.getFileDescriptor());
+
+            out = new BufferedWriter(writer);
+            out.write("id," + "date," + "number," + "type,"
+                    + "duration," + "name\n");
+
+            // Get the database again to avoid traversing the ListView,
+            // which only has visible items
+
+            // Get a cursor
+            String[] desiredColumns = {COL_ID, COL_NUMBER, COL_DATE,
+                    COL_DURATION, COL_TYPE, COL_NAME};
+            cursor = getContentResolver().query(getUri(),
+                    desiredColumns, mFilters[filter].selection, null,
+                    sortOrders[mSortOrder].sortOrder);
+            int indexId = cursor.getColumnIndex(COL_ID);
+            int indexDate = cursor.getColumnIndex(COL_DATE);
+            int indexNumber = cursor.getColumnIndex(COL_NUMBER);
+            int indexDuration = cursor.getColumnIndex(COL_DURATION);
+            int indexType = cursor.getColumnIndex(COL_TYPE);
+            int indexName = cursor.getColumnIndex(COL_NAME);
+
+            // Loop over items
+            cursor.moveToFirst();
+            while (!cursor.isAfterLast()) {
+                String id = cursor.getString(indexId);
+                String number = "<Number NA>";
+                if (indexNumber > -1) {
+                    number = cursor.getString(indexNumber);
+                }
+                long dateNum = -1L;
+                if (indexDate > -1) {
+                    dateNum = cursor.getLong(indexDate);
+                }
+                String duration = "<Duration NA>";
+                if (indexDuration > -1) {
+                    duration = cursor.getString(indexDuration);
+                }
+                int type = -1;
+                if (indexType > -1) {
+                    type = cursor.getInt(indexType);
+                }
+                String name = "Unknown";
+                if (indexName > -1) {
+                    name = cursor.getString(indexName);
+                    if (name == null) {
+                        name = "Unknown";
+                    }
+                }
+                out.write(id
+                        + ","
+                        + "\""
+                        + formatDate(MessageUtils.mediumFormatter,
+                        dateNum) + "\","
+                        + MessageUtils.formatAddress(number) + ","
+                        + formatType(type) + ","
+                        + formatDuration(duration) + "," + name +
+                        "\n");
+                cursor.moveToNext();
+            }
+        } catch (Exception ex) {
+            Utils.excMsg(this, "Error finding calls", ex);
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+            try {
+                if (writer != null) writer.close();
+                if (out != null) out.close();
+            } catch (Exception ex) {
+                // No nothing
+            }
+        }
+        Utils.infoMsg(this, "Wrote " + uri.getPath());
     }
 
     /**
@@ -398,125 +506,6 @@ public class CallHistoryActivity extends AppCompatActivity implements IConstants
         } catch (Exception ex) {
             Utils.excMsg(this, "Error showing Help", ex);
         }
-    }
-
-    /**
-     * Asks for the name of the save file
-     */
-    private void save() {
-        try {
-            File sdCardRoot = Environment.getExternalStorageDirectory();
-            String format = "yyyy-MM-dd-HHmmss";
-            SimpleDateFormat formatter = new SimpleDateFormat(format,
-                    Locale.US);
-            Date now = new Date();
-            String fileName = String.format(SAVE_FILE_NAME,
-                    formatter.format(now));
-            Uri.Builder builder = new Uri.Builder();
-            builder.path(sdCardRoot.getPath())
-                    .appendPath(SD_CARD_MISC_DIR);
-            Uri uri = builder.build();
-
-            Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
-            intent.addCategory(Intent.CATEGORY_OPENABLE);
-            intent.setType("text/csv");
-            intent.putExtra(Intent.EXTRA_TITLE, fileName);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                intent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, uri);
-            }
-            Log.d(TAG, this.getClass().getSimpleName()
-                    + ".save: uri=" + uri);
-            startActivityForResult(intent, CREATE_DOCUMENT);
-        } catch (Exception ex) {
-            Utils.excMsg(this, "Error requesting saving to SD card", ex);
-        }
-    }
-
-    /**
-     * Saves the info to the SD card
-     */
-    private void doSave(Uri uri) {
-        FileWriter writer = null;
-        BufferedWriter out = null;
-        Cursor cursor = null;
-        try {
-            ParcelFileDescriptor pfd = getContentResolver().
-                    openFileDescriptor(uri, "w");
-            writer =
-                    new FileWriter(pfd.getFileDescriptor());
-
-            out = new BufferedWriter(writer);
-            out.write("id," + "date," + "number," + "type,"
-                    + "duration," + "name\n");
-
-            // Get the database again to avoid traversing the ListView,
-            // which only has visible items
-
-            // Get a cursor
-            String[] desiredColumns = {COL_ID, COL_NUMBER, COL_DATE,
-                    COL_DURATION, COL_TYPE, COL_NAME};
-            cursor = getContentResolver().query(getUri(),
-                    desiredColumns, mFilters[filter].selection, null,
-                    sortOrders[mSortOrder].sortOrder);
-            int indexId = cursor.getColumnIndex(COL_ID);
-            int indexDate = cursor.getColumnIndex(COL_DATE);
-            int indexNumber = cursor.getColumnIndex(COL_NUMBER);
-            int indexDuration = cursor.getColumnIndex(COL_DURATION);
-            int indexType = cursor.getColumnIndex(COL_TYPE);
-            int indexName = cursor.getColumnIndex(COL_NAME);
-
-            // Loop over items
-            cursor.moveToFirst();
-            while (!cursor.isAfterLast()) {
-                String id = cursor.getString(indexId);
-                String number = "<Number NA>";
-                if (indexNumber > -1) {
-                    number = cursor.getString(indexNumber);
-                }
-                long dateNum = -1L;
-                if (indexDate > -1) {
-                    dateNum = cursor.getLong(indexDate);
-                }
-                String duration = "<Duration NA>";
-                if (indexDuration > -1) {
-                    duration = cursor.getString(indexDuration);
-                }
-                int type = -1;
-                if (indexType > -1) {
-                    type = cursor.getInt(indexType);
-                }
-                String name = "Unknown";
-                if (indexName > -1) {
-                    name = cursor.getString(indexName);
-                    if (name == null) {
-                        name = "Unknown";
-                    }
-                }
-                out.write(id
-                        + ","
-                        + "\""
-                        + formatDate(MessageUtils.mediumFormatter,
-                        dateNum) + "\","
-                        + MessageUtils.formatAddress(number) + ","
-                        + formatType(type) + ","
-                        + formatDuration(duration) + "," + name +
-                        "\n");
-                cursor.moveToNext();
-            }
-        } catch (Exception ex) {
-            Utils.excMsg(this, "Error finding calls", ex);
-        } finally {
-            if (cursor != null) {
-                cursor.close();
-            }
-            try {
-                if (writer != null) writer.close();
-                if (out != null) out.close();
-            } catch (Exception ex) {
-                // No nothing
-            }
-        }
-        Utils.infoMsg(this, "Wrote " + uri.getPath());
     }
 
     /**
