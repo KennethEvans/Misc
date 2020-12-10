@@ -541,10 +541,9 @@ public class DisplayMMSActivity extends AppCompatActivity implements IConstants 
      */
     public String getMmsText(String id) {
         Uri partURI = Uri.parse("content://mms/part/" + id);
-        InputStream is = null;
         StringBuilder sb = new StringBuilder();
-        try {
-            is = getContentResolver().openInputStream(partURI);
+        try (InputStream is =
+                     getContentResolver().openInputStream(partURI)) {
             if (is != null) {
                 InputStreamReader isr = new InputStreamReader(is,
                         StandardCharsets.UTF_8);
@@ -558,13 +557,6 @@ public class DisplayMMSActivity extends AppCompatActivity implements IConstants 
         } catch (IOException ex) {
             Log.e(TAG, getClass().getSimpleName() + ".getMmsText Exception: "
                     + ex.getMessage());
-        } finally {
-            if (is != null) {
-                try {
-                    is.close();
-                } catch (IOException ignored) {
-                }
-            }
         }
         return sb.toString();
     }

@@ -32,7 +32,6 @@ import android.graphics.Color;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -104,8 +103,7 @@ public class WifiActivity extends AppCompatActivity implements IConstants {
         });
 
         // Get the stored sort order
-        SharedPreferences prefs = PreferenceManager
-                .getDefaultSharedPreferences(this);
+        SharedPreferences prefs = getPreferences(MODE_PRIVATE);
         int sortOrderOrdinal = prefs.getInt(PREF_WIFI_SORT_ORDER, SortOrder
                 .NONE.ordinal());
         if (sortOrderOrdinal >= 0 && sortOrderOrdinal < SortOrder.values()
@@ -226,9 +224,9 @@ public class WifiActivity extends AppCompatActivity implements IConstants {
                                 break;
                         }
                         // Save the sort order
-                        SharedPreferences.Editor editor = PreferenceManager
-                                .getDefaultSharedPreferences(WifiActivity
-                                        .this).edit();
+                        SharedPreferences.Editor editor =
+                                getPreferences(MODE_PRIVATE)
+                                        .edit();
                         editor.putInt(PREF_WIFI_SORT_ORDER, sortOrder.ordinal
                                 ());
                         editor.commit();

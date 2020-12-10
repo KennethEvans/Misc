@@ -30,7 +30,6 @@ import android.content.pm.PackageManager;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.text.Editable;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -95,8 +94,7 @@ public class AppDetailsActivity extends AppCompatActivity implements IConstants 
         });
 
         // Get the preferences
-        SharedPreferences prefs = PreferenceManager
-                .getDefaultSharedPreferences(this);
+        SharedPreferences prefs = getPreferences(MODE_PRIVATE);
         Gson gson = new Gson();
         String json = prefs.getString(PREF_APPDETAILS_APP_NAMES, "");
         String[] appNames = gson.fromJson(json, String[].class);
@@ -365,14 +363,14 @@ public class AppDetailsActivity extends AppCompatActivity implements IConstants 
      * Store the app names list in Preferences.
      */
     private void storeAppDetailsPreference() {
-        SharedPreferences.Editor prefsEditor = PreferenceManager
-                .getDefaultSharedPreferences(this).edit();
+        SharedPreferences.Editor editor = getPreferences(MODE_PRIVATE)
+                .edit();
         String[] appNames = createAppNamesFromAppDetails();
         if (appNames != null) {
             Gson gson = new Gson();
             String json = gson.toJson(appNames);
-            prefsEditor.putString(PREF_APPDETAILS_APP_NAMES, json);
-            prefsEditor.commit();
+            editor.putString(PREF_APPDETAILS_APP_NAMES, json);
+            editor.commit();
         }
     }
 
