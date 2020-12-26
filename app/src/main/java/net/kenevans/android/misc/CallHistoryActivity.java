@@ -21,7 +21,6 @@
 
 package net.kenevans.android.misc;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -193,22 +192,21 @@ public class CallHistoryActivity extends AppCompatActivity implements IConstants
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
-        switch (id) {
-            case R.id.refresh:
-                refresh();
-                return true;
-            case R.id.save:
-                save();
-                return true;
-            case R.id.help:
-                showHelp();
-                return true;
-            case R.id.filter:
-                setFilter();
-                return true;
-            case R.id.sort:
-                setSortOrder();
-                return true;
+        if (id == R.id.refresh) {
+            refresh();
+            return true;
+        } else if (id == R.id.save) {
+            save();
+            return true;
+        } else if (id == R.id.help) {
+            showHelp();
+            return true;
+        } else if (id == R.id.filter) {
+            setFilter();
+            return true;
+        } else if (id == R.id.sort) {
+            setSortOrder();
+            return true;
         }
         return false;
     }
@@ -249,12 +247,18 @@ public class CallHistoryActivity extends AppCompatActivity implements IConstants
     protected void onActivityResult(int requestCode, int resultCode,
                                     Intent intent) {
         super.onActivityResult(requestCode, resultCode, intent);
-        if (requestCode == CREATE_DOCUMENT && resultCode == Activity.RESULT_OK) {
-            Uri uri;
-            if (intent != null) {
-                uri = intent.getData();
-                Log.d(TAG, "uri=" + uri);
-                doSave(uri);
+        // DEBUG
+        Log.d(TAG, this.getClass().getSimpleName()
+                + ".onActivityResult: requestCode=" + requestCode
+                + " resultCode=" + resultCode + " mCurrentPosition="
+                + mCurrentPosition);
+        if (requestCode == DISPLAY_MESSAGE) {
+            mIncrement = 0;
+            // Note that earlier items are at higher positions in the list
+            if (resultCode == RESULT_PREV) {
+                mIncrement = -1;
+            } else if (resultCode == RESULT_NEXT) {
+                mIncrement = +1;
             }
         }
     }

@@ -107,19 +107,19 @@ public class MMSSMSActivity extends AppCompatActivity implements IConstants {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
-        switch (id) {
-            case R.id.refresh:
-                refresh();
-                return true;
-            case R.id.order:
-                setOrder();
-                return true;
+        if (id == R.id.refresh) {
+            refresh();
+            return true;
+        } else if (id == R.id.order) {
+            setOrder();
+            return true;
         }
         return false;
     }
 
-    protected void onListItemClick(ListView lv, View view, int position, long
-            id) {
+    protected void onListItemClick(ListView lv, View view, int position,
+                                   long
+                                           id) {
         Log.d(TAG, this.getClass().getSimpleName() + ": onListItemClick: " +
                 "position=" + position + " id=" + id);
         Data data = mListAdapter.getData(position);
@@ -153,7 +153,6 @@ public class MMSSMSActivity extends AppCompatActivity implements IConstants {
         }
     }
 
-
     @Override
     protected void onResume() {
         Log.d(TAG, this.getClass().getSimpleName()
@@ -184,7 +183,8 @@ public class MMSSMSActivity extends AppCompatActivity implements IConstants {
                 getText(R.string.sort_id)};
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle(getText(R.string.sort_title));
-        builder.setSingleChoiceItems(items, mSortOrder == Order.TIME ? 0 : 1,
+        builder.setSingleChoiceItems(items, mSortOrder == Order.TIME ? 0
+                        : 1,
                 new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int item) {
                         dialog.dismiss();
@@ -197,7 +197,8 @@ public class MMSSMSActivity extends AppCompatActivity implements IConstants {
     }
 
     /**
-     * Displays the message at the current position plus the current mIncrement,
+     * Displays the message at the current position plus the current
+     * mIncrement,
      * adjusting for being within range. Resets the mIncrement to 0 after.
      */
     private void displayMessage() {
@@ -221,7 +222,8 @@ public class MMSSMSActivity extends AppCompatActivity implements IConstants {
             } else {
                 Data data = mListAdapter.getData(mCurrentPosition);
                 if (data == null) {
-                    Utils.errMsg(this, "Error displaying message: Missing " +
+                    Utils.errMsg(this, "Error displaying message: Missing" +
+                            " " +
                             "data for position " + mCurrentPosition);
                     return;
                 }
@@ -232,13 +234,15 @@ public class MMSSMSActivity extends AppCompatActivity implements IConstants {
             }
             // Determine the new mCurrentPosition
             Log.d(TAG, this.getClass().getSimpleName()
-                    + ".displayMessage: position=" + mCurrentPosition + " id="
+                    + ".displayMessage: position=" + mCurrentPosition +
+                    " id="
                     + id + " changed=" + changed);
             if (changed) {
                 for (int i = 0; i < count; i++) {
                     Data data = mListAdapter.getData(mCurrentPosition);
                     if (data == null) {
-                        Utils.errMsg(this, "Error displaying message: Missing" +
+                        Utils.errMsg(this, "Error displaying message: " +
+                                "Missing" +
                                 " " + "data for position " + mCurrentPosition);
                         return;
                     }
@@ -261,7 +265,8 @@ public class MMSSMSActivity extends AppCompatActivity implements IConstants {
                 mCurrentPosition += mIncrement;
                 if (mCurrentPosition > count - 1) {
                     Toast.makeText(getApplicationContext(),
-                            "At the last item in the list", Toast.LENGTH_LONG)
+                            "At the last item in the list",
+                            Toast.LENGTH_LONG)
                             .show();
                     mCurrentPosition = count - 1;
                 }
@@ -269,7 +274,8 @@ public class MMSSMSActivity extends AppCompatActivity implements IConstants {
                 mCurrentPosition += mIncrement;
                 if (mCurrentPosition < 0) {
                     Toast.makeText(getApplicationContext(),
-                            "At the first item in the list", Toast.LENGTH_LONG)
+                            "At the first item in the list",
+                            Toast.LENGTH_LONG)
                             .show();
                     mCurrentPosition = 0;
                 }
@@ -395,7 +401,7 @@ public class MMSSMSActivity extends AppCompatActivity implements IConstants {
             mDataList = new ArrayList<>();
             Cursor cursor = null;
             long id = -1;
-            int indexId = -1;
+            int indexId;
             int indexDate = -1;
             long dateNum;
             int nSMS = 0;
@@ -409,7 +415,8 @@ public class MMSSMSActivity extends AppCompatActivity implements IConstants {
                         null, null, null);
                 if (cursor == null) {
                     Utils.errMsg(MMSSMSActivity.this,
-                            "ListAdapter: Error getting data: No SMS items in" +
+                            "ListAdapter: Error getting data: No SMS " +
+                                    "items in" +
                                     " database");
 
                 } else {
@@ -444,7 +451,8 @@ public class MMSSMSActivity extends AppCompatActivity implements IConstants {
                         null, null, null);
                 if (cursor == null) {
                     Utils.errMsg(MMSSMSActivity.this,
-                            "ListAdapter: Error getting data: No items in " +
+                            "ListAdapter: Error getting data: No items in" +
+                                    " " +
                                     "database");
                 }
                 indexId = cursor.getColumnIndex(COL_ID);
@@ -484,7 +492,8 @@ public class MMSSMSActivity extends AppCompatActivity implements IConstants {
 //                        }
                         // Note these are in reverse order
                         if (mSortOrder == Order.ID) {
-                            return Long.compare(data2.getId(), data1.getId());
+                            return Long.compare(data2.getId(),
+                                    data1.getId());
                         } else {
                             return Long.compare(data2.getDateNum(),
                                     data1.getDateNum());
@@ -582,14 +591,15 @@ public class MMSSMSActivity extends AppCompatActivity implements IConstants {
                     String address;
                     String idStr;
                     long dateNum;
-                    int indexId = -1;
-                    int indexAddress = -1;
+                    int indexId;
+                    int indexAddress;
                     int indexDate = -1;
-                    Cursor cursor = null;
+                    Cursor cursor;
                     if (data.getType() == MessageType.SMS) {
                         // SMS
 //                        Log.d(TAG, "SMS: data.getType()=" + data.getType());
-                        String[] projection = new String[]{COL_ID, COL_ADDRESS};
+                        String[] projection = new String[]{COL_ID,
+                                COL_ADDRESS};
                         cursor = getContentResolver().query(SMS_URI,
                                 projection,
                                 COL_ID + "=" + data.getId(), null, null);
@@ -632,7 +642,8 @@ public class MMSSMSActivity extends AppCompatActivity implements IConstants {
                             String toAddr =
                                     MessageUtils.getMmsAddress(MMSSMSActivity.this, 151, idStr);
                             if (fromAddr != null) {
-                                if (!fromAddr.equals("insert-address-token")) {
+                                if (!fromAddr.equals("insert-address" +
+                                        "-token")) {
                                     address = "From: " + fromAddr;
                                 } else {
                                     // Is outgoing
