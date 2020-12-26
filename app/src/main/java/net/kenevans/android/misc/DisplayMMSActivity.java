@@ -80,7 +80,7 @@ public class DisplayMMSActivity extends AppCompatActivity implements IConstants 
      * The date multiplier to use to get ms. MMS message timestamps are in sec
      * not ms.
      */
-    public Long mDateMultiplier = 1L;
+    public Long mDateMultiplier = 1000L;
     /**
      * Name of the file written to the root of the SD card
      */

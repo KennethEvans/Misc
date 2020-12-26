@@ -167,7 +167,7 @@ public class MMSActivity extends AppCompatActivity implements IConstants {
             if (resultCode == RESULT_PREV) {
                 mIncrement = -1;
             } else if (resultCode == RESULT_NEXT) {
-                mIncrement = 1;
+                mIncrement = +1;
             }
         }
     }
