@@ -1,10 +1,10 @@
 apply plugin: 'com.android.application'
 android {
-    compileSdkVersion 30
+    compileSdkVersion 31
     defaultConfig {
         applicationId "net.kenevans.android.misc"
         minSdkVersion 19
-        targetSdkVersion 30
+        targetSdkVersion 31
         versionCode 21
         versionName "2.1.0"
     }
@@ -13,7 +13,7 @@ android {
         }
     }
     dependencies {
-        implementation 'com.google.code.gson:gson:2.8.5'
+        implementation 'com.google.code.gson:gson:2.8.9'
     }
     productFlavors {
     }
@@ -22,6 +22,6 @@ android {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
-    implementation 'androidx.appcompat:appcompat:1.2.0'
-    implementation 'com.google.android.gms:play-services-maps:17.0.0'
+    implementation 'androidx.appcompat:appcompat:1.4.1'
+    implementation 'com.google.android.gms:play-services-maps:18.0.2'
 }
