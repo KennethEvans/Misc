@@ -32,6 +32,7 @@ import android.graphics.Color;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -63,10 +64,6 @@ public class WifiActivity extends AppCompatActivity implements IConstants {
     enum SortOrder {
         NONE, SSID, BSSID, LEVEL, FREQUENCY
     }
-
-    private static int[] WIFI_STRENGTH_COLORS = {
-            0xFFCD3700, 0xFFFFA500, Color.YELLOW, 0xFFBCEE68, Color.GREEN,
-    };
 
     /**
      * The sort order to use.
@@ -284,7 +281,9 @@ public class WifiActivity extends AppCompatActivity implements IConstants {
         private int id;
         private String ssid;
         private String bssid;
-        private int level;
+        private int rssi;
+        private int bars;
+        private int barColor;
         private int frequency;
         private String capabilities;
 
@@ -301,7 +300,7 @@ public class WifiActivity extends AppCompatActivity implements IConstants {
                 this.ssid = "???";
             }
             this.bssid = scanResult.BSSID;
-            this.level = scanResult.level;
+            this.rssi = scanResult.level;
             this.frequency = scanResult.frequency;
             this.capabilities = scanResult.capabilities;
         }
@@ -318,8 +317,8 @@ public class WifiActivity extends AppCompatActivity implements IConstants {
             return bssid;
         }
 
-        public int getLevel() {
-            return level;
+        public int getRssi() {
+            return rssi;
         }
 
         public int getFrequency() {
@@ -340,14 +339,18 @@ public class WifiActivity extends AppCompatActivity implements IConstants {
         }
 
         /**
-         * Get the number of bars in the range 1 - 4.
-         *
-         * @return
+         * Calculates the maximum signal level, the numbers of bars in the range
+         * 0 to maxSignalLevel, and the corespondoing color.
          */
-        public int getBars() {
-            return WifiManager.calculateSignalLevel(level, 5);
+        public void getBars() {
+            WifiManager wifiMgr =
+                    (WifiManager) getSystemService(Context.WIFI_SERVICE);
+            int maxSignalLevel = wifiMgr.getMaxSignalLevel();
+            bars = wifiMgr.calculateSignalLevel(rssi);
+            int hue = 360 - 240 * bars / maxSignalLevel;
+            barColor = Color.HSVToColor(new float[]{hue, .75f, 1});
+//            Log.d(TAG, "bars=" + bars + "/" + maxSignalLevel + " hue=" + hue);
         }
-
 
         @Override
         public int compareTo(WifiNetwork other) {
@@ -359,7 +362,7 @@ public class WifiActivity extends AppCompatActivity implements IConstants {
                     return this.frequency - other.frequency;
                 case LEVEL:
                     // Highest first
-                    return other.level - this.level;
+                    return other.rssi - this.rssi;
                 case SSID:
                     return (this.ssid.toLowerCase()).compareTo(other.ssid
                             .toLowerCase());
@@ -417,25 +420,22 @@ public class WifiActivity extends AppCompatActivity implements IConstants {
             }
 
             WifiNetwork network = mNetworks.get(i);
-            int bars = network.getBars();
+            network.getBars();
+            int bars = network.bars;
             String title = "";
             title += network.getSsid() + " " + network.getBssid();
 
             String subTitle = "";
             subTitle += bars + ((bars != 1) ? " bars " : " bar ") + network
-                    .getLevel()
+                    .getRssi()
                     + " db " + "Channel " + network.getChannel()
                     + " (" + network.getFrequency() + " MHz)";
 
             viewHolder.title.setText(title);
             viewHolder.subTitle.setText(subTitle);
 
-            // Color the text according to the level
-            if (bars >= 0 && bars < WIFI_STRENGTH_COLORS.length) {
-                viewHolder.subTitle.setTextColor(WIFI_STRENGTH_COLORS[bars]);
-            } else {
-                viewHolder.subTitle.setTextColor(Color.WHITE);
-            }
+            // Color the text according to the RSSI
+            viewHolder.subTitle.setTextColor(network.barColor);
 
             return view;
         }
